@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>座標獵人</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #f0f0f0;
+      font-family: 'Noto Sans TC', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #ff9900;
+      letter-spacing: 0.15em;
+      margin-bottom: 4px;
+      text-shadow: 0 0 12px #ff990066;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 18px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── HUD ── */
+    .hud {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .hud-item {
+      text-align: center;
+    }
+
+    .hud-label {
+      font-size: 0.72rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .hud-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ff9900;
+      line-height: 1.1;
+    }
+
+    .hud-value.timer-danger { color: #ff4444; animation: pulse 0.5s infinite alternate; }
+
+    @keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
+
+    /* ── Grid ── */
+    .grid-wrapper {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      display: block;
+      border: 1px solid #333;
+      border-radius: 4px;
+    }
+
+    /* ── Input area ── */
+    .input-area {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .input-area input {
+      background: #1e1e1e;
+      border: 2px solid #444;
+      border-radius: 6px;
+      color: #f0f0f0;
+      font-size: 1.1rem;
+      padding: 8px 14px;
+      width: 160px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: monospace;
+    }
+
+    .input-area input:focus { border-color: #ff9900; }
+    .input-area input.shake {
+      animation: shake 0.3s;
+      border-color: #ff4444;
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .btn {
+      background: #ff9900;
+      border: none;
+      border-radius: 6px;
+      color: #111;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 9px 20px;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn:hover { background: #ffb84d; }
+    .btn:active { transform: scale(0.96); }
+    .btn:disabled { background: #444; color: #777; cursor: not-allowed; }
+
+    /* ── Feedback ── */
+    .feedback {
+      height: 24px;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .feedback.hit  { color: #ff9900; }
+    .feedback.miss { color: #aaa; }
+    .feedback.dup  { color: #888; }
+
+    /* ── Restart ── */
+    .btn-restart {
+      background: transparent;
+      border: 2px solid #ff9900;
+      color: #ff9900;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 7px 22px;
+      transition: background 0.15s;
+      letter-spacing: 0.06em;
+    }
+
+    .btn-restart:hover { background: #ff990022; }
+
+    /* ── Result overlay ── */
+    #result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000cc;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #result-overlay.show { display: flex; }
+
+    .result-box {
+      background: #1a1a1a;
+      border: 2px solid #ff9900;
+      border-radius: 12px;
+      padding: 40px 50px;
+      text-align: center;
+      box-shadow: 0 0 40px #ff990044;
+    }
+
+    .result-box h2 {
+      font-size: 1.5rem;
+      color: #ff9900;
+      margin-bottom: 12px;
+    }
+
+    .result-score {
+      font-size: 4rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+
+    .result-max {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    .result-msg {
+      font-size: 1.1rem;
+      margin-bottom: 28px;
+      color: #f0c070;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🎯 座標獵人</h1>
+<p class="subtitle">猜出隱藏座標，60 秒內獵捕全部 10 個！</p>
+
+<div class="hud">
+  <div class="hud-item">
+    <div class="hud-label">得分</div>
+    <div class="hud-value" id="score">0</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">剩餘時間</div>
+    <div class="hud-value" id="timer">60</div>
+  </div>
+  <div class="hud-item">
+    <div class="hud-label">命中 / 總數</div>
+    <div class="hud-value"><span id="hit-count">0</span>/10</div>
+  </div>
+</div>
+
+<div class="grid-wrapper">
+  <canvas id="grid" width="484" height="484"></canvas>
+</div>
+
+<div class="input-area">
+  <input type="text" id="guess-input" placeholder="例：2,-3" maxlength="8" autocomplete="off" />
+  <button class="btn" id="guess-btn">猜！</button>
+</div>
+
+<div class="feedback" id="feedback"></div>
+
+<button class="btn-restart" id="restart-btn">↺ 重新開始</button>
+
+<!-- Result overlay -->
+<div id="result-overlay">
+  <div class="result-box">
+    <h2>時間到！</h2>
+    <div class="result-score" id="final-score">0</div>
+    <div class="result-max">/ 10 分</div>
+    <div class="result-msg" id="result-msg"></div>
+    <button class="btn" id="overlay-restart-btn">再玩一次</button>
+  </div>
+</div>
+
+<script>
+  const CANVAS_SIZE = 484;
+  const CELL = 44;          // 484 / 11 = 44px per cell
+  const ORIGIN_PX = { x: CANVAS_SIZE / 2, y: CANVAS_SIZE / 2 };
+  const RANGE = 5;          // -5 to 5
+
+  const canvas = document.getElementById('grid');
+  const ctx = canvas.getContext('2d');
+
+  let targets = [];
+  let guessed = new Set();   // "x,y" strings already tried
+  let hits = new Set();      // "x,y" strings that were correct
+  let score = 0;
+  let timeLeft = 60;
+  let timerInterval = null;
+  let gameOver = false;
+
+  /* ── coordinate helpers ── */
+  function toPixel(gx, gy) {
+    return {
+      x: ORIGIN_PX.x + gx * CELL,
+      y: ORIGIN_PX.y - gy * CELL
+    };
+  }
+
+  /* ── draw grid ── */
+  function drawGrid() {
+    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // Background
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // Grid lines
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      const px = i * CELL + CELL / 2;
+      // vertical
+      ctx.beginPath(); ctx.moveTo(px, CELL / 2); ctx.lineTo(px, CANVAS_SIZE - CELL / 2); ctx.stroke();
+      // horizontal
+      ctx.beginPath(); ctx.moveTo(CELL / 2, px); ctx.lineTo(CANVAS_SIZE - CELL / 2, px); ctx.stroke();
+    }
+
+    // Axes (brighter)
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 2;
+    // X axis
+    ctx.beginPath();
+    ctx.moveTo(CELL / 2, ORIGIN_PX.y);
+    ctx.lineTo(CANVAS_SIZE - CELL / 2, ORIGIN_PX.y);
+    ctx.stroke();
+    // Y axis
+    ctx.beginPath();
+    ctx.moveTo(ORIGIN_PX.x, CELL / 2);
+    ctx.lineTo(ORIGIN_PX.x, CANVAS_SIZE - CELL / 2);
+    ctx.stroke();
+
+    // Axis labels
+    ctx.fillStyle = '#666';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let v = -RANGE; v <= RANGE; v++) {
+      if (v === 0) continue;
+      const { x: px } = toPixel(v, 0);
+      const { y: py } = toPixel(0, v);
+
+      // X axis numbers
+      ctx.fillText(v, px, ORIGIN_PX.y + 16);
+      // Y axis numbers
+      ctx.fillText(v, ORIGIN_PX.x - 16, py);
+    }
+
+    // Origin label
+    ctx.fillStyle = '#555';
+    ctx.fillText('0', ORIGIN_PX.x - 14, ORIGIN_PX.y + 14);
+
+    // Grid dots at intersections
+    for (let gx = -RANGE; gx <= RANGE; gx++) {
+      for (let gy = -RANGE; gy <= RANGE; gy++) {
+        const { x, y } = toPixel(gx, gy);
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#333';
+        ctx.fill();
+      }
+    }
+
+    // Draw hit markers
+    hits.forEach(key => {
+      const [hx, hy] = key.split(',').map(Number);
+      const { x, y } = toPixel(hx, hy);
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(x, y, 14, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff990033';
+      ctx.fill();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(x, y, 10, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ff9900';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Cross
+      ctx.strokeStyle = '#ff9900';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x - 6, y); ctx.lineTo(x + 6, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6); ctx.stroke();
+
+      // Coordinate label
+      ctx.fillStyle = '#ff9900';
+      ctx.font = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(`(${hx},${hy})`, x, y - 12);
+    });
+
+    // Show all targets on game over
+    if (gameOver) {
+      targets.forEach(([tx, ty]) => {
+        const key = `${tx},${ty}`;
+        if (!hits.has(key)) {
+          const { x, y } = toPixel(tx, ty);
+          ctx.beginPath();
+          ctx.arc(x, y, 8, 0, Math.PI * 2);
+          ctx.strokeStyle = '#ff444488';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = '#ff444466';
+          ctx.fill();
+
+          ctx.fillStyle = '#ff6666';
+          ctx.font = '10px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(`(${tx},${ty})`, x, y - 10);
+        }
+      });
+    }
+  }
+
+  /* ── generate targets ── */
+  function generateTargets() {
+    const pool = new Set();
+    while (pool.size < 10) {
+      const x = Math.floor(Math.random() * 11) - 5;
+      const y = Math.floor(Math.random() * 11) - 5;
+      pool.add(`${x},${y}`);
+    }
+    return [...pool].map(s => s.split(',').map(Number));
+  }
+
+  /* ── init game ── */
+  function initGame() {
+    targets = generateTargets();
+    guessed = new Set();
+    hits = new Set();
+    score = 0;
+    timeLeft = 60;
+    gameOver = false;
+
+    document.getElementById('score').textContent = 0;
+    document.getElementById('timer').textContent = 60;
+    document.getElementById('timer').classList.remove('timer-danger');
+    document.getElementById('hit-count').textContent = 0;
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('guess-input').value = '';
+    document.getElementById('guess-input').disabled = false;
+    document.getElementById('guess-btn').disabled = false;
+    document.getElementById('result-overlay').classList.remove('show');
+
+    drawGrid();
+    startTimer();
+    document.getElementById('guess-input').focus();
+  }
+
+  /* ── timer ── */
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      document.getElementById('timer').textContent = timeLeft;
+      if (timeLeft <= 10) {
+        document.getElementById('timer').classList.add('timer-danger');
+      }
+      if (timeLeft <= 0) {
+        endGame();
+      }
+    }, 1000);
+  }
+
+  /* ── end game ── */
+  function endGame() {
+    clearInterval(timerInterval);
+    gameOver = true;
+    document.getElementById('guess-input').disabled = true;
+    document.getElementById('guess-btn').disabled = true;
+    drawGrid();
+
+    const msgs = [
+      '繼續練習，你會更棒的！',
+      '不錯！再多練習幾次吧！',
+      '很好！坐標感越來越強了！',
+      '優秀！快追上滿分了！',
+      '太厲害了！完美獵人！'
+    ];
+    const idx = score <= 2 ? 0 : score <= 4 ? 1 : score <= 6 ? 2 : score <= 8 ? 3 : 4;
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('result-msg').textContent = msgs[idx];
+    document.getElementById('result-overlay').classList.add('show');
+  }
+
+  /* ── handle guess ── */
+  function handleGuess() {
+    if (gameOver) return;
+
+    const raw = document.getElementById('guess-input').value.trim();
+    const match = raw.match(/^(-?\d+)\s*,\s*(-?\d+)$/);
+    const input = document.getElementById('guess-input');
+    const fb = document.getElementById('feedback');
+
+    if (!match) {
+      input.classList.remove('shake');
+      void input.offsetWidth;
+      input.classList.add('shake');
+      fb.textContent = '格式錯誤，請輸入如：2,-3';
+      fb.className = 'feedback miss';
+      return;
+    }
+
+    const gx = parseInt(match[1]);
+    const gy = parseInt(match[2]);
+
+    if (gx < -5 || gx > 5 || gy < -5 || gy > 5) {
+      fb.textContent = '座標超出範圍（-5 到 5）';
+      fb.className = 'feedback miss';
+      input.value = '';
+      return;
+    }
+
+    const key = `${gx},${gy}`;
+    input.value = '';
+    input.classList.remove('shake');
+
+    if (guessed.has(key)) {
+      fb.textContent = `(${gx}, ${gy}) 已經猜過了`;
+      fb.className = 'feedback dup';
+      return;
+    }
+
+    guessed.add(key);
+
+    const isHit = targets.some(([tx, ty]) => tx === gx && ty === gy);
+    if (isHit) {
+      hits.add(key);
+      score++;
+      document.getElementById('score').textContent = score;
+      document.getElementById('hit-count').textContent = hits.size;
+      fb.textContent = `🎯 命中！(${gx}, ${gy})`;
+      fb.className = 'feedback hit';
+      drawGrid();
+
+      if (hits.size === 10) endGame();
+    } else {
+      fb.textContent = `❌ 沒有…(${gx}, ${gy})`;
+      fb.className = 'feedback miss';
+    }
+  }
+
+  /* ── events ── */
+  document.getElementById('guess-btn').addEventListener('click', handleGuess);
+  document.getElementById('guess-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleGuess();
+  });
+  document.getElementById('guess-input').addEventListener('animationend', () => {
+    document.getElementById('guess-input').classList.remove('shake');
+  });
+  document.getElementById('restart-btn').addEventListener('click', initGame);
+  document.getElementById('overlay-restart-btn').addEventListener('click', initGame);
+
+  /* ── start ── */
+  initGame();
+</script>
+</body>
+</html>
