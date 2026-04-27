@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>影片轉音訊</title>
+  <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #f0f0f0;
+      font-family: 'Noto Sans TC', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      color: #ff9900;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+      text-shadow: 0 0 12px #ff990055;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #777;
+      margin-bottom: 40px;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      width: 100%;
+      max-width: 520px;
+      border: 2px dashed #444;
+      border-radius: 14px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-bottom: 28px;
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: #ff9900;
+      background: #ff990011;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 3rem;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .drop-text {
+      font-size: 1rem;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+
+    .drop-hint {
+      font-size: 0.78rem;
+      color: #555;
+    }
+
+    /* ── File info card ── */
+    .file-card {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+    }
+
+    .file-card.show { display: flex; align-items: center; gap: 16px; }
+
+    .file-icon { font-size: 2.2rem; flex-shrink: 0; }
+
+    .file-details { flex: 1; min-width: 0; }
+
+    .file-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f0f0f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .file-meta { font-size: 0.78rem; color: #777; }
+
+    .file-change {
+      font-size: 0.78rem;
+      color: #ff9900;
+      cursor: pointer;
+      flex-shrink: 0;
+      text-decoration: underline;
+    }
+
+    /* ── Format picker ── */
+    .format-row {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .format-row.show { display: flex; }
+
+    .format-label { font-size: 0.88rem; color: #aaa; flex-shrink: 0; }
+
+    .format-btn {
+      background: #1e1e1e;
+      border: 2px solid #333;
+      border-radius: 8px;
+      color: #aaa;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 7px 18px;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
+
+    .format-btn:hover { border-color: #ff9900; color: #ff9900; }
+    .format-btn.active { border-color: #ff9900; color: #ff9900; background: #ff990018; }
+
+    /* ── Convert button ── */
+    .btn-convert {
+      display: none;
+      background: #ff9900;
+      border: none;
+      border-radius: 8px;
+      color: #111;
+      cursor: pointer;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 12px 40px;
+      margin-bottom: 28px;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.06em;
+    }
+
+    .btn-convert.show { display: block; }
+    .btn-convert:hover { background: #ffb84d; }
+    .btn-convert:active { transform: scale(0.97); }
+    .btn-convert:disabled { background: #444; color: #777; cursor: not-allowed; }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 28px;
+    }
+
+    .progress-wrap.show { display: block; }
+
+    .progress-label {
+      font-size: 0.82rem;
+      color: #888;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .progress-bar-bg {
+      background: #222;
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      background: #ff9900;
+      height: 100%;
+      border-radius: 6px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* ── Result ── */
+    .result-card {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      background: #0f1a0f;
+      border: 2px solid #33aa33;
+      border-radius: 10px;
+      padding: 22px 24px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .result-card.show { display: block; }
+
+    .result-card h3 {
+      font-size: 1rem;
+      color: #66cc66;
+      margin-bottom: 14px;
+    }
+
+    .result-meta {
+      font-size: 0.82rem;
+      color: #888;
+      margin-bottom: 18px;
+    }
+
+    .btn-download {
+      background: #33aa33;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 11px 32px;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-download:hover { background: #44cc44; }
+
+    /* ── Error ── */
+    .error-msg {
+      display: none;
+      width: 100%;
+      max-width: 520px;
+      background: #1a0f0f;
+      border: 1px solid #aa3333;
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      color: #ff6666;
+      margin-bottom: 24px;
+    }
+
+    .error-msg.show { display: block; }
+
+    /* ── Note ── */
+    .note {
+      width: 100%;
+      max-width: 520px;
+      font-size: 0.78rem;
+      color: #555;
+      line-height: 1.7;
+      border-top: 1px solid #222;
+      padding-top: 20px;
+    }
+
+    .note strong { color: #888; }
+  </style>
+</head>
+<body>
+
+<h1>🎵 影片轉音訊</h1>
+<p class="subtitle">純瀏覽器處理・檔案不會上傳到任何伺服器</p>
+
+<!-- Drop zone -->
+<div class="drop-zone" id="drop-zone">
+  <input type="file" id="file-input" accept="video/*,audio/*" />
+  <span class="drop-icon">🎬</span>
+  <p class="drop-text">把影片拖曳到這裡，或點擊選擇檔案</p>
+  <p class="drop-hint">支援 MP4、MOV、WebM、AVI、MKV 等常見格式</p>
+</div>
+
+<!-- File info -->
+<div class="file-card" id="file-card">
+  <span class="file-icon" id="file-icon">🎬</span>
+  <div class="file-details">
+    <div class="file-name" id="file-name">—</div>
+    <div class="file-meta" id="file-meta">—</div>
+  </div>
+  <span class="file-change" id="file-change">換檔案</span>
+</div>
+
+<!-- Format picker -->
+<div class="format-row" id="format-row">
+  <span class="format-label">輸出格式：</span>
+  <button class="format-btn active" data-fmt="wav">WAV</button>
+  <button class="format-btn" data-fmt="mp3">MP3</button>
+  <button class="format-btn" data-fmt="webm">WebM</button>
+</div>
+
+<!-- Convert button -->
+<button class="btn-convert" id="btn-convert">▶ 開始轉換</button>
+
+<!-- Progress -->
+<div class="progress-wrap" id="progress-wrap">
+  <div class="progress-label">
+    <span id="progress-text">解碼中…</span>
+    <span id="progress-pct">0%</span>
+  </div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progress-fill"></div>
+  </div>
+</div>
+
+<!-- Result -->
+<div class="result-card" id="result-card">
+  <h3>✅ 轉換完成！</h3>
+  <div class="result-meta" id="result-meta"></div>
+  <a id="btn-download" class="btn-download" download>⬇ 下載音訊檔</a>
+</div>
+
+<!-- Error -->
+<div class="error-msg" id="error-msg"></div>
+
+<!-- Note -->
+<div class="note">
+  <strong>注意事項：</strong><br>
+  • 所有處理在你的瀏覽器內完成，檔案不會上傳到任何地方 🔒<br>
+  • 大型檔案（&gt;500MB）可能需要較多時間，請耐心等待<br>
+  • WAV 為無損格式（檔案較大）；WebM 為壓縮格式（檔案較小）<br>
+  • 若瀏覽器不支援來源格式，請先用其他軟體轉為 MP4 再試
+</div>
+
+<script>
+  /* ── state ── */
+  let selectedFile = null;
+  let selectedFormat = 'wav';
+  let downloadURL = null;
+
+  /* ── UI refs ── */
+  const dropZone    = document.getElementById('drop-zone');
+  const fileInput   = document.getElementById('file-input');
+  const fileCard    = document.getElementById('file-card');
+  const fileIcon    = document.getElementById('file-icon');
+  const fileName    = document.getElementById('file-name');
+  const fileMeta    = document.getElementById('file-meta');
+  const fileChange  = document.getElementById('file-change');
+  const formatRow   = document.getElementById('format-row');
+  const btnConvert  = document.getElementById('btn-convert');
+  const progressWrap= document.getElementById('progress-wrap');
+  const progressText= document.getElementById('progress-text');
+  const progressPct = document.getElementById('progress-pct');
+  const progressFill= document.getElementById('progress-fill');
+  const resultCard  = document.getElementById('result-card');
+  const resultMeta  = document.getElementById('result-meta');
+  const btnDownload = document.getElementById('btn-download');
+  const errorMsg    = document.getElementById('error-msg');
+
+  /* ── helpers ── */
+  function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024 ** 2) return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1024 ** 2).toFixed(1) + ' MB';
+  }
+
+  function setProgress(pct, label) {
+    progressFill.style.width = pct + '%';
+    progressPct.textContent = Math.round(pct) + '%';
+    if (label) progressText.textContent = label;
+  }
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.add('show');
+    progressWrap.classList.remove('show');
+    btnConvert.disabled = false;
+    btnConvert.textContent = '▶ 開始轉換';
+  }
+
+  function hideError() { errorMsg.classList.remove('show'); }
+
+  /* ── file selection ── */
+  function handleFile(file) {
+    if (!file) return;
+    selectedFile = file;
+
+    // reset result
+    resultCard.classList.remove('show');
+    hideError();
+    if (downloadURL) { URL.revokeObjectURL(downloadURL); downloadURL = null; }
+
+    // show file card
+    const isVideo = file.type.startsWith('video/');
+    fileIcon.textContent = isVideo ? '🎬' : '🎵';
+    fileName.textContent = file.name;
+    fileMeta.textContent = formatBytes(file.size) + '　•　' + (file.type || '未知格式');
+
+    fileCard.classList.add('show');
+    formatRow.classList.add('show');
+    btnConvert.classList.add('show');
+    btnConvert.disabled = false;
+    btnConvert.textContent = '▶ 開始轉換';
+    progressWrap.classList.remove('show');
+  }
+
+  fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileChange.addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  /* ── format selection ── */
+  document.querySelectorAll('.format-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedFormat = btn.dataset.fmt;
+    });
+  });
+
+  /* ── WAV encoder ── */
+  function encodeWAV(audioBuffer) {
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate  = audioBuffer.sampleRate;
+    const samples     = audioBuffer.length;
+    const bitsPerSample = 16;
+    const byteRate    = sampleRate * numChannels * bitsPerSample / 8;
+    const blockAlign  = numChannels * bitsPerSample / 8;
+    const dataSize    = samples * numChannels * 2;
+
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view   = new DataView(buffer);
+
+    function writeStr(offset, str) {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    }
+
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);             // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeStr(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    // interleave channels
+    let offset = 44;
+    for (let i = 0; i < samples; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        let sample = audioBuffer.getChannelData(ch)[i];
+        sample = Math.max(-1, Math.min(1, sample));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+    return buffer;
+  }
+
+  /* ── MP3 encoder via lamejs ── */
+  function encodeMP3(audioBuffer) {
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate  = audioBuffer.sampleRate;
+    const kbps        = 128;
+    const mp3enc = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
+    const blockSize = 1152;
+    const mp3Data   = [];
+
+    const ch0 = audioBuffer.getChannelData(0);
+    const ch1 = numChannels > 1 ? audioBuffer.getChannelData(1) : ch0;
+
+    // convert Float32 → Int16
+    function toInt16(floatArr, start, len) {
+      const out = new Int16Array(len);
+      for (let i = 0; i < len; i++) {
+        const s = Math.max(-1, Math.min(1, floatArr[start + i]));
+        out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return out;
+    }
+
+    for (let i = 0; i < ch0.length; i += blockSize) {
+      const len  = Math.min(blockSize, ch0.length - i);
+      const left  = toInt16(ch0, i, len);
+      const right = toInt16(ch1, i, len);
+      const chunk = numChannels > 1
+        ? mp3enc.encodeBuffer(left, right)
+        : mp3enc.encodeBuffer(left);
+      if (chunk.length > 0) mp3Data.push(chunk);
+    }
+
+    const end = mp3enc.flush();
+    if (end.length > 0) mp3Data.push(end);
+
+    return new Blob(mp3Data, { type: 'audio/mpeg' });
+  }
+
+  /* ── WebM via MediaRecorder ── */
+  function convertWebM(audioBuffer) {
+    return new Promise((resolve, reject) => {
+      const ctx = new AudioContext({ sampleRate: audioBuffer.sampleRate });
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+
+      const dest = ctx.createMediaStreamDestination();
+      source.connect(dest);
+
+      const recorder = new MediaRecorder(dest.stream);
+      const chunks = [];
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => resolve(new Blob(chunks, { type: 'audio/webm' }));
+
+      recorder.start();
+      source.start();
+      source.onended = () => { recorder.stop(); ctx.close(); };
+    });
+  }
+
+  /* ── main convert ── */
+  btnConvert.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    hideError();
+    btnConvert.disabled = true;
+    btnConvert.textContent = '轉換中…';
+    resultCard.classList.remove('show');
+    progressWrap.classList.add('show');
+    setProgress(5, '讀取檔案…');
+
+    try {
+      // Read file as ArrayBuffer
+      const arrayBuffer = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onprogress = e => {
+          if (e.lengthComputable) setProgress(5 + (e.loaded / e.total) * 25, '讀取檔案…');
+        };
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(selectedFile);
+      });
+
+      setProgress(30, '解碼音訊…');
+
+      // Decode audio
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+      await audioCtx.close();
+
+      setProgress(60, '編碼輸出…');
+
+      const baseName = selectedFile.name.replace(/\.[^.]+$/, '');
+      let blob, outName;
+
+      if (selectedFormat === 'wav') {
+        const wavBuffer = encodeWAV(audioBuffer);
+        blob = new Blob([wavBuffer], { type: 'audio/wav' });
+        outName = baseName + '.wav';
+        setProgress(95, '完成！');
+      } else if (selectedFormat === 'mp3') {
+        setProgress(65, 'MP3 編碼中…');
+        blob = encodeMP3(audioBuffer);
+        outName = baseName + '.mp3';
+        setProgress(95, '完成！');
+      } else {
+        setProgress(65, '即時錄製（WebM）…');
+        blob = await convertWebM(audioBuffer);
+        outName = baseName + '.webm';
+        setProgress(95, '完成！');
+      }
+
+      setProgress(100, '完成！');
+
+      // Create download
+      if (downloadURL) URL.revokeObjectURL(downloadURL);
+      downloadURL = URL.createObjectURL(blob);
+      btnDownload.href = downloadURL;
+      btnDownload.download = outName;
+
+      const dur = audioBuffer.duration;
+      const mm = Math.floor(dur / 60);
+      const ss = Math.floor(dur % 60).toString().padStart(2, '0');
+      resultMeta.textContent = `${outName}　•　${formatBytes(blob.size)}　•　時長 ${mm}:${ss}`;
+
+      resultCard.classList.add('show');
+      progressWrap.classList.remove('show');
+      btnConvert.disabled = false;
+      btnConvert.textContent = '▶ 再轉一次';
+
+    } catch (err) {
+      console.error(err);
+      showError('❌ 轉換失敗：' + (err.message || '瀏覽器無法解碼此格式，請先將影片轉為 MP4 再試。'));
+    }
+  });
+</script>
+</body>
+</html>
