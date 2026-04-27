@@ -9,7 +9,7 @@
 - **接續工作**：對 Claude 說「讀工作筆記、告訴我上次做到哪」
 
 ## 工作桌 + 三個家
-- 📋 GDrive 工作桌：`/Users/tcdopc003/Library/CloudStorage/GoogleDrive-tinghan@gmail.com/我的雲端硬碟/my-workspace-tools/`（自動跨電腦同步）
+- 📋 GDrive 工作桌：`G:\我的雲端硬碟\my-workspace-tools\`（自動跨電腦同步）
 - 🐙 GitHub repo：`tinghan-daai/my-workspace-tools`（公開，網頁的家）
 - 📘 Obsidian 駕駛艙：`obsidian/my-workspace-tools/工作筆記.md`（想法的家）
 - 🔥 Firebase 專案：`my-teaching-tools`（或你建的，資料的家）
