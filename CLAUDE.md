@@ -18,6 +18,7 @@
 （之後加新工具時會自動更新）
 - **座標獵人** `tools/coordinate-hunter/` — 直角座標練習遊戲，60 秒計時
 - **影片轉音訊** `tools/video-to-audio/` — 純瀏覽器影片轉 WAV/MP3/WebM
+- **短影音分析** `tools/short-video-review/` — 台中慈濟醫院外包短影音成效追蹤＋檢討卡（Phase 1: localStorage）
 
 ## 工作注意事項
 - 學生資料一律去識別化（只用座號 + 班級代號）
