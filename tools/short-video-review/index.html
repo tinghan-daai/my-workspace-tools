@@ -623,6 +623,8 @@
       .ranking-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <!-- SheetJS：用來在瀏覽器解析 Meta 匯出的 .xlsx 檔 -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div id="db-error-bar" style="display:none;background:#ff6b6b;color:#fff;padding:8px 16px;text-align:center;font-size:0.85rem;"></div>
@@ -742,9 +744,20 @@
         </div>
 
         <div class="form-section">
-          <h3>📋 FB 數據手動填寫</h3>
+          <h3>📊 從 Meta 匯出檔匯入 FB 數據（推薦）</h3>
           <p style="font-size:0.82rem;color:var(--text-soft);margin-bottom:10px;">
-            開一個表格，一次列出所有 FB Reels，邊開 FB 看數字邊填、autosave 不會掉資料。
+            到 Meta 商務管理平台 → 內容 → 匯出 → 選日期範圍 → 下載 .xlsx，<br>
+            把檔案丟進來，工具會用<b>發布日期</b>對到 Firestore 的 FB 紀錄。
+          </p>
+          <input type="file" id="fb-import-file" accept=".xlsx,.xls" style="width:100%;padding:6px;background:var(--bg-deep);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit;">
+          <div id="fb-import-preview" style="margin-top:10px;font-size:0.82rem;color:var(--text-soft);max-height:200px;overflow-y:auto;"></div>
+          <button class="btn btn-ghost" id="btn-fb-import-confirm" style="width:100%;margin-top:8px;display:none;">確認匯入</button>
+        </div>
+
+        <div class="form-section">
+          <h3>📋 FB 數據手動填寫（備援）</h3>
+          <p style="font-size:0.82rem;color:var(--text-soft);margin-bottom:10px;">
+            如果不能取得 Meta 匯出檔，用這個一筆一筆手動貼。
           </p>
           <button class="btn btn-ghost" id="btn-fb-bulk-open" style="width:100%;">📋 開啟 FB 批次填寫表格</button>
         </div>
@@ -1521,6 +1534,180 @@ async function bulkFetchYTMetrics() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// FB 從 Meta 匯出檔批次匯入（用 SheetJS 解析 .xlsx）
+// ════════════════════════════════════════════════════════════════
+let pendingFBImport = null;  // { matched: [{id, title, date, views, likes, comments, shares}], unmatched: [...] }
+
+function parseMetaDateValue(v) {
+  if (!v) return null;
+  if (v instanceof Date) {
+    const y = v.getFullYear(), m = v.getMonth() + 1, d = v.getDate();
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  const s = String(v);
+  // Meta 匯出常見格式：MM/DD/YYYY HH:MM
+  let m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  // YYYY-MM-DD 也支援
+  m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  return null;
+}
+
+async function handleFBFileSelected(e) {
+  const file = e.target.files[0];
+  const preview = document.getElementById('fb-import-preview');
+  const confirmBtn = document.getElementById('btn-fb-import-confirm');
+  pendingFBImport = null;
+  confirmBtn.style.display = 'none';
+  preview.innerHTML = '';
+  if (!file) return;
+
+  if (typeof XLSX === 'undefined') {
+    preview.innerHTML = '<span style="color:var(--bad);">⚠ SheetJS 函式庫沒載入，請重整頁面再試</span>';
+    return;
+  }
+
+  preview.textContent = '解析中…';
+
+  let rows;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+  } catch (err) {
+    preview.innerHTML = `<span style="color:var(--bad);">⚠ 解析失敗：${escapeHtml(err.message)}</span>`;
+    return;
+  }
+
+  if (!rows || rows.length < 2) {
+    preview.innerHTML = '<span style="color:var(--bad);">⚠ 檔案是空的或格式不對</span>';
+    return;
+  }
+
+  // 找欄位
+  const headers = rows[0].map(h => String(h || ''));
+  const findCol = (...keywords) => {
+    for (const kw of keywords) {
+      const idx = headers.findIndex(h => h.includes(kw));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  const cols = {
+    date:      findCol('發佈時間'),
+    type:      findCol('貼文類型'),
+    title:     findCol('標題'),
+    url:       findCol('永久連結'),
+    views:     findCol('觀看次數'),
+    reactions: findCol('心情數'),
+    comments:  findCol('留言'),
+    shares:    findCol('分享'),
+  };
+  const missing = Object.entries(cols).filter(([, v]) => v < 0).map(([k]) => k);
+  if (missing.length) {
+    preview.innerHTML = `<span style="color:var(--bad);">⚠ 找不到欄位：${missing.join(', ')}<br>欄位名稱可能是：${headers.join(' | ')}</span>`;
+    return;
+  }
+
+  // 解析資料列
+  const dateMap = {};  // 'YYYY-MM-DD' -> {views, likes, comments, shares, title}
+  let reelsCount = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !r.length) continue;
+    const type = String(r[cols.type] || '');
+    if (!type.includes('連續短片')) continue;  // 只匹配 Reels
+    const date = parseMetaDateValue(r[cols.date]);
+    if (!date) continue;
+    reelsCount++;
+    dateMap[date] = {
+      views:    Number(r[cols.views]    || 0),
+      likes:    Number(r[cols.reactions]|| 0),
+      comments: Number(r[cols.comments] || 0),
+      shares:   Number(r[cols.shares]   || 0),
+      title:    String(r[cols.title]    || '').replace(/\n/g, ' ').slice(0, 40),
+    };
+  }
+
+  // 對到 Firestore FB 紀錄
+  const all = Storage.load();
+  const fbRecs = all.filter(v => v.platform === 'facebook');
+  const matched = [];
+  const unmatched = [];
+  for (const v of fbRecs) {
+    if (dateMap[v.publishedAt]) {
+      matched.push({ id: v.id, title: v.title, date: v.publishedAt, ...dateMap[v.publishedAt] });
+    } else {
+      unmatched.push(v);
+    }
+  }
+
+  // 顯示預覽
+  let html = `<div style="margin-bottom:8px;">
+    讀到 <b>${rows.length - 1}</b> 列、其中 <b>${reelsCount}</b> 為連續短片。
+    匹配到 <b style="color:var(--primary)">${matched.length}</b> / ${fbRecs.length} 支 FB 紀錄。
+  </div>`;
+  if (matched.length) {
+    html += `<details style="margin-bottom:6px;"><summary style="cursor:pointer;color:var(--primary);">✓ 匹配 ${matched.length} 筆（點開看）</summary>
+      <table style="width:100%;font-size:0.78rem;margin-top:6px;border-collapse:collapse;">
+        <tr style="color:var(--text-mute);"><th align="left">日期</th><th align="right">觀看</th><th align="right">心情</th><th align="right">留言</th><th align="right">分享</th><th align="left">標題</th></tr>
+        ${matched.map(m => `<tr><td>${m.date}</td><td align="right">${fmtNum(m.views)}</td><td align="right">${m.likes}</td><td align="right">${m.comments}</td><td align="right">${m.shares}</td><td style="overflow:hidden;text-overflow:ellipsis;max-width:220px;white-space:nowrap;">${escapeHtml((m.title || '').slice(0, 18))}…</td></tr>`).join('')}
+      </table></details>`;
+  }
+  if (unmatched.length) {
+    html += `<details><summary style="cursor:pointer;color:var(--text-soft);">未匹配 ${unmatched.length} 筆 FB 紀錄（不在這份匯出檔的日期範圍內）</summary>
+      <ul style="margin:6px 0 0 16px;padding:0;">
+        ${unmatched.slice(0, 10).map(v => `<li>${v.publishedAt} ｜ ${escapeHtml((v.title || '').slice(0,24))}</li>`).join('')}
+        ${unmatched.length > 10 ? `<li>…還有 ${unmatched.length - 10} 筆</li>` : ''}
+      </ul>
+      <div style="font-size:0.78rem;color:var(--text-mute);margin-top:6px;">→ 請去 Meta 後台再匯出涵蓋這些日期的範圍，重新拖入即可</div>
+    </details>`;
+  }
+  preview.innerHTML = html;
+
+  if (matched.length) {
+    pendingFBImport = matched;
+    confirmBtn.style.display = 'block';
+    confirmBtn.textContent = `確認匯入 ${matched.length} 筆`;
+  }
+}
+
+async function confirmFBImport() {
+  if (!pendingFBImport || !pendingFBImport.length) return;
+  const preview = document.getElementById('fb-import-preview');
+  const btn = document.getElementById('btn-fb-import-confirm');
+  btn.disabled = true;
+
+  let ok = 0, fail = 0;
+  for (let i = 0; i < pendingFBImport.length; i++) {
+    const m = pendingFBImport[i];
+    btn.textContent = `匯入中 (${i + 1}/${pendingFBImport.length})…`;
+    try {
+      await Storage.upsert({
+        id: m.id,
+        metrics: {
+          views:    m.views,
+          likes:    m.likes,
+          comments: m.comments,
+          shares:   m.shares,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+      ok++;
+    } catch (e) {
+      console.error('FB import failed for', m.id, e);
+      fail++;
+    }
+  }
+  preview.innerHTML += `<div style="margin-top:10px;color:var(--primary);">✅ 完成！更新 ${ok} 筆${fail ? `、失敗 ${fail} 筆（看 console）` : ''}</div>`;
+  btn.style.display = 'none';
+  pendingFBImport = null;
+  document.getElementById('fb-import-file').value = '';
+}
+
+// ════════════════════════════════════════════════════════════════
 // FB 批次填寫 Modal（手動填數據、autosave on blur）
 // ════════════════════════════════════════════════════════════════
 const fbSaveTimers = new Map();   // id -> setTimeout handle
@@ -1765,8 +1952,10 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-bulk-fetch-yt', bulkFetchYTMetrics);
   safeBind('btn-bulk-budget', bulkFillBudget);
   safeBind('btn-fb-bulk-open', openFBBulkModal);
+  safeBind('btn-fb-import-confirm', confirmFBImport);
 
   document.getElementById('fb-bulk-filter').addEventListener('change', renderFBBulkRows);
+  document.getElementById('fb-import-file').addEventListener('change', handleFBFileSelected);
   document.getElementById('btn-export').addEventListener('click', exportCSV);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
