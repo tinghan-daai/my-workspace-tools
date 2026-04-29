@@ -173,6 +173,83 @@
     }
     .btn-spacer { flex: 1; }
 
+    /* ── Top/Bottom 排行 ── */
+    .ranking-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .ranking-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+    .ranking-panel h3 {
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ranking-panel.top h3 { color: var(--primary); }
+    .ranking-panel.bottom h3 { color: var(--bad); }
+    .ranking-row {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 4px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      transition: background .12s;
+    }
+    .ranking-row:hover { background: var(--bg-deep); }
+    .ranking-row + .ranking-row { border-top: 1px dashed var(--border); }
+    .ranking-rank {
+      font-weight: 700;
+      text-align: center;
+      color: var(--text-soft);
+    }
+    .ranking-row:nth-child(1) .ranking-rank { color: var(--accent-gold); }
+    .ranking-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ranking-title .platform-pip {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .ranking-title .platform-pip.youtube { background: var(--yt); }
+    .ranking-title .platform-pip.facebook { background: var(--fb); }
+    .ranking-meta {
+      font-size: 0.78rem;
+      color: var(--text-soft);
+      white-space: nowrap;
+    }
+    .ranking-meta .eng {
+      font-weight: 700;
+      color: var(--text);
+      margin-left: 4px;
+    }
+    .ranking-empty {
+      text-align: center;
+      color: var(--text-mute);
+      font-size: 0.85rem;
+      padding: 18px 0;
+    }
+
     /* ── 影片卡片 ── */
     .video-grid {
       display: grid;
@@ -459,6 +536,7 @@
       .form-grid { grid-template-columns: 1fr; }
       .detail-grid { grid-template-columns: 1fr; }
       .toolbar input { min-width: 0; flex: 1; }
+      .ranking-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -472,6 +550,18 @@
   <div class="container">
     <!-- 概覽 -->
     <div class="summary" id="summary"></div>
+
+    <!-- Top / Bottom 排行 -->
+    <div class="ranking-grid">
+      <div class="ranking-panel top">
+        <h3>🏆 互動率前 5 名</h3>
+        <div id="top-list"></div>
+      </div>
+      <div class="ranking-panel bottom">
+        <h3>📉 互動率後 5 名</h3>
+        <div id="bottom-list"></div>
+      </div>
+    </div>
 
     <!-- 工具列 -->
     <div class="toolbar">
@@ -538,6 +628,33 @@
           </p>
           <button class="btn btn-ghost" id="btn-bulk-fetch-yt" style="width:100%;">▶ 批次抓取所有 YouTube 影片</button>
           <div id="bulk-fetch-status" style="margin-top:10px;font-size:0.85rem;color:var(--text-soft);min-height:1.2em;"></div>
+        </div>
+
+        <div class="form-section">
+          <h3>💰 批次填入預算</h3>
+          <p style="font-size:0.82rem;color:var(--text-soft);margin-bottom:10px;">
+            如果所有影片是同一個外包單價，可以一次填到全部 79 筆。CPM 才算得出來。
+          </p>
+          <div class="form-grid">
+            <div class="field">
+              <label>每支預算（NT$）</label>
+              <input type="number" id="bulk-budget-amount" min="0" step="100" placeholder="例：6000">
+            </div>
+            <div class="field">
+              <label>套用範圍</label>
+              <select id="bulk-budget-scope">
+                <option value="all">所有影片</option>
+                <option value="youtube">只 YouTube</option>
+                <option value="facebook">只 Facebook</option>
+              </select>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:0.82rem;color:var(--text-soft);cursor:pointer;">
+            <input type="checkbox" id="bulk-budget-overwrite">
+            也覆蓋已經有預算的影片（不勾就只填空白的）
+          </label>
+          <button class="btn btn-ghost" id="btn-bulk-budget" style="width:100%;margin-top:10px;">💰 套用預算到全部</button>
+          <div id="bulk-budget-status" style="margin-top:10px;font-size:0.85rem;color:var(--text-soft);min-height:1.2em;"></div>
         </div>
       </div>
       <div class="modal-foot">
@@ -1270,10 +1387,111 @@ async function bulkFetchYTMetrics() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// Top 5 / Bottom 5 排行（依互動率，需有 views > 0 才參與）
+// ════════════════════════════════════════════════════════════════
+function renderRanking() {
+  const all = Storage.load();
+  // 只算有觀看數據的，否則「未抓取」會混進 Bottom
+  const ranked = all
+    .filter(v => v.metrics && (v.metrics.views || 0) > 0)
+    .map(v => ({ ...v, _eng: calcEngagement(v.metrics) }))
+    .filter(v => v._eng != null);
+
+  ranked.sort((a, b) => b._eng - a._eng);
+
+  const top = ranked.slice(0, 5);
+  const bottom = ranked.slice(-5).reverse(); // 由低到高
+
+  const renderRow = (v, rank) => `
+    <div class="ranking-row" data-id="${v.id}">
+      <div class="ranking-rank">${rank}</div>
+      <div class="ranking-title">
+        <span class="platform-pip ${v.platform}"></span>${escapeHtml(v.title || '(未命名)')}
+      </div>
+      <div class="ranking-meta">${fmtNum(v.metrics.views)} 觀看<span class="eng">${fmtPct(v._eng)}</span></div>
+    </div>
+  `;
+
+  const topEl = document.getElementById('top-list');
+  const botEl = document.getElementById('bottom-list');
+  if (!topEl || !botEl) return;
+
+  if (!ranked.length) {
+    const empty = '<div class="ranking-empty">還沒有觀看數，請先到 ⚙ 設定 → 批次抓取 YouTube 數據</div>';
+    topEl.innerHTML = empty;
+    botEl.innerHTML = empty;
+    return;
+  }
+
+  topEl.innerHTML = top.map((v, i) => renderRow(v, i + 1)).join('');
+  botEl.innerHTML = bottom.map((v, i) => renderRow(v, ranked.length - i)).join('');
+
+  // 綁點擊 → 開詳細
+  document.querySelectorAll('.ranking-row').forEach(el => {
+    el.addEventListener('click', () => openView(el.dataset.id));
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+// 批次填入預算
+// ════════════════════════════════════════════════════════════════
+async function bulkFillBudget() {
+  const status = document.getElementById('bulk-budget-status');
+  const btn    = document.getElementById('btn-bulk-budget');
+
+  const amountStr = document.getElementById('bulk-budget-amount').value.trim();
+  const scope     = document.getElementById('bulk-budget-scope').value;
+  const overwrite = document.getElementById('bulk-budget-overwrite').checked;
+  const amount    = Number(amountStr);
+
+  if (!amountStr || !Number.isFinite(amount) || amount < 0) {
+    alert('請填入有效的預算金額（≥ 0）');
+    return;
+  }
+
+  const all = Storage.load();
+  let candidates = all;
+  if (scope !== 'all') candidates = candidates.filter(v => v.platform === scope);
+
+  const willTouch = candidates.filter(v => overwrite || v.budget == null);
+  const willSkip  = candidates.length - willTouch.length;
+
+  if (!willTouch.length) {
+    alert(`範圍內沒有要更新的影片（${candidates.length} 支都已有預算，且未勾「覆蓋」）`);
+    return;
+  }
+
+  const ok = confirm(
+    `即將為 ${willTouch.length} 支影片設定預算 NT$ ${amount.toLocaleString()}\n` +
+    (willSkip ? `（略過已有預算的 ${willSkip} 支）\n` : '') +
+    `\n確定？`
+  );
+  if (!ok) return;
+
+  btn.disabled = true;
+  let okCount = 0, failCount = 0;
+  for (let i = 0; i < willTouch.length; i++) {
+    const v = willTouch[i];
+    status.textContent = `處理中 (${i + 1}/${willTouch.length})… 成功 ${okCount}、失敗 ${failCount}`;
+    try {
+      await Storage.upsert({ id: v.id, budget: amount });
+      okCount++;
+    } catch (e) {
+      console.error('Budget update failed for', v.id, e);
+      failCount++;
+    }
+  }
+  status.innerHTML = `✅ 完成！成功 <b style="color:var(--primary)">${okCount}</b> 支`
+    + (failCount ? `、<span style="color:var(--bad)">失敗 ${failCount}</span>（看 console）` : '');
+  btn.disabled = false;
+}
+
+// ════════════════════════════════════════════════════════════════
 // 事件綁定
 // ════════════════════════════════════════════════════════════════
 function renderAll() {
   renderSummary();
+  renderRanking();
   renderGrid();
 }
 
@@ -1292,6 +1510,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-delete', deleteVideo);
   safeBind('btn-bulk-import', bulkImportFromSpreadsheet);
   safeBind('btn-bulk-fetch-yt', bulkFetchYTMetrics);
+  safeBind('btn-bulk-budget', bulkFillBudget);
   document.getElementById('btn-export').addEventListener('click', exportCSV);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
