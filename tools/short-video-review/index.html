@@ -529,6 +529,16 @@
           <button class="btn btn-ghost" id="btn-bulk-import" style="width:100%;">📥 從排播表匯入（79 筆）</button>
           <div id="bulk-import-status" style="margin-top:10px;font-size:0.85rem;color:var(--text-soft);min-height:1.2em;"></div>
         </div>
+
+        <div class="form-section">
+          <h3>📊 批次抓取 YouTube 數據</h3>
+          <p style="font-size:0.82rem;color:var(--text-soft);margin-bottom:10px;">
+            為所有 YouTube 影片一次抓取最新觀看數/讚/留言。<br>
+            <b>只動 metrics 欄位</b>，不會覆蓋檢討內容。需要先設好 API 金鑰。
+          </p>
+          <button class="btn btn-ghost" id="btn-bulk-fetch-yt" style="width:100%;">▶ 批次抓取所有 YouTube 影片</button>
+          <div id="bulk-fetch-status" style="margin-top:10px;font-size:0.85rem;color:var(--text-soft);min-height:1.2em;"></div>
+        </div>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" data-close>取消</button>
@@ -1192,6 +1202,74 @@ async function bulkImportFromSpreadsheet() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// 批次抓取 YouTube 數據（呼叫 fetchVideoMetricsFromAPI 對所有 YT 影片）
+// ════════════════════════════════════════════════════════════════
+async function bulkFetchYTMetrics() {
+  const status = document.getElementById('bulk-fetch-status');
+  const btn    = document.getElementById('btn-bulk-fetch-yt');
+
+  if (!getYTApiKey()) {
+    alert('尚未設定 YouTube API 金鑰，請先填入上方欄位並儲存。');
+    return;
+  }
+
+  const all = Storage.load();
+  const targets = all.filter(v => v.platform === 'youtube' && parseYouTubeId(v.url || ''));
+
+  if (!targets.length) {
+    alert('沒有可抓取的 YouTube 影片（需要有可解析的 YouTube URL）。');
+    return;
+  }
+
+  const ok = confirm(
+    `即將為 ${targets.length} 支 YouTube 影片抓取最新數據。\n\n` +
+    `會覆蓋既有的觀看/讚/留言數字（若你之前手動填過）。\n` +
+    `不會動到檢討、評分、預算等其他欄位。\n\n` +
+    `預計耗時約 ${Math.ceil(targets.length * 0.5)} 秒，確定？`
+  );
+  if (!ok) return;
+
+  btn.disabled = true;
+  let okCount = 0, failCount = 0, stopped = false;
+  const errors = [];
+
+  for (let i = 0; i < targets.length; i++) {
+    const v = targets[i];
+    const shortTitle = (v.title || '').slice(0, 18);
+    status.textContent = `抓取中 (${i + 1}/${targets.length})… 成功 ${okCount}、失敗 ${failCount} ｜ ${shortTitle}…`;
+    try {
+      const m = await fetchVideoMetricsFromAPI(v);
+      if (!m) {
+        failCount++;
+        errors.push(`${v.title}: API 回空（影片可能已下架或私人）`);
+        continue;
+      }
+      await Storage.upsert({ id: v.id, metrics: m });
+      okCount++;
+    } catch (e) {
+      console.error('Bulk fetch error for', v.id, e);
+      failCount++;
+      errors.push(`${v.title}: ${e.message}`);
+      // 偵測 quota / 403 / 401，這類錯誤後續每筆都會失敗，直接停
+      if (/quota|exceeded|403|401|forbidden/i.test(e.message)) {
+        status.innerHTML = `⛔ <span style="color:var(--bad)">偵測到 API 限額/權限錯誤，已停止</span>。成功 ${okCount}、失敗 ${failCount}（看 console）`;
+        stopped = true;
+        break;
+      }
+    }
+    // 緩衝避免 rate limit
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  if (!stopped) {
+    status.innerHTML = `✅ 完成！成功 <b style="color:var(--primary)">${okCount}</b> 支`
+      + (failCount ? `、<span style="color:var(--bad)">失敗 ${failCount}</span>（看 console）` : '');
+  }
+  btn.disabled = false;
+  if (errors.length) console.warn('Bulk fetch errors:', errors);
+}
+
+// ════════════════════════════════════════════════════════════════
 // 事件綁定
 // ════════════════════════════════════════════════════════════════
 function renderAll() {
@@ -1213,6 +1291,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-save', saveVideo);
   safeBind('btn-delete', deleteVideo);
   safeBind('btn-bulk-import', bulkImportFromSpreadsheet);
+  safeBind('btn-bulk-fetch-yt', bulkFetchYTMetrics);
   document.getElementById('btn-export').addEventListener('click', exportCSV);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
