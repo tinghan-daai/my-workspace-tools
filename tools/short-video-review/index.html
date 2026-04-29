@@ -173,6 +173,90 @@
     }
     .btn-spacer { flex: 1; }
 
+    /* ── FB 批次填寫表格 ── */
+    .fb-bulk-modal { max-width: 1100px; }
+    .fb-bulk-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .fb-bulk-toolbar select {
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-deep);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    .fb-bulk-progress {
+      font-size: 0.85rem;
+      color: var(--text-soft);
+      margin-left: auto;
+    }
+    .fb-bulk-progress b { color: var(--primary); }
+    .fb-bulk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .fb-bulk-table th {
+      text-align: left;
+      padding: 8px 6px;
+      color: var(--text-soft);
+      font-weight: 500;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--card);
+    }
+    .fb-bulk-table td {
+      padding: 6px 6px;
+      border-bottom: 1px dashed var(--border);
+      vertical-align: middle;
+    }
+    .fb-bulk-table .col-title {
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .fb-bulk-table input[type=number] {
+      width: 78px;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-deep);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    .fb-bulk-table input[type=number]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(63,255,176,.12);
+    }
+    .fb-bulk-table a.reel-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .fb-bulk-table a.reel-link:hover { color: var(--primary); }
+    .fb-bulk-table .row-status {
+      font-size: 0.78rem;
+      color: var(--text-mute);
+      white-space: nowrap;
+    }
+    .fb-bulk-table .row-status.saving { color: var(--accent); }
+    .fb-bulk-table .row-status.saved { color: var(--good); }
+    .fb-bulk-table .row-status.error { color: var(--bad); }
+    .fb-bulk-table tr.dirty td { background: rgba(65,232,255,.04); }
+
     /* ── Top/Bottom 排行 ── */
     .ranking-grid {
       display: grid;
@@ -656,6 +740,14 @@
           <button class="btn btn-ghost" id="btn-bulk-budget" style="width:100%;margin-top:10px;">💰 套用預算到全部</button>
           <div id="bulk-budget-status" style="margin-top:10px;font-size:0.85rem;color:var(--text-soft);min-height:1.2em;"></div>
         </div>
+
+        <div class="form-section">
+          <h3>📋 FB 數據手動填寫</h3>
+          <p style="font-size:0.82rem;color:var(--text-soft);margin-bottom:10px;">
+            開一個表格，一次列出所有 FB Reels，邊開 FB 看數字邊填、autosave 不會掉資料。
+          </p>
+          <button class="btn btn-ghost" id="btn-fb-bulk-open" style="width:100%;">📋 開啟 FB 批次填寫表格</button>
+        </div>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" data-close>取消</button>
@@ -801,6 +893,48 @@
         <div class="btn-spacer"></div>
         <button class="btn btn-ghost" data-close>關閉</button>
         <button class="btn btn-primary" id="btn-edit-from-view">編輯</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────── Modal: FB 批次填寫 ─────── -->
+  <div class="modal-bg" id="modal-fb-bulk">
+    <div class="modal fb-bulk-modal">
+      <div class="modal-head">
+        <h2>📋 FB 數據批次填寫</h2>
+        <button class="modal-close" data-close>&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="fb-bulk-toolbar">
+          <select id="fb-bulk-filter">
+            <option value="empty">只顯示未填寫的</option>
+            <option value="all">顯示全部</option>
+          </select>
+          <span class="fb-bulk-progress" id="fb-bulk-progress">— / —</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="fb-bulk-table">
+            <thead>
+              <tr>
+                <th>標題</th>
+                <th>開啟</th>
+                <th>觀看</th>
+                <th>讚</th>
+                <th>留言</th>
+                <th>分享</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody id="fb-bulk-rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <p style="font-size:0.78rem;color:var(--text-soft);margin:0;">
+          💡 點 🔗 在新分頁開啟 Reel → 看數字 → 回來填 → 失焦自動儲存（800ms 後）
+        </p>
+        <div class="btn-spacer"></div>
+        <button class="btn btn-ghost" data-close>關閉</button>
       </div>
     </div>
   </div>
@@ -1387,6 +1521,125 @@ async function bulkFetchYTMetrics() {
 }
 
 // ════════════════════════════════════════════════════════════════
+// FB 批次填寫 Modal（手動填數據、autosave on blur）
+// ════════════════════════════════════════════════════════════════
+const fbSaveTimers = new Map();   // id -> setTimeout handle
+const fbDirtyValues = new Map();  // id -> { views, likes, comments, shares }
+
+function openFBBulkModal() {
+  document.getElementById('modal-settings').classList.remove('show');  // 關設定，避免兩個疊
+  document.getElementById('modal-fb-bulk').classList.add('show');
+  renderFBBulkRows();
+}
+
+function renderFBBulkRows() {
+  const filter = document.getElementById('fb-bulk-filter').value;
+  const all = Storage.load();
+  const fbAll = all.filter(v => v.platform === 'facebook');
+  const filled = fbAll.filter(v => v.metrics && v.metrics.views != null).length;
+
+  document.getElementById('fb-bulk-progress').innerHTML
+    = `已填 <b>${filled}</b> / ${fbAll.length}`;
+
+  let rows = fbAll.slice();
+  if (filter === 'empty') {
+    rows = rows.filter(v => !v.metrics || v.metrics.views == null);
+  }
+  // 依發布日期排序（新→舊）
+  rows.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+
+  const tbody = document.getElementById('fb-bulk-rows');
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-mute);">沒有符合條件的影片</td></tr>`;
+    return;
+  }
+
+  const fmt = v => (v == null ? '' : v);
+  const rowHtml = (v) => {
+    const m = v.metrics || {};
+    const filledRow = m.views != null;
+    return `
+      <tr data-id="${v.id}">
+        <td class="col-title" title="${escapeHtml(v.title)}">${escapeHtml(v.title)}<br>
+          <span style="font-size:0.72rem;color:var(--text-mute);">${v.publishedAt || '—'}</span>
+        </td>
+        <td>${v.url ? `<a class="reel-link" href="${escapeHtml(v.url)}" target="_blank" rel="noopener" title="在新分頁開啟 Reel">🔗</a>` : '—'}</td>
+        <td><input type="number" min="0" data-field="views" value="${fmt(m.views)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="likes" value="${fmt(m.likes)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="comments" value="${fmt(m.comments)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="shares" value="${fmt(m.shares)}" placeholder="—"></td>
+        <td class="row-status ${filledRow ? 'saved' : ''}">${filledRow ? '✓ 已填' : '空白'}</td>
+      </tr>
+    `;
+  };
+
+  tbody.innerHTML = rows.map(rowHtml).join('');
+
+  // 綁每列輸入事件：debounced autosave on input
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.querySelectorAll('input[type=number]').forEach(inp => {
+      inp.addEventListener('input', () => onFBRowDirty(tr));
+      inp.addEventListener('blur',  () => scheduleFBRowSave(tr));
+    });
+  });
+}
+
+function onFBRowDirty(tr) {
+  tr.classList.add('dirty');
+  const status = tr.querySelector('.row-status');
+  status.className = 'row-status';
+  status.textContent = '編輯中…';
+}
+
+function scheduleFBRowSave(tr) {
+  const id = tr.dataset.id;
+  // 取消既有 timer
+  if (fbSaveTimers.has(id)) clearTimeout(fbSaveTimers.get(id));
+
+  const handle = setTimeout(() => saveFBRow(tr), 800);
+  fbSaveTimers.set(id, handle);
+}
+
+async function saveFBRow(tr) {
+  const id = tr.dataset.id;
+  const status = tr.querySelector('.row-status');
+  status.className = 'row-status saving';
+  status.textContent = '儲存中…';
+
+  const num = (s) => {
+    const v = String(s ?? '').trim();
+    return v === '' ? null : Number(v);
+  };
+  const get = (field) => num(tr.querySelector(`input[data-field="${field}"]`).value);
+
+  const metrics = {
+    views:    get('views'),
+    likes:    get('likes'),
+    comments: get('comments'),
+    shares:   get('shares'),
+    fetchedAt: null,  // 手動填寫不算 API 抓取
+  };
+
+  try {
+    await Storage.upsert({ id, metrics });
+    status.className = 'row-status saved';
+    status.textContent = metrics.views != null ? '✓ 已儲存' : '空白';
+    tr.classList.remove('dirty');
+    // 進度更新
+    const all = Storage.load();
+    const fbAll = all.filter(v => v.platform === 'facebook');
+    const filled = fbAll.filter(v => v.metrics && v.metrics.views != null).length;
+    document.getElementById('fb-bulk-progress').innerHTML
+      = `已填 <b>${filled}</b> / ${fbAll.length}`;
+  } catch (e) {
+    console.error('FB row save failed:', e);
+    status.className = 'row-status error';
+    status.textContent = '✗ 失敗（看 console）';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
 // Top 5 / Bottom 5 排行（依互動率，需有 views > 0 才參與）
 // ════════════════════════════════════════════════════════════════
 function renderRanking() {
@@ -1511,6 +1764,9 @@ document.addEventListener('DOMContentLoaded', () => {
   safeBind('btn-bulk-import', bulkImportFromSpreadsheet);
   safeBind('btn-bulk-fetch-yt', bulkFetchYTMetrics);
   safeBind('btn-bulk-budget', bulkFillBudget);
+  safeBind('btn-fb-bulk-open', openFBBulkModal);
+
+  document.getElementById('fb-bulk-filter').addEventListener('change', renderFBBulkRows);
   document.getElementById('btn-export').addEventListener('click', exportCSV);
   document.getElementById('btn-print').addEventListener('click', () => window.print());
 
