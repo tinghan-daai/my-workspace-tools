@@ -662,6 +662,10 @@
         <option value="date">按發布日期排序</option>
         <option value="rating">按評分排序</option>
       </select>
+      <select id="view-mode" title="同一支影片在 YT 跟 FB 是合計還是分開看">
+        <option value="combined">📺 依影片合計（YT+FB）</option>
+        <option value="platform">↔ 依平台分開</option>
+      </select>
       <input type="text" id="search" placeholder="搜尋標題、廠商、主題…">
       <div class="btn-spacer"></div>
       <button class="btn btn-ghost" id="btn-settings">⚙ 設定</button>
@@ -1106,6 +1110,62 @@ function fmtPct(n) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// 影片合計視角：把同標題的 YT + FB 配對成一個 group
+// ════════════════════════════════════════════════════════════════
+function normalizeTitle(t) {
+  return String(t || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function groupVideos(records) {
+  const groups = new Map();
+  for (const v of records) {
+    const key = normalizeTitle(v.title);
+    if (!key) continue;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        title: v.title,
+        topic: v.topic,
+        publishedAt: v.publishedAt,
+        yt: null,
+        fb: null,
+      });
+    }
+    const g = groups.get(key);
+    if (v.platform === 'youtube') g.yt = v;
+    else if (v.platform === 'facebook') g.fb = v;
+    // 合計卡用最早的發布日期（通常 YT 早於 FB）
+    if (v.publishedAt && (!g.publishedAt || v.publishedAt < g.publishedAt)) {
+      g.publishedAt = v.publishedAt;
+    }
+  }
+  return groups;
+}
+
+function getCombinedMetrics(group) {
+  const ytm = group.yt?.metrics || {};
+  const fbm = group.fb?.metrics || {};
+  // 只把「有抓到」的數字算進去；null 不要當 0（避免 FB 還沒抓的時候誤判 views 0）
+  const sum = (k) => (ytm[k] ?? 0) + (fbm[k] ?? 0);
+  const views    = sum('views');
+  const likes    = sum('likes');
+  const comments = sum('comments');
+  const shares   = sum('shares');
+  // 預算：YT/FB 哪邊有就加哪邊（user 規則：成本算一次，所以理論上只會其中一邊有）
+  const budget = (group.yt?.budget || 0) + (group.fb?.budget || 0);
+  return {
+    views, likes, comments, shares,
+    budget: budget || null,
+    engagement: views > 0 ? (likes + comments + shares) / views * 100 : null,
+    cpm: (budget > 0 && views > 0) ? budget / views * 1000 : null,
+    hasYT: !!group.yt,
+    hasFB: !!group.fb,
+    ytViews: ytm.views,
+    fbViews: fbm.views,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
 // State + 渲染
 // ════════════════════════════════════════════════════════════════
 let editingId = null;
@@ -1155,11 +1215,30 @@ function renderSummary() {
   document.getElementById('summary').innerHTML = html;
 }
 
+function getViewMode() {
+  const el = document.getElementById('view-mode');
+  return el ? el.value : 'combined';
+}
+
 function renderGrid() {
-  const list = getFiltered();
   const grid = document.getElementById('video-grid');
   const empty = document.getElementById('empty-state');
+  const platformFilter = document.getElementById('filter-platform');
 
+  // 平台篩選器在合計模式沒意義，停用它
+  const mode = getViewMode();
+  platformFilter.disabled = (mode === 'combined');
+  platformFilter.style.opacity = (mode === 'combined') ? '0.4' : '1';
+
+  if (mode === 'combined') {
+    renderGridCombined(grid, empty);
+  } else {
+    renderGridByPlatform(grid, empty);
+  }
+}
+
+function renderGridByPlatform(grid, empty) {
+  const list = getFiltered();
   if (list.length === 0) {
     grid.innerHTML = '';
     empty.style.display = 'block';
@@ -1215,6 +1294,98 @@ function renderGrid() {
 
   grid.querySelectorAll('.card').forEach(el => {
     el.addEventListener('click', () => openView(el.dataset.id));
+  });
+}
+
+function getFilteredGroups() {
+  const sortBy = document.getElementById('sort-by').value;
+  const q = document.getElementById('search').value.trim().toLowerCase();
+
+  let groups = Array.from(groupVideos(Storage.load()).values());
+
+  if (q) groups = groups.filter(g => {
+    const hay = [g.title, g.topic, g.yt?.vendor, g.fb?.vendor]
+      .filter(Boolean).join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  groups.sort((a, b) => {
+    const ma = getCombinedMetrics(a);
+    const mb = getCombinedMetrics(b);
+    if (sortBy === 'views') return (mb.views || 0) - (ma.views || 0);
+    if (sortBy === 'date')  return (b.publishedAt || '').localeCompare(a.publishedAt || '');
+    if (sortBy === 'rating') {
+      const ra = Math.max(a.yt?.review?.rating || 0, a.fb?.review?.rating || 0);
+      const rb = Math.max(b.yt?.review?.rating || 0, b.fb?.review?.rating || 0);
+      return rb - ra;
+    }
+    return (mb.engagement || 0) - (ma.engagement || 0);
+  });
+
+  return groups;
+}
+
+function renderGridCombined(grid, empty) {
+  const groups = getFilteredGroups();
+  if (groups.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = groups.map(g => {
+    const m = getCombinedMetrics(g);
+    const engClass = m.engagement == null ? '' : (m.engagement >= 5 ? 'good' : m.engagement < 1 ? 'bad' : '');
+    const rating = Math.max(g.yt?.review?.rating || 0, g.fb?.review?.rating || 0);
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+
+    // 平台徽章：兩個並排
+    const badges = [
+      m.hasYT ? `<span class="platform-badge youtube" title="YT 觀看 ${fmtNum(m.ytViews)}">YT ${fmtNum(m.ytViews)}</span>` : '',
+      m.hasFB ? `<span class="platform-badge facebook" title="FB 觀看 ${fmtNum(m.fbViews)}">FB ${fmtNum(m.fbViews)}</span>` : '',
+    ].filter(Boolean).join('');
+
+    return `
+      <div class="card" data-key="${escapeHtml(g.key)}">
+        <div class="card-head">
+          <div class="card-title">${escapeHtml(g.title || '(未命名)')}</div>
+          <div class="card-meta">
+            ${badges}
+            <span>${g.publishedAt || '—'}</span>
+            <span>·</span>
+            <span>${escapeHtml(g.topic || '—')}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="metric-row">
+            <div class="metric"><div class="metric-label">合計觀看</div><div class="metric-value">${fmtNum(m.views)}</div></div>
+            <div class="metric"><div class="metric-label">讚</div><div class="metric-value">${fmtNum(m.likes)}</div></div>
+            <div class="metric"><div class="metric-label">留言</div><div class="metric-value">${fmtNum(m.comments)}</div></div>
+            <div class="metric"><div class="metric-label">分享</div><div class="metric-value">${fmtNum(m.shares)}</div></div>
+          </div>
+          <div class="card-perf">
+            <div class="perf-item">
+              <div class="perf-label">合計互動率</div>
+              <div class="perf-value ${engClass}">${fmtPct(m.engagement)}</div>
+            </div>
+            <div class="perf-item">
+              <div class="perf-label">CPM</div>
+              <div class="perf-value">${m.cpm != null ? 'NT$ ' + m.cpm.toFixed(1) : '—'}</div>
+            </div>
+            <div class="perf-item">
+              <div class="perf-label">預算</div>
+              <div class="perf-value">${fmtMoney(m.budget)}</div>
+            </div>
+          </div>
+          <div class="card-rating">${stars}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.card').forEach(el => {
+    el.addEventListener('click', () => openCombinedView(el.dataset.key));
   });
 }
 
@@ -1375,6 +1546,111 @@ function openView(id) {
     </div>
   `;
   document.getElementById('btn-edit-from-view').dataset.id = id;
+  document.getElementById('btn-edit-from-view').dataset.combined = '';
+  document.getElementById('modal-view').classList.add('show');
+}
+
+// ════════════════════════════════════════════════════════════════
+// Modal: 影片合計詳細頁（YT + FB 並排）
+// ════════════════════════════════════════════════════════════════
+function openCombinedView(groupKey) {
+  const groups = groupVideos(Storage.load());
+  const g = groups.get(groupKey);
+  if (!g) return;
+  const m = getCombinedMetrics(g);
+
+  const renderPlatformCol = (rec, label, badgeClass) => {
+    if (!rec) {
+      return `<div class="detail-block" style="opacity:0.5;">
+        <div class="detail-label">${label}</div>
+        <div class="detail-value" style="color:var(--text-mute);">— 沒有此平台資料</div>
+      </div>`;
+    }
+    const rm = rec.metrics || {};
+    const reng = calcEngagement(rm);
+    return `
+      <div class="detail-block">
+        <div class="detail-label" style="display:flex;align-items:center;gap:6px;">
+          <span class="platform-badge ${badgeClass}" style="font-size:0.68rem;">${label}</span>
+          ${rec.url ? `<a href="${escapeHtml(rec.url)}" target="_blank" rel="noopener" style="color:var(--primary);font-size:0.78rem;">看影片 ↗</a>` : ''}
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-mute);margin:4px 0 6px;">${rec.publishedAt || '—'}</div>
+        <div style="font-size:0.85rem;line-height:1.7;">
+          觀看 <b>${fmtNum(rm.views)}</b><br>
+          讚 ${fmtNum(rm.likes)} ｜ 留言 ${fmtNum(rm.comments)} ｜ 分享 ${fmtNum(rm.shares)}<br>
+          互動率 <b>${fmtPct(reng)}</b>
+        </div>
+        <button class="btn btn-ghost" data-edit-id="${rec.id}" style="margin-top:8px;width:100%;font-size:0.78rem;padding:5px 10px;">編輯這筆</button>
+      </div>
+    `;
+  };
+
+  // 取兩邊檢討的聯集（哪邊有寫就顯示）
+  const reviewYt = g.yt?.review || {};
+  const reviewFb = g.fb?.review || {};
+  const mergeReview = (k) => {
+    const a = (reviewYt[k] || '').trim();
+    const b = (reviewFb[k] || '').trim();
+    if (a && b && a !== b) return `[YT] ${a}\n\n[FB] ${b}`;
+    return a || b;
+  };
+  const rating = Math.max(reviewYt.rating || 0, reviewFb.rating || 0);
+  const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+
+  document.getElementById('view-title').textContent = g.title || '(未命名)';
+  document.getElementById('view-body').innerHTML = `
+    <div class="card-meta" style="margin-bottom:14px;">
+      ${m.hasYT ? `<span class="platform-badge youtube">YouTube</span>` : ''}
+      ${m.hasFB ? `<span class="platform-badge facebook">Facebook</span>` : ''}
+      <span>${g.publishedAt || '—'}</span>
+      <span>·</span>
+      <span>${escapeHtml(g.topic || '—')}</span>
+    </div>
+
+    <h4 style="font-size:0.85rem;color:var(--primary);margin:0 0 10px;letter-spacing:0.05em;">📊 兩平台合計</h4>
+    <div class="detail-grid" style="margin-bottom:18px;">
+      <div class="detail-block"><div class="detail-label">合計觀看</div><div class="detail-value" style="color:var(--primary);font-size:1.1rem;">${fmtNum(m.views)}</div></div>
+      <div class="detail-block"><div class="detail-label">合計互動率</div><div class="detail-value" style="color:var(--primary);font-size:1.1rem;">${fmtPct(m.engagement)}</div></div>
+      <div class="detail-block"><div class="detail-label">CPM（成本算一次）</div><div class="detail-value">${m.cpm != null ? 'NT$ ' + m.cpm.toFixed(1) : '—'}</div></div>
+      <div class="detail-block"><div class="detail-label">製作預算</div><div class="detail-value">${fmtMoney(m.budget)}</div></div>
+      <div class="detail-block" style="grid-column:span 2;"><div class="detail-label">合計互動數</div><div class="detail-value">讚 ${fmtNum(m.likes)} ｜ 留言 ${fmtNum(m.comments)} ｜ 分享 ${fmtNum(m.shares)}</div></div>
+      <div class="detail-block" style="grid-column:span 2;"><div class="detail-label">整體評分（取兩邊較高）</div><div class="detail-value" style="color:var(--accent-gold);font-size:1.05rem;">${stars}</div></div>
+    </div>
+
+    <h4 style="font-size:0.85rem;color:var(--primary);margin:0 0 10px;letter-spacing:0.05em;">↔ 平台分開看</h4>
+    <div class="detail-grid" style="margin-bottom:18px;">
+      ${renderPlatformCol(g.yt, 'YouTube', 'youtube')}
+      ${renderPlatformCol(g.fb, 'Facebook', 'facebook')}
+    </div>
+
+    <div class="review-block">
+      <h4>👍 做得好的地方</h4>
+      <p>${escapeHtml(mergeReview('strengths')) || '<span style="color:var(--text-soft);">未填寫</span>'}</p>
+    </div>
+    <div class="review-block">
+      <h4>🔧 可以改進的地方</h4>
+      <p>${escapeHtml(mergeReview('improvements')) || '<span style="color:var(--text-soft);">未填寫</span>'}</p>
+    </div>
+    <div class="review-block">
+      <h4>📋 給長官的建議</h4>
+      <p>${escapeHtml(mergeReview('recommendations')) || '<span style="color:var(--text-soft);">未填寫</span>'}</p>
+    </div>
+  `;
+
+  // 編輯按鈕（從合計視圖切到單筆編輯）
+  document.querySelectorAll('#view-body button[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const editId = btn.dataset.editId;
+      closeModals();
+      openEdit(editId);
+    });
+  });
+
+  // 主編輯按鈕：合計視圖時優先編 YT（如果沒有再編 FB）
+  const primaryEdit = g.yt?.id || g.fb?.id || '';
+  document.getElementById('btn-edit-from-view').dataset.id = primaryEdit;
+  document.getElementById('btn-edit-from-view').dataset.combined = '1';
   document.getElementById('modal-view').classList.add('show');
 }
 
@@ -1830,45 +2106,49 @@ async function saveFBRow(tr) {
 // Top 5 / Bottom 5 排行（依互動率，需有 views > 0 才參與）
 // ════════════════════════════════════════════════════════════════
 function renderRanking() {
-  const all = Storage.load();
-  // 只算有觀看數據的，否則「未抓取」會混進 Bottom
-  const ranked = all
-    .filter(v => v.metrics && (v.metrics.views || 0) > 0)
-    .map(v => ({ ...v, _eng: calcEngagement(v.metrics) }))
-    .filter(v => v._eng != null);
+  // 排行一律用「影片合計」視角，避免同一支影片在 YT/FB 各佔一格
+  const groups = Array.from(groupVideos(Storage.load()).values());
+  const ranked = groups
+    .map(g => ({ g, m: getCombinedMetrics(g) }))
+    .filter(x => x.m.views > 0 && x.m.engagement != null);
 
-  ranked.sort((a, b) => b._eng - a._eng);
+  ranked.sort((a, b) => b.m.engagement - a.m.engagement);
 
   const top = ranked.slice(0, 5);
   const bottom = ranked.slice(-5).reverse(); // 由低到高
 
-  const renderRow = (v, rank) => `
-    <div class="ranking-row" data-id="${v.id}">
-      <div class="ranking-rank">${rank}</div>
-      <div class="ranking-title">
-        <span class="platform-pip ${v.platform}"></span>${escapeHtml(v.title || '(未命名)')}
+  const renderRow = ({ g, m }, rank) => {
+    // 兩個 pip：有 YT 的塗 YT 色、有 FB 的塗 FB 色
+    const pips = [
+      m.hasYT ? `<span class="platform-pip youtube"></span>` : '',
+      m.hasFB ? `<span class="platform-pip facebook"></span>` : '',
+    ].join('');
+    return `
+      <div class="ranking-row" data-key="${escapeHtml(g.key)}">
+        <div class="ranking-rank">${rank}</div>
+        <div class="ranking-title">${pips}${escapeHtml(g.title || '(未命名)')}</div>
+        <div class="ranking-meta">${fmtNum(m.views)} 觀看<span class="eng">${fmtPct(m.engagement)}</span></div>
       </div>
-      <div class="ranking-meta">${fmtNum(v.metrics.views)} 觀看<span class="eng">${fmtPct(v._eng)}</span></div>
-    </div>
-  `;
+    `;
+  };
 
   const topEl = document.getElementById('top-list');
   const botEl = document.getElementById('bottom-list');
   if (!topEl || !botEl) return;
 
   if (!ranked.length) {
-    const empty = '<div class="ranking-empty">還沒有觀看數，請先到 ⚙ 設定 → 批次抓取 YouTube 數據</div>';
+    const empty = '<div class="ranking-empty">還沒有觀看數，請先到 ⚙ 設定 → 批次抓取數據</div>';
     topEl.innerHTML = empty;
     botEl.innerHTML = empty;
     return;
   }
 
-  topEl.innerHTML = top.map((v, i) => renderRow(v, i + 1)).join('');
-  botEl.innerHTML = bottom.map((v, i) => renderRow(v, ranked.length - i)).join('');
+  topEl.innerHTML = top.map((x, i) => renderRow(x, i + 1)).join('');
+  botEl.innerHTML = bottom.map((x, i) => renderRow(x, ranked.length - i)).join('');
 
-  // 綁點擊 → 開詳細
+  // 綁點擊 → 開合計詳細頁
   document.querySelectorAll('.ranking-row').forEach(el => {
-    el.addEventListener('click', () => openView(el.dataset.id));
+    el.addEventListener('click', () => openCombinedView(el.dataset.key));
   });
 }
 
@@ -1991,7 +2271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     s.addEventListener('click', () => setRating(Number(s.dataset.v)))
   );
 
-  ['filter-platform','sort-by','search'].forEach(id =>
+  ['filter-platform','sort-by','search','view-mode'].forEach(id =>
     document.getElementById(id).addEventListener('input', renderGrid)
   );
 
