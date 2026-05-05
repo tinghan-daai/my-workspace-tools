@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "座標獵人",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3001", "tools/coordinate-hunter"],
+      "port": 3001
+    },
+    {
+      "name": "短影音分析",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3002", "tools/short-video-review"],
+      "port": 3002
+    },
+    {
+      "name": "影片轉音訊",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3003", "tools/video-to-audio"],
+      "port": 3003
+    }
+  ]
+}
