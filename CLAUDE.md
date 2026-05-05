@@ -20,6 +20,7 @@
 - **影片轉音訊** `tools/video-to-audio/` — 純瀏覽器影片轉 WAV/MP3/WebM
 - **短影音分析** `tools/short-video-review/` — 台中慈濟醫院外包短影音成效追蹤＋檢討卡（Phase 1: localStorage）
 - **open-design 捷徑** `tools/open-design-shortcut/` — 設計工具啟動捷徑（主程式在 `G:\我的雲端硬碟\open-design\`）
+- **AI 書僮** `tools/ai-reader/` — 三階段深讀 Prompt 生成器：輸入書名＋個人人設，一鍵生成三段 AI 深讀 Prompt
 
 ## 設計工具（open-design）
 - **啟動**：雙擊 `tools/open-design-shortcut/start.bat`，或對 Claude 說「開設計工具」
