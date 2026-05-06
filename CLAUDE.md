@@ -21,6 +21,7 @@
 - **短影音分析** `tools/short-video-review/` — 台中慈濟醫院外包短影音成效追蹤＋檢討卡（Phase 1: localStorage）
 - **open-design 捷徑** `tools/open-design-shortcut/` — 設計工具啟動捷徑（主程式在 `~/Library/CloudStorage/GoogleDrive-tinghan@gmail.com/我的雲端硬碟/open-design/`）
 - **AI 書僮** `tools/ai-reader/` — 三階段深讀 Prompt 生成器：輸入書名＋個人人設，一鍵生成三段 AI 深讀 Prompt
+- **檔案轉 Markdown** `tools/file-to-md/` — PDF / Word / PPT / 圖片 → .md，純瀏覽器；掃描檔走 tesseract.js OCR（繁中＋英文）
 
 ## 設計工具（open-design）
 - **啟動**：對 Claude 說「開設計工具」（Mac 上直接用 terminal 啟動）
