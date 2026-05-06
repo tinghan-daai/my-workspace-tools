@@ -19,5 +19,11 @@
       "runtimeArgs": ["serve", "-p", "3003", "tools/video-to-audio"],
       "port": 3003
     }
+    ,{
+      "name": "AI書僮",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3004", "tools/ai-reader"],
+      "port": 3004
+    }
   ]
 }
