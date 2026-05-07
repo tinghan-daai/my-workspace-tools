@@ -1,0 +1,14 @@
+{
+  "name": "File to Markdown",
+  "short_name": "轉MD",
+  "description": "PDF / Word / PPT / 圖片 轉換為 Markdown",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#4ec9b0",
+  "lang": "zh-TW",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
