@@ -394,7 +394,7 @@
     }
     .metric-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 8px;
       margin-bottom: 10px;
     }
@@ -850,6 +850,7 @@
               <button type="button" class="btn btn-ghost" id="btn-auto-fetch" style="font-size:0.85rem;">▶ 自動抓取 YouTube 數據</button>
               <span id="auto-fetch-status" style="font-size:0.8rem;color:var(--text-soft);"></span>
             </div>
+            <div style="font-size:0.75rem;color:var(--text-soft);letter-spacing:0.06em;margin-bottom:6px;">曝光與互動</div>
             <div class="form-grid">
               <div class="field">
                 <label>觀看數</label>
@@ -866,6 +867,32 @@
               <div class="field">
                 <label>分享數</label>
                 <input type="number" name="shares" min="0" placeholder="0">
+              </div>
+              <div class="field">
+                <label>收藏數</label>
+                <input type="number" name="saves" min="0" placeholder="0">
+              </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-soft);letter-spacing:0.06em;margin:10px 0 6px;">內容吸引力</div>
+            <div class="form-grid">
+              <div class="field">
+                <label>完播率 (%)</label>
+                <input type="number" name="completionRate" min="0" max="100" step="0.1" placeholder="例：45.2">
+              </div>
+              <div class="field">
+                <label>平均觀看時長（秒）</label>
+                <input type="number" name="avgViewDuration" min="0" placeholder="例：28">
+              </div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-soft);letter-spacing:0.06em;margin:10px 0 6px;">轉換指標（選填）</div>
+            <div class="form-grid">
+              <div class="field">
+                <label>點擊率 CTR (%)</label>
+                <input type="number" name="ctr" min="0" max="100" step="0.01" placeholder="例：2.5">
+              </div>
+              <div class="field">
+                <label>轉換率 (%)</label>
+                <input type="number" name="conversionRate" min="0" max="100" step="0.01" placeholder="例：1.2">
               </div>
             </div>
           </div>
@@ -939,6 +966,7 @@
                 <th>讚</th>
                 <th>留言</th>
                 <th>分享</th>
+                <th>收藏</th>
                 <th>狀態</th>
               </tr>
             </thead>
@@ -1092,7 +1120,7 @@ function calcCPM(budget, views) {
 }
 function calcEngagement(m) {
   if (!m || !m.views) return null;
-  return ((m.likes || 0) + (m.comments || 0) + (m.shares || 0)) / m.views * 100;
+  return ((m.likes || 0) + (m.comments || 0) + (m.shares || 0) + (m.saves || 0)) / m.views * 100;
 }
 function fmtNum(n) {
   if (n == null) return '—';
@@ -1151,12 +1179,19 @@ function getCombinedMetrics(group) {
   const likes    = sum('likes');
   const comments = sum('comments');
   const shares   = sum('shares');
+  const saves    = sum('saves');
+  const crVals = [ytm.completionRate, fbm.completionRate].filter(x => x != null);
+  const completionRate = crVals.length ? crVals.reduce((a, b) => a + b, 0) / crVals.length : null;
+  const avgViewDuration = ytm.avgViewDuration ?? fbm.avgViewDuration ?? null;
+  const ctr = ytm.ctr ?? fbm.ctr ?? null;
+  const conversionRate = ytm.conversionRate ?? fbm.conversionRate ?? null;
   // 預算：YT/FB 哪邊有就加哪邊（user 規則：成本算一次，所以理論上只會其中一邊有）
   const budget = (group.yt?.budget || 0) + (group.fb?.budget || 0);
   return {
-    views, likes, comments, shares,
+    views, likes, comments, shares, saves,
+    completionRate, avgViewDuration, ctr, conversionRate,
     budget: budget || null,
-    engagement: views > 0 ? (likes + comments + shares) / views * 100 : null,
+    engagement: views > 0 ? (likes + comments + shares + saves) / views * 100 : null,
     cpm: (budget > 0 && views > 0) ? budget / views * 1000 : null,
     hasYT: !!group.yt,
     hasFB: !!group.fb,
@@ -1204,12 +1239,15 @@ function renderSummary() {
   }, 0);
   const avgEngagement = totalViews ? (totalEngagements / totalViews * 100) : null;
   const overallCPM = (totalBudget && totalViews) ? (totalBudget / totalViews * 1000) : null;
+  const crAll = all.map(v => v.metrics?.completionRate).filter(x => x != null);
+  const avgCompletionRate = crAll.length ? crAll.reduce((a, b) => a + b, 0) / crAll.length : null;
 
   const html = [
     `<div class="stat"><div class="stat-label">總影片數</div><div class="stat-value">${all.length}</div></div>`,
     `<div class="stat"><div class="stat-label">總預算</div><div class="stat-value">${fmtMoney(totalBudget)}</div></div>`,
     `<div class="stat"><div class="stat-label">總觀看數</div><div class="stat-value">${fmtNum(totalViews)}</div></div>`,
     `<div class="stat"><div class="stat-label">平均互動率</div><div class="stat-value">${fmtPct(avgEngagement)}</div></div>`,
+    `<div class="stat"><div class="stat-label">平均完播率</div><div class="stat-value">${avgCompletionRate != null ? avgCompletionRate.toFixed(1) + '%' : '—'}</div></div>`,
     `<div class="stat"><div class="stat-label">整體 CPM</div><div class="stat-value">${overallCPM != null ? 'NT$ ' + overallCPM.toFixed(1) : '—'}</div><div class="stat-sub">每千次觀看成本</div></div>`,
   ].join('');
   document.getElementById('summary').innerHTML = html;
@@ -1271,11 +1309,16 @@ function renderGridByPlatform(grid, empty) {
             <div class="metric"><div class="metric-label">讚</div><div class="metric-value">${fmtNum(m.likes)}</div></div>
             <div class="metric"><div class="metric-label">留言</div><div class="metric-value">${fmtNum(m.comments)}</div></div>
             <div class="metric"><div class="metric-label">分享</div><div class="metric-value">${fmtNum(m.shares)}</div></div>
+            <div class="metric"><div class="metric-label">收藏</div><div class="metric-value">${fmtNum(m.saves)}</div></div>
           </div>
           <div class="card-perf">
             <div class="perf-item">
               <div class="perf-label">互動率</div>
               <div class="perf-value ${engClass}">${fmtPct(eng)}</div>
+            </div>
+            <div class="perf-item">
+              <div class="perf-label">完播率</div>
+              <div class="perf-value">${m.completionRate != null ? m.completionRate.toFixed(1) + '%' : '—'}</div>
             </div>
             <div class="perf-item">
               <div class="perf-label">CPM</div>
@@ -1363,11 +1406,16 @@ function renderGridCombined(grid, empty) {
             <div class="metric"><div class="metric-label">讚</div><div class="metric-value">${fmtNum(m.likes)}</div></div>
             <div class="metric"><div class="metric-label">留言</div><div class="metric-value">${fmtNum(m.comments)}</div></div>
             <div class="metric"><div class="metric-label">分享</div><div class="metric-value">${fmtNum(m.shares)}</div></div>
+            <div class="metric"><div class="metric-label">收藏</div><div class="metric-value">${fmtNum(m.saves)}</div></div>
           </div>
           <div class="card-perf">
             <div class="perf-item">
               <div class="perf-label">合計互動率</div>
               <div class="perf-value ${engClass}">${fmtPct(m.engagement)}</div>
+            </div>
+            <div class="perf-item">
+              <div class="perf-label">完播率</div>
+              <div class="perf-value">${m.completionRate != null ? m.completionRate.toFixed(1) + '%' : '—'}</div>
             </div>
             <div class="perf-item">
               <div class="perf-label">CPM</div>
@@ -1422,6 +1470,11 @@ function openEdit(id) {
       setVal('likes', m.likes ?? '');
       setVal('comments', m.comments ?? '');
       setVal('shares', m.shares ?? '');
+      setVal('saves', m.saves ?? '');
+      setVal('completionRate', m.completionRate ?? '');
+      setVal('avgViewDuration', m.avgViewDuration ?? '');
+      setVal('ctr', m.ctr ?? '');
+      setVal('conversionRate', m.conversionRate ?? '');
       const r = v.review || {};
       setVal('strengths', r.strengths || '');
       setVal('improvements', r.improvements || '');
@@ -1479,6 +1532,11 @@ async function saveVideo() {
       likes: num('likes'),
       comments: num('comments'),
       shares: num('shares'),
+      saves: num('saves'),
+      completionRate: num('completionRate'),
+      avgViewDuration: num('avgViewDuration'),
+      ctr: num('ctr'),
+      conversionRate: num('conversionRate'),
       fetchedAt: null,
     },
     review: {
@@ -1526,8 +1584,12 @@ function openView(id) {
       <div class="detail-block"><div class="detail-label">外包廠商</div><div class="detail-value">${escapeHtml(v.vendor || '—')}</div></div>
       <div class="detail-block"><div class="detail-label">製作預算</div><div class="detail-value">${fmtMoney(v.budget)}</div></div>
       <div class="detail-block"><div class="detail-label">觀看數</div><div class="detail-value">${fmtNum(m.views)}</div></div>
-      <div class="detail-block"><div class="detail-label">互動數</div><div class="detail-value">讚 ${fmtNum(m.likes)} ｜ 留言 ${fmtNum(m.comments)} ｜ 分享 ${fmtNum(m.shares)}</div></div>
+      <div class="detail-block"><div class="detail-label">互動數</div><div class="detail-value">讚 ${fmtNum(m.likes)} ｜ 留言 ${fmtNum(m.comments)} ｜ 分享 ${fmtNum(m.shares)} ｜ 收藏 ${fmtNum(m.saves)}</div></div>
       <div class="detail-block"><div class="detail-label">互動率</div><div class="detail-value">${fmtPct(eng)}</div></div>
+      <div class="detail-block"><div class="detail-label">完播率</div><div class="detail-value">${m.completionRate != null ? m.completionRate.toFixed(1) + '%' : '—'}</div></div>
+      <div class="detail-block"><div class="detail-label">平均觀看時長</div><div class="detail-value">${m.avgViewDuration != null ? m.avgViewDuration + ' 秒' : '—'}</div></div>
+      <div class="detail-block"><div class="detail-label">點擊率 CTR</div><div class="detail-value">${m.ctr != null ? m.ctr.toFixed(2) + '%' : '—'}</div></div>
+      <div class="detail-block"><div class="detail-label">轉換率</div><div class="detail-value">${m.conversionRate != null ? m.conversionRate.toFixed(2) + '%' : '—'}</div></div>
       <div class="detail-block"><div class="detail-label">CPM</div><div class="detail-value">${cpm != null ? 'NT$ ' + cpm.toFixed(1) : '—'}</div></div>
       <div class="detail-block"><div class="detail-label">整體評分</div><div class="detail-value" style="color:var(--accent); font-size:1.05rem;">${stars}</div></div>
     </div>
@@ -1577,8 +1639,12 @@ function openCombinedView(groupKey) {
         <div style="font-size:0.78rem;color:var(--text-mute);margin:4px 0 6px;">${rec.publishedAt || '—'}</div>
         <div style="font-size:0.85rem;line-height:1.7;">
           觀看 <b>${fmtNum(rm.views)}</b><br>
-          讚 ${fmtNum(rm.likes)} ｜ 留言 ${fmtNum(rm.comments)} ｜ 分享 ${fmtNum(rm.shares)}<br>
+          讚 ${fmtNum(rm.likes)} ｜ 留言 ${fmtNum(rm.comments)} ｜ 分享 ${fmtNum(rm.shares)} ｜ 收藏 ${fmtNum(rm.saves)}<br>
           互動率 <b>${fmtPct(reng)}</b>
+          ${rm.completionRate != null ? `｜ 完播率 <b>${rm.completionRate.toFixed(1)}%</b>` : ''}
+          ${rm.avgViewDuration != null ? `｜ 平均觀看 <b>${rm.avgViewDuration}秒</b>` : ''}
+          ${rm.ctr != null ? `<br>CTR <b>${rm.ctr.toFixed(2)}%</b>` : ''}
+          ${rm.conversionRate != null ? `｜ 轉換率 <b>${rm.conversionRate.toFixed(2)}%</b>` : ''}
         </div>
         <button class="btn btn-ghost" data-edit-id="${rec.id}" style="margin-top:8px;width:100%;font-size:0.78rem;padding:5px 10px;">編輯這筆</button>
       </div>
@@ -1611,9 +1677,10 @@ function openCombinedView(groupKey) {
     <div class="detail-grid" style="margin-bottom:18px;">
       <div class="detail-block"><div class="detail-label">合計觀看</div><div class="detail-value" style="color:var(--primary);font-size:1.1rem;">${fmtNum(m.views)}</div></div>
       <div class="detail-block"><div class="detail-label">合計互動率</div><div class="detail-value" style="color:var(--primary);font-size:1.1rem;">${fmtPct(m.engagement)}</div></div>
+      <div class="detail-block"><div class="detail-label">完播率（平均）</div><div class="detail-value">${m.completionRate != null ? m.completionRate.toFixed(1) + '%' : '—'}</div></div>
       <div class="detail-block"><div class="detail-label">CPM（成本算一次）</div><div class="detail-value">${m.cpm != null ? 'NT$ ' + m.cpm.toFixed(1) : '—'}</div></div>
       <div class="detail-block"><div class="detail-label">製作預算</div><div class="detail-value">${fmtMoney(m.budget)}</div></div>
-      <div class="detail-block" style="grid-column:span 2;"><div class="detail-label">合計互動數</div><div class="detail-value">讚 ${fmtNum(m.likes)} ｜ 留言 ${fmtNum(m.comments)} ｜ 分享 ${fmtNum(m.shares)}</div></div>
+      <div class="detail-block" style="grid-column:span 2;"><div class="detail-label">合計互動數</div><div class="detail-value">讚 ${fmtNum(m.likes)} ｜ 留言 ${fmtNum(m.comments)} ｜ 分享 ${fmtNum(m.shares)} ｜ 收藏 ${fmtNum(m.saves)}</div></div>
       <div class="detail-block" style="grid-column:span 2;"><div class="detail-label">整體評分（取兩邊較高）</div><div class="detail-value" style="color:var(--accent-gold);font-size:1.05rem;">${stars}</div></div>
     </div>
 
@@ -1661,7 +1728,7 @@ function exportCSV() {
   const list = getFiltered();
   if (!list.length) { alert('沒有可匯出的資料'); return; }
 
-  const headers = ['標題','平台','發布日期','廠商','主題','預算','觀看數','讚','留言','分享','互動率(%)','CPM(NT$)','評分','做得好','可改進','給長官建議'];
+  const headers = ['標題','平台','發布日期','廠商','主題','預算','觀看數','讚','留言','分享','收藏','互動率(%)','完播率(%)','平均觀看時長(秒)','CTR(%)','轉換率(%)','CPM(NT$)','評分','做得好','可改進','給長官建議'];
   const rows = list.map(v => {
     const m = v.metrics || {};
     const r = v.review || {};
@@ -1670,8 +1737,12 @@ function exportCSV() {
     return [
       v.title || '', v.platform || '', v.publishedAt || '',
       v.vendor || '', v.topic || '', v.budget ?? '',
-      m.views ?? '', m.likes ?? '', m.comments ?? '', m.shares ?? '',
+      m.views ?? '', m.likes ?? '', m.comments ?? '', m.shares ?? '', m.saves ?? '',
       eng != null ? eng.toFixed(2) : '',
+      m.completionRate != null ? m.completionRate.toFixed(1) : '',
+      m.avgViewDuration ?? '',
+      m.ctr != null ? m.ctr.toFixed(2) : '',
+      m.conversionRate != null ? m.conversionRate.toFixed(2) : '',
       cpm != null ? cpm.toFixed(1) : '',
       r.rating || 0,
       r.strengths || '', r.improvements || '', r.recommendations || '',
@@ -2032,6 +2103,7 @@ function renderFBBulkRows() {
         <td><input type="number" min="0" data-field="likes" value="${fmt(m.likes)}" placeholder="—"></td>
         <td><input type="number" min="0" data-field="comments" value="${fmt(m.comments)}" placeholder="—"></td>
         <td><input type="number" min="0" data-field="shares" value="${fmt(m.shares)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="saves" value="${fmt(m.saves)}" placeholder="—"></td>
         <td class="row-status ${filledRow ? 'saved' : ''}">${filledRow ? '✓ 已填' : '空白'}</td>
       </tr>
     `;
@@ -2081,6 +2153,7 @@ async function saveFBRow(tr) {
     likes:    get('likes'),
     comments: get('comments'),
     shares:   get('shares'),
+    saves:    get('saves'),
     fetchedAt: null,  // 手動填寫不算 API 抓取
   };
 
