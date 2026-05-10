@@ -23,6 +23,7 @@
 - **AI 書僮** `tools/ai-reader/` — 三階段深讀 Prompt 生成器：輸入書名＋個人人設，一鍵生成三段 AI 深讀 Prompt
 - **檔案轉 Markdown** `tools/file-to-md/` — PDF / Word / PPT / 圖片 → .md，純瀏覽器；掃描檔走 tesseract.js OCR（繁中＋英文）
 - **AI 代理人入門** `tools/ai-agent-intro/` — 給同事的 10 張簡報 + 5 頁報告（.pptx / .docx）；附 build 腳本可重新生成
+- **台灣 AI 新聞聚合 (yahoo-tw-ai)** `~/printing-press/library/yahoo-tw-ai/` — 5 來源（Yahoo TW / iThome / INSIDE / TechOrange / Bnext）每日 AI 新聞 CLI；本地 SQLite + 中英關鍵字過濾；Windows 排程每日 08:00 自動 sync（任務名 `yahoo-tw-ai-daily-sync`）。庫不在 my-workspace-tools 裡，是用 Printing Press 印的獨立 Go binary。常用：`yahoo-tw-ai-pp-cli daily --limit 10`、`yahoo-tw-ai-pp-cli news-sync`、`yahoo-tw-ai-pp-cli sources --report`
 
 ## 設計工具（open-design）
 - **啟動**：對 Claude 說「開設計工具」（Mac 上直接用 terminal 啟動）
