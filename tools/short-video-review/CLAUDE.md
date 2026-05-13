@@ -44,6 +44,22 @@
 }
 ```
 
+## UI / 設計
+2026-05 套用 Claude Design 產出的「Newsroom Brief」週報式版型：
+- Masthead（VOL/ISSUE 自動算）+ 4 大指標 + 月度趨勢儀表板 + 主題排名
+- Lead Story（本期 ER 第一）
+- 影片列表：YT+FB 自動合併、檢討卡（＋／－／→）直接顯示在每列
+- 後 5 名 + 廠商成績單
+- 三個分頁：週報總覽 / 所有影片 / 外包廠商
+- 視覺：黑墨配米白紙感、Noto Serif TC + JetBrains Mono，純資料工具感
+
+舊版（深色螢光主題）備份在 `index.html.bak`。
+
+## 檔案結構
+- `index.html` — 主程式（HTML + CSS + ES module JS）
+- `bulk-data.json` — 排播表批次匯入用的 79 筆紀錄（YT × 40、FB × 39），透過 `fetch('./bulk-data.json')` 載入
+- `index.html.bak` — 2026-05 改版前的舊版（深色螢光主題），保留參考
+
 ## 接 Firestore 時要改的地方
 打開 `index.html`，搜尋 `// STORAGE_LAYER` 註解，整段換掉即可。其他 UI 邏輯不動。
 
@@ -56,4 +72,5 @@
 
 ## 給長官看的視角
 - 列表預設按「互動率」排序（成效高的在上）
-- 提供「匯出本月報表」按鈕（CSV / 列印）
+- 「週報總覽」分頁直接是一份可列印的週報：Masthead + 指標 + 趨勢 + Lead + 後 5 名 + 廠商表
+- CSV 匯出 + `Ctrl+P` 列印（@media print 已調好版面）
