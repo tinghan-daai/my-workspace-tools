@@ -446,10 +446,21 @@
     .detail-grid { grid-template-columns: 1fr; }
     .masthead-title { font-size: 44px; }
   }
+  .back-btn {
+    position: fixed; top: 14px; left: 16px; z-index: 9999;
+    background: rgba(15,17,23,0.88); border: 1px solid #333;
+    border-radius: 20px; padding: 6px 14px; color: #888;
+    text-decoration: none; font-size: 0.82rem;
+    backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+  }
+  .back-btn:hover { color: #eee; border-color: #4f8ef7; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
+
 <div id="db-error-bar" style="display:none;"></div>
 
 <!-- ── Top utility bar ── -->

@@ -284,9 +284,19 @@
       color: var(--muted);
       text-align: center;
     }
+    .back-btn {
+      position: fixed; top: 14px; left: 16px; z-index: 9999;
+      background: rgba(15,17,23,0.88); border: 1px solid #2a3050;
+      border-radius: 20px; padding: 6px 14px; color: #8899bb;
+      text-decoration: none; font-size: 0.82rem;
+      backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: #e4e8f5; border-color: #4f8ef7; }
   </style>
 </head>
 <body>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
 
 <header>
   <h1>圖片調整尺寸</h1>
@@ -316,9 +326,14 @@
 
   <div class="option-row">
     <label>
-      <input type="checkbox" id="keepRatio" checked />
-      等比例縮放（以寬為準，高自動計算）
+      <input type="checkbox" id="keepRatio" checked onchange="toggleRatioBasis()" />
+      等比例縮放，以
     </label>
+    <select id="ratioBasis">
+      <option value="width">寬</option>
+      <option value="height">高</option>
+    </select>
+    <span style="font-size:0.85rem;color:var(--muted)">為準</span>
     <label>輸出格式
       <select id="outputFormat">
         <option value="image/jpeg">JPG</option>
@@ -368,11 +383,9 @@
     event.target.classList.add('active')
   }
 
-  // 寬度異動時若等比，自動更新高度（預覽用，轉換時才真算）
-  document.getElementById('targetW').addEventListener('input', syncHeight)
-  function syncHeight() {
-    if (!document.getElementById('keepRatio').checked) return
-    // 只在有檔案時顯示提示，不強制改高度（等轉換時各圖自行計算）
+  function toggleRatioBasis() {
+    const on = document.getElementById('keepRatio').checked
+    document.getElementById('ratioBasis').disabled = !on
   }
 
   // ── 檔案輸入 ──
@@ -446,12 +459,13 @@
 
   // ── 調整尺寸 ──
   async function resizeAll() {
-    const targetW  = parseInt(document.getElementById('targetW').value)
-    const targetH  = parseInt(document.getElementById('targetH').value)
+    const targetW   = parseInt(document.getElementById('targetW').value)
+    const targetH   = parseInt(document.getElementById('targetH').value)
     const keepRatio = document.getElementById('keepRatio').checked
-    const format   = document.getElementById('outputFormat').value
-    const quality  = parseFloat(document.getElementById('outputQuality').value)
-    const ext      = format === 'image/jpeg' ? 'jpg' : format === 'image/png' ? 'png' : 'webp'
+    const basis     = document.getElementById('ratioBasis').value
+    const format    = document.getElementById('outputFormat').value
+    const quality   = parseFloat(document.getElementById('outputQuality').value)
+    const ext       = format === 'image/jpeg' ? 'jpg' : format === 'image/png' ? 'png' : 'webp'
 
     if (!targetW || !targetH) return
 
@@ -463,7 +477,7 @@
       await new Promise(r => setTimeout(r, 10)) // 讓 UI 更新
 
       try {
-        const blob = await resizeImage(files[i].url, targetW, targetH, keepRatio, format, quality)
+        const blob = await resizeImage(files[i].url, targetW, targetH, keepRatio, basis, format, quality)
         const baseName = files[i].name.replace(/\.[^.]+$/, '')
         files[i].blob = blob
         files[i].outName = `${baseName}_${targetW}x${targetH}.${ext}`
@@ -485,14 +499,18 @@
     updateActions()
   }
 
-  function resizeImage(src, targetW, targetH, keepRatio, format, quality) {
+  function resizeImage(src, targetW, targetH, keepRatio, basis, format, quality) {
     return new Promise((resolve, reject) => {
       const img = new Image()
       img.onload = () => {
         let w = targetW, h = targetH
         if (keepRatio) {
           const ratio = img.naturalWidth / img.naturalHeight
-          h = Math.round(targetW / ratio)
+          if (basis === 'width') {
+            h = Math.round(targetW / ratio)
+          } else {
+            w = Math.round(targetH * ratio)
+          }
         }
         const canvas = document.createElement('canvas')
         canvas.width  = w

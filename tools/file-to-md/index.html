@@ -195,9 +195,20 @@
       letter-spacing: 0.05em;
     }
     .footer a { color: #777; text-decoration: none; }
+    .back-btn {
+      position: fixed; top: 14px; left: 16px; z-index: 9999;
+      background: rgba(15,17,23,0.88); border: 1px solid #333;
+      border-radius: 20px; padding: 6px 14px; color: #888;
+      text-decoration: none; font-size: 0.82rem;
+      backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: #eee; border-color: #4f8ef7; }
   </style>
 </head>
 <body>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
+
   <div class="container">
     <div class="header">
       <h1>FILE → MARKDOWN</h1>
