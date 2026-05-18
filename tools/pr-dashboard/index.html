@@ -305,6 +305,22 @@
     .todo-item:hover .todo-del { opacity: 1; }
     .todo-del:hover { color: #e05555; }
 
+    .todo-gcal {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      text-decoration: none;
+      transition: opacity 0.1s, color 0.1s;
+    }
+
+    .todo-item:hover .todo-gcal { opacity: 1; }
+    .todo-gcal:hover { color: var(--accent); }
+
     .todo-empty {
       font-size: 0.84rem;
       color: var(--muted);
@@ -633,6 +649,7 @@
               ${dueStr ? `<span class="todo-due">${dueStr}</span>` : ''}
             </div>
             <span class="todo-tag ${tc.cls}">${tc.label}</span>
+            ${t.dueAt ? `<a class="todo-gcal" href="${buildGcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 行事曆">📅</a>` : ''}
             <button class="todo-del" onclick="deleteTodo(${i})" title="刪除">✕</button>
           </div>`
       }).join('')
@@ -678,6 +695,21 @@
     if (isNaN(d)) return ''
     const days = ['日','一','二','三','四','五','六']
     return `${d.getMonth()+1}/${d.getDate()}（週${days[d.getDay()]}）${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
+  }
+
+  function buildGcalUrl(todo) {
+    const start = new Date(todo.dueAt)
+    if (isNaN(start)) return '#'
+    const end = new Date(start.getTime() + 60 * 60 * 1000) // 預設一小時
+    const fmt = d => d.toISOString().replace(/[-:]|\.\d{3}/g, '')
+    const tagLabel = (tagConfig[todo.tag] || tagConfig.other).label
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: `[${tagLabel}] ${todo.text}`,
+      dates: `${fmt(start)}/${fmt(end)}`,
+      details: '由公傳室工作儀表板建立',
+    })
+    return `https://calendar.google.com/calendar/render?${params.toString()}`
   }
 
   function escHtml(str) {
