@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>設計啟動器 — 公傳室</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --card: #1f2435;
+      --border: #2a3050;
+      --accent: #4f8ef7;
+      --accent-light: #7fb3ff;
+      --text: #e4e8f5;
+      --muted: #7a85a8;
+      --success: #3ecf8e;
+      --tag-bg: #1a2540;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+    }
+
+    header {
+      max-width: 720px;
+      margin: 0 auto 28px;
+    }
+
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.92rem; line-height: 1.6; }
+
+    .main-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+
+    .field-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field-label span { color: var(--accent); font-weight: 600; }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .tag:hover, .tag.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    textarea:focus { outline: none; border-color: var(--accent); }
+    textarea::placeholder { color: var(--muted); }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .select-wrap { flex: 1; min-width: 140px; }
+
+    .select-wrap label {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    select:focus { outline: none; border-color: var(--accent); }
+
+    .btn-launch {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn-launch:hover { opacity: 0.88; }
+
+    /* 結果區 */
+    .result-section {
+      max-width: 720px;
+      margin: 24px auto 0;
+      display: none;
+    }
+
+    .result-section.visible { display: block; }
+
+    .result-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .result-block h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .prompt-box {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 0.88rem;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .copy-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .copy-btn:hover { opacity: 0.85; }
+    .copy-btn.copied { background: var(--success); }
+
+    /* 素材連結 */
+    .asset-links { display: flex; flex-direction: column; gap: 10px; }
+
+    .asset-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .asset-link:hover { border-color: var(--accent); }
+    .asset-link .icon { font-size: 1.2rem; flex-shrink: 0; }
+    .asset-link .info strong { font-size: 0.9rem; display: block; }
+    .asset-link .info span { font-size: 0.8rem; color: var(--muted); }
+
+    .step-hint {
+      max-width: 720px;
+      margin: 0 auto 24px;
+      background: #0d1f3c;
+      border: 1px solid #1a3a6e;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 0.88rem;
+      line-height: 1.8;
+      color: #a0c4ff;
+      display: none;
+    }
+
+    .step-hint.visible { display: block; }
+
+    .step-hint strong { color: var(--accent-light); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>設計啟動器</h1>
+  <p>描述你要做的海報 → 一鍵產生 AI Prompt → 貼到 Claude 拿到構圖、配色、素材建議</p>
+</header>
+
+<div class="main-card">
+  <div class="field-label">這次要做什麼？<span>（快速選）</span></div>
+  <div class="tags" id="presetTags">
+    <span class="tag" data-text="義診活動宣傳海報，主題是骨科，對象是社區長輩，要有溫暖感">義診活動</span>
+    <span class="tag" data-text="醫師人物介紹海報，展現專業形象，風格現代乾淨">醫師介紹</span>
+    <span class="tag" data-text="衛教宣導海報，主題是糖尿病預防，受眾是一般民眾">衛教宣導</span>
+    <span class="tag" data-text="感恩表揚活動海報，莊重正式，有儀式感">感恩表揚</span>
+    <span class="tag" data-text="志工招募海報，活潑親切，呼籲民眾加入">志工招募</span>
+    <span class="tag" data-text="社區健康篩檢活動海報，親民、易讀、資訊清晰">社區活動</span>
+    <span class="tag" data-text="醫學研究論文海報，呈現研究成果，學術嚴謹，兼顧視覺清晰與專業感">論文海報</span>
+  </div>
+
+  <div class="field-label">詳細描述（可直接修改上方快速選的內容）</div>
+  <textarea id="userInput" placeholder="例如：6 月義診活動海報，主題是骨科，對象是社區長輩，要有溫暖感"></textarea>
+
+  <div class="row">
+    <div class="select-wrap">
+      <label>海報尺寸</label>
+      <select id="sizeSelect">
+        <option>A4 直式（210×297mm）</option>
+        <option>A3 橫式（420×297mm）</option>
+        <option>論文海報直式（60×80cm）</option>
+        <option>論文海報直式（90×120cm）</option>
+        <option>方形（1080×1080px）</option>
+        <option>限時動態（1080×1920px）</option>
+        <option>橫幅（1920×600px）</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <label>視覺風格</label>
+      <select id="styleSelect">
+        <option>溫暖、人文、慈濟風</option>
+        <option>簡潔、現代、專業感</option>
+        <option>活潑、明亮、親切感</option>
+        <option>莊重、正式、儀式感</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <label>主色調</label>
+      <select id="colorSelect">
+        <option>不限定，請 AI 建議</option>
+        <option>藍色系</option>
+        <option>綠色系</option>
+        <option>橘紅色系</option>
+        <option>紫色系</option>
+        <option>黑白灰（中性）</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="btn-launch" onclick="generate()">產生設計 Prompt</button>
+</div>
+
+<!-- 操作提示 -->
+<div class="step-hint" id="stepHint">
+  <strong>接下來怎麼用？</strong><br>
+  1. 按下方「複製 Prompt」按鈕<br>
+  2. 打開 <strong>Claude.ai</strong> 或你的 <strong>Claude Code</strong>，貼上送出<br>
+  3. Claude 會給你構圖方向、配色建議、素材搜尋詞
+</div>
+
+<!-- 結果 -->
+<div class="result-section" id="resultSection">
+
+  <div class="result-block">
+    <h3>你的設計 Prompt</h3>
+    <div class="prompt-box" id="promptBox"></div>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">
+      複製 Prompt
+    </button>
+  </div>
+
+  <div class="result-block">
+    <h3>同時可以去找素材</h3>
+    <div class="asset-links">
+      <a class="asset-link" href="https://unsplash.com" target="_blank">
+        <span class="icon">🖼</span>
+        <div class="info">
+          <strong>Unsplash</strong>
+          <span>高品質人物、場景攝影，CC0 免費商用</span>
+        </div>
+      </a>
+      <a class="asset-link" href="https://www.pexels.com/zh-tw/" target="_blank">
+        <span class="icon">📷</span>
+        <div class="info">
+          <strong>Pexels</strong>
+          <span>醫療、長者、社區類圖片豐富，免費商用</span>
+        </div>
+      </a>
+      <a class="asset-link" href="https://www.flaticon.com" target="_blank">
+        <span class="icon">✏️</span>
+        <div class="info">
+          <strong>Flaticon</strong>
+          <span>醫療 icon 圖示，可下載 SVG／PNG</span>
+        </div>
+      </a>
+      <a class="asset-link" href="https://fonts.google.com/?subset=chinese-traditional" target="_blank">
+        <span class="icon">🔤</span>
+        <div class="info">
+          <strong>Google Fonts 繁中字型</strong>
+          <span>思源黑體、思源宋體等，免費商用</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'))
+        tag.classList.add('active')
+        document.getElementById('userInput').value = tag.dataset.text
+      })
+    })
+  })
+
+  function generate() {
+    const input = document.getElementById('userInput').value.trim()
+    if (!input) {
+      document.getElementById('userInput').focus()
+      document.getElementById('userInput').placeholder = '請先描述這次要做什麼海報 ↑'
+      return
+    }
+
+    const size = document.getElementById('sizeSelect').value
+    const style = document.getElementById('styleSelect').value
+    const color = document.getElementById('colorSelect').value
+
+    const prompt = `你是一位專業的醫療機構視覺設計顧問，協助台中慈濟醫院公傳室的設計師快速啟動設計工作。
+
+【這次的海報任務】
+- 內容：${input}
+- 尺寸：${size}
+- 風格：${style}
+- 主色調：${color}
+
+請依序提供以下三個部分：
+
+一、構圖方向（提供 3 個不同方向）
+每個方向包含：名稱、視覺邏輯、元素排列建議
+
+二、配色方案
+提供 3～4 個顏色，包含色碼（HEX）和用途說明
+
+三、素材搜尋建議
+提供 3～5 個適合在 Unsplash / Pexels 搜尋的英文關鍵字`
+
+    document.getElementById('promptBox').textContent = prompt
+    document.getElementById('resultSection').classList.add('visible')
+    document.getElementById('stepHint').classList.add('visible')
+    document.getElementById('copyBtn').textContent = '複製 Prompt'
+    document.getElementById('copyBtn').classList.remove('copied')
+
+    document.getElementById('stepHint').scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('promptBox').textContent
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn')
+      btn.textContent = '已複製！去貼到 Claude ✓'
+      btn.classList.add('copied')
+      setTimeout(() => {
+        btn.textContent = '複製 Prompt'
+        btn.classList.remove('copied')
+      }, 3000)
+    })
+  }
+</script>
+</body>
+</html>
