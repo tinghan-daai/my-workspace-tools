@@ -305,6 +305,22 @@
     .todo-item:hover .todo-del { opacity: 1; }
     .todo-del:hover { color: #e05555; }
 
+    .todo-gcal {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      text-decoration: none;
+      transition: opacity 0.1s, color 0.1s;
+    }
+
+    .todo-item:hover .todo-gcal { opacity: 1; }
+    .todo-gcal:hover { color: var(--accent); }
+
     .todo-empty {
       font-size: 0.84rem;
       color: var(--muted);
@@ -364,6 +380,44 @@
       border-radius: 4px;
       transition: width 0.3s;
     }
+
+    /* 備忘錄 */
+    .memo-wrap {
+      max-width: 960px;
+      margin: 0 auto 36px;
+    }
+
+    .memo-textarea {
+      width: 100%;
+      min-height: 180px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      line-height: 1.6;
+      resize: vertical;
+    }
+
+    .memo-textarea:focus { outline: none; border-color: var(--accent); }
+    .memo-textarea::placeholder { color: var(--muted); }
+
+    .memo-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .memo-save-state {
+      transition: color 0.2s;
+    }
+
+    .memo-save-state.saved { color: var(--accent2); }
   </style>
 </head>
 <body>
@@ -505,6 +559,22 @@
 
 </div>
 
+<!-- 備忘錄 -->
+<div class="section-title">備忘錄</div>
+<div class="memo-wrap">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>隨手筆記</h2>
+      <span class="badge" id="memoCount">0 字</span>
+    </div>
+    <textarea class="memo-textarea" id="memoArea" placeholder="想到什麼就寫下來⋯⋯靈感、會議重點、待確認事項、長官交辦——自動存檔。"></textarea>
+    <div class="memo-meta">
+      <span class="memo-save-state" id="memoSaveState">尚未編輯</span>
+      <button class="todo-del" id="memoClear" style="opacity:1;color:var(--muted);">清空</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // 日期
   const now = new Date()
@@ -579,6 +649,7 @@
               ${dueStr ? `<span class="todo-due">${dueStr}</span>` : ''}
             </div>
             <span class="todo-tag ${tc.cls}">${tc.label}</span>
+            ${t.dueAt ? `<a class="todo-gcal" href="${buildGcalUrl(t)}" target="_blank" rel="noopener" title="加到 Google 行事曆">📅</a>` : ''}
             <button class="todo-del" onclick="deleteTodo(${i})" title="刪除">✕</button>
           </div>`
       }).join('')
@@ -626,12 +697,85 @@
     return `${d.getMonth()+1}/${d.getDate()}（週${days[d.getDay()]}）${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`
   }
 
+  function buildGcalUrl(todo) {
+    const start = new Date(todo.dueAt)
+    if (isNaN(start)) return '#'
+    const end = new Date(start.getTime() + 60 * 60 * 1000) // 預設一小時
+    const fmt = d => d.toISOString().replace(/[-:]|\.\d{3}/g, '')
+    const tagLabel = (tagConfig[todo.tag] || tagConfig.other).label
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: `[${tagLabel}] ${todo.text}`,
+      dates: `${fmt(start)}/${fmt(end)}`,
+      details: '由公傳室工作儀表板建立',
+    })
+    return `https://calendar.google.com/calendar/render?${params.toString()}`
+  }
+
   function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
   }
 
 
   renderTodos()
+
+  // ── 備忘錄 ──
+  const MEMO_KEY = 'pr_dashboard_memo'
+  const memoArea  = document.getElementById('memoArea')
+  const memoCount = document.getElementById('memoCount')
+  const memoState = document.getElementById('memoSaveState')
+  const memoClear = document.getElementById('memoClear')
+  let memoMem = ''
+  let memoTimer = null
+
+  function loadMemo() {
+    if (storageOK) {
+      try { return localStorage.getItem(MEMO_KEY) || '' } catch { return '' }
+    }
+    return memoMem
+  }
+
+  function saveMemo(val) {
+    if (storageOK) {
+      try { localStorage.setItem(MEMO_KEY, val) } catch(e) { console.warn('備忘錄儲存失敗', e) }
+    } else {
+      memoMem = val
+    }
+  }
+
+  function updateMemoCount() {
+    memoCount.textContent = `${memoArea.value.length} 字`
+  }
+
+  function flashSaved() {
+    memoState.textContent = '已自動儲存 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+    memoState.classList.add('saved')
+  }
+
+  memoArea.value = loadMemo()
+  updateMemoCount()
+  if (memoArea.value) memoState.textContent = '上次編輯內容已載入'
+
+  memoArea.addEventListener('input', () => {
+    updateMemoCount()
+    memoState.textContent = '編輯中⋯⋯'
+    memoState.classList.remove('saved')
+    clearTimeout(memoTimer)
+    memoTimer = setTimeout(() => {
+      saveMemo(memoArea.value)
+      flashSaved()
+    }, 500)
+  })
+
+  memoClear.addEventListener('click', () => {
+    if (!memoArea.value) return
+    if (!confirm('確定清空備忘錄？')) return
+    memoArea.value = ''
+    saveMemo('')
+    updateMemoCount()
+    memoState.textContent = '已清空'
+    memoState.classList.remove('saved')
+  })
 </script>
 </body>
 </html>
