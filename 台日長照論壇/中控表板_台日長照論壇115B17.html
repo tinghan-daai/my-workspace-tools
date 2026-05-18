@@ -231,9 +231,12 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
 @keyframes fadeIn{to{opacity:1}}
 .slide-up{animation:slideUp .5s ease forwards;opacity:0;transform:translateY(20px)}
 @keyframes slideUp{to{opacity:1;transform:none}}
+.back-btn{position:fixed;bottom:20px;left:20px;z-index:9999;background:rgba(15,17,23,0.88);border:1px solid #333;border-radius:20px;padding:6px 14px;color:#888;text-decoration:none;font-size:0.82rem;backdrop-filter:blur(8px);transition:color .15s,border-color .15s;}
+.back-btn:hover{color:#eee;border-color:#4f8ef7;}
 </style>
 </head>
 <body>
+<a class="back-btn" href="../tools/pr-dashboard/index.html">← 儀表板</a>
 <div class="wrap">
 
 <!-- Header -->
