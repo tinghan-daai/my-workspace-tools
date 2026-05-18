@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>圖片調整尺寸 — 批次處理</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --card: #1f2435;
+      --border: #2a3050;
+      --accent: #4f8ef7;
+      --accent2: #3ecf8e;
+      --text: #e4e8f5;
+      --muted: #7a85a8;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 20px 80px;
+    }
+
+    header { max-width: 800px; margin: 0 auto 28px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+
+    .card {
+      max-width: 800px;
+      margin: 0 auto 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* 尺寸設定 */
+    .size-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .preset-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.83rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover, .preset-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .size-inputs {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .size-inputs label { font-size: 0.85rem; color: var(--muted); }
+
+    .size-inputs input[type="number"] {
+      width: 100px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      text-align: center;
+    }
+
+    .size-inputs input[type="number"]:focus { outline: none; border-color: var(--accent); }
+
+    .size-sep { color: var(--muted); font-size: 1.1rem; }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .option-row label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .option-row input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .option-row select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: var(--text);
+      font-size: 0.83rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* 拖放區 */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragging {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.05);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .drop-zone .dz-icon { font-size: 2.2rem; margin-bottom: 10px; }
+    .drop-zone p { font-size: 0.9rem; color: var(--muted); }
+    .drop-zone span { font-size: 0.8rem; color: var(--muted); margin-top: 4px; display: block; }
+
+    /* 檔案列表 */
+    .file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border-radius: 10px;
+      padding: 10px 14px;
+      border: 1px solid transparent;
+    }
+
+    .file-item .thumb {
+      width: 44px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .file-item .info { flex: 1; min-width: 0; }
+    .file-item .info strong { font-size: 0.87rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-item .info span { font-size: 0.75rem; color: var(--muted); }
+
+    .file-item .status {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .status-wait    { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+    .status-done    { background: #0d2a1a; color: var(--accent2); border: 1px solid #1a4a2a; }
+    .status-error   { background: #2a0d0d; color: #ff7070; border: 1px solid #4a1a1a; }
+    .status-working { background: #0d1f3c; color: var(--accent); border: 1px solid #1a3a6e; }
+
+    .file-item .dl-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--muted);
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      display: none;
+    }
+
+    .file-item .dl-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .file-item.done .dl-btn { display: block; }
+
+    .file-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 4px;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+
+    .file-del:hover { opacity: 1; color: #e05555; }
+
+    /* 動作列 */
+    .action-row {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      min-width: 160px;
+    }
+
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 20px;
+      color: var(--text);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-secondary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .summary {
+      max-width: 800px;
+      margin: 14px auto 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>圖片調整尺寸</h1>
+  <p>批次調整圖片大小，純瀏覽器處理，檔案不會上傳到網路</p>
+</header>
+
+<!-- 尺寸設定 -->
+<div class="card">
+  <h2>目標尺寸</h2>
+
+  <div class="size-presets">
+    <button class="preset-btn" onclick="setPreset(3888,2592)">3888 × 2592 px（原始高解析）</button>
+    <button class="preset-btn" onclick="setPreset(450,300)">450 × 300 px（網頁縮圖）</button>
+    <button class="preset-btn" onclick="setPreset(1920,1080)">1920 × 1080 px（Full HD）</button>
+    <button class="preset-btn" onclick="setPreset(1080,1080)">1080 × 1080 px（IG 方形）</button>
+    <button class="preset-btn" onclick="setPreset(1080,1920)">1080 × 1920 px（限時動態）</button>
+  </div>
+
+  <div class="size-inputs">
+    <label>寬</label>
+    <input type="number" id="targetW" value="450" min="1" max="9999" />
+    <span class="size-sep">×</span>
+    <label>高</label>
+    <input type="number" id="targetH" value="300" min="1" max="9999" />
+    <label style="margin-left:4px">px</label>
+  </div>
+
+  <div class="option-row">
+    <label>
+      <input type="checkbox" id="keepRatio" checked />
+      等比例縮放（以寬為準，高自動計算）
+    </label>
+    <label>輸出格式
+      <select id="outputFormat">
+        <option value="image/jpeg">JPG</option>
+        <option value="image/png">PNG</option>
+        <option value="image/webp">WebP</option>
+      </select>
+    </label>
+    <label>品質
+      <select id="outputQuality">
+        <option value="0.95">最高（95%）</option>
+        <option value="0.85" selected>高（85%）</option>
+        <option value="0.75">中（75%）</option>
+        <option value="0.6">低（60%）</option>
+      </select>
+    </label>
+  </div>
+</div>
+
+<!-- 上傳區 -->
+<div class="card">
+  <h2>選擇圖片</h2>
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept="image/*" multiple />
+    <div class="dz-icon">🖼</div>
+    <p>點擊選擇，或將圖片拖放至此</p>
+    <span>支援 JPG、PNG、WebP、GIF，可一次選取多張</span>
+  </div>
+  <div class="file-list" id="fileList"></div>
+</div>
+
+<!-- 動作按鈕 -->
+<div class="action-row">
+  <button class="btn-primary" id="resizeAllBtn" onclick="resizeAll()" disabled>開始調整尺寸</button>
+  <button class="btn-secondary" id="downloadZipBtn" onclick="downloadZip()" disabled>全部下載（ZIP）</button>
+  <button class="btn-secondary" onclick="clearAll()">清除全部</button>
+</div>
+<div class="summary" id="summary"></div>
+
+<script>
+  let files = []       // { file, url, blob, name, origW, origH }
+
+  // ── 尺寸預設 ──
+  function setPreset(w, h) {
+    document.getElementById('targetW').value = w
+    document.getElementById('targetH').value = h
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'))
+    event.target.classList.add('active')
+  }
+
+  // 寬度異動時若等比，自動更新高度（預覽用，轉換時才真算）
+  document.getElementById('targetW').addEventListener('input', syncHeight)
+  function syncHeight() {
+    if (!document.getElementById('keepRatio').checked) return
+    // 只在有檔案時顯示提示，不強制改高度（等轉換時各圖自行計算）
+  }
+
+  // ── 檔案輸入 ──
+  const dropZone  = document.getElementById('dropZone')
+  const fileInput = document.getElementById('fileInput')
+
+  fileInput.addEventListener('change', e => handleFiles(Array.from(e.target.files)))
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragging') })
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'))
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault()
+    dropZone.classList.remove('dragging')
+    handleFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')))
+  })
+
+  function handleFiles(newFiles) {
+    newFiles.forEach(f => {
+      if (!f.type.startsWith('image/')) return
+      const url = URL.createObjectURL(f)
+      const img = new Image()
+      img.onload = () => {
+        files.push({ file: f, url, blob: null, name: f.name, origW: img.naturalWidth, origH: img.naturalHeight })
+        renderFileList()
+      }
+      img.src = url
+    })
+  }
+
+  // ── 渲染清單 ──
+  function renderFileList() {
+    const list = document.getElementById('fileList')
+    if (files.length === 0) { list.innerHTML = ''; return }
+
+    list.innerHTML = files.map((f, i) => `
+      <div class="file-item ${f.blob ? 'done' : ''}" id="fi-${i}">
+        <img class="thumb" src="${f.url}" />
+        <div class="info">
+          <strong title="${f.name}">${f.name}</strong>
+          <span>${f.origW} × ${f.origH} px</span>
+        </div>
+        <span class="status ${f.blob ? 'status-done' : 'status-wait'}">${f.blob ? '完成' : '待處理'}</span>
+        <button class="dl-btn" onclick="downloadOne(${i})">下載</button>
+        <button class="file-del" onclick="removeFile(${i})" title="移除">✕</button>
+      </div>
+    `).join('')
+
+    updateActions()
+  }
+
+  function removeFile(i) {
+    URL.revokeObjectURL(files[i].url)
+    files.splice(i, 1)
+    renderFileList()
+  }
+
+  function clearAll() {
+    files.forEach(f => URL.revokeObjectURL(f.url))
+    files = []
+    renderFileList()
+    document.getElementById('summary').textContent = ''
+    document.getElementById('fileInput').value = ''
+  }
+
+  function updateActions() {
+    const hasFiles = files.length > 0
+    const hasDone  = files.some(f => f.blob)
+    document.getElementById('resizeAllBtn').disabled   = !hasFiles
+    document.getElementById('downloadZipBtn').disabled = !hasDone
+  }
+
+  // ── 調整尺寸 ──
+  async function resizeAll() {
+    const targetW  = parseInt(document.getElementById('targetW').value)
+    const targetH  = parseInt(document.getElementById('targetH').value)
+    const keepRatio = document.getElementById('keepRatio').checked
+    const format   = document.getElementById('outputFormat').value
+    const quality  = parseFloat(document.getElementById('outputQuality').value)
+    const ext      = format === 'image/jpeg' ? 'jpg' : format === 'image/png' ? 'png' : 'webp'
+
+    if (!targetW || !targetH) return
+
+    document.getElementById('resizeAllBtn').disabled = true
+    document.getElementById('resizeAllBtn').textContent = '處理中…'
+
+    for (let i = 0; i < files.length; i++) {
+      setStatus(i, 'status-working', '處理中')
+      await new Promise(r => setTimeout(r, 10)) // 讓 UI 更新
+
+      try {
+        const blob = await resizeImage(files[i].url, targetW, targetH, keepRatio, format, quality)
+        const baseName = files[i].name.replace(/\.[^.]+$/, '')
+        files[i].blob = blob
+        files[i].outName = `${baseName}_${targetW}x${targetH}.${ext}`
+        setStatus(i, 'status-done', '完成')
+        const item = document.getElementById(`fi-${i}`)
+        if (item) {
+          item.classList.add('done')
+          item.querySelector('.dl-btn').style.display = 'block'
+        }
+      } catch(e) {
+        setStatus(i, 'status-error', '失敗')
+      }
+    }
+
+    const doneCount = files.filter(f => f.blob).length
+    document.getElementById('summary').textContent = `完成 ${doneCount} / ${files.length} 張`
+    document.getElementById('resizeAllBtn').disabled = false
+    document.getElementById('resizeAllBtn').textContent = '開始調整尺寸'
+    updateActions()
+  }
+
+  function resizeImage(src, targetW, targetH, keepRatio, format, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        let w = targetW, h = targetH
+        if (keepRatio) {
+          const ratio = img.naturalWidth / img.naturalHeight
+          h = Math.round(targetW / ratio)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width  = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob failed')), format, quality)
+      }
+      img.onerror = reject
+      img.src = src
+    })
+  }
+
+  function setStatus(i, cls, text) {
+    const item = document.getElementById(`fi-${i}`)
+    if (!item) return
+    const s = item.querySelector('.status')
+    s.className = `status ${cls}`
+    s.textContent = text
+  }
+
+  // ── 下載 ──
+  function downloadOne(i) {
+    const f = files[i]
+    if (!f.blob) return
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(f.blob)
+    a.download = f.outName
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  }
+
+  async function downloadZip() {
+    const done = files.filter(f => f.blob)
+    if (!done.length) return
+
+    const btn = document.getElementById('downloadZipBtn')
+    btn.textContent = '打包中…'
+    btn.disabled = true
+
+    const zip = new JSZip()
+    done.forEach(f => zip.file(f.outName, f.blob))
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(zipBlob)
+    a.download = `resized_images_${Date.now()}.zip`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+
+    btn.textContent = '全部下載（ZIP）'
+    btn.disabled = false
+  }
+</script>
+</body>
+</html>
