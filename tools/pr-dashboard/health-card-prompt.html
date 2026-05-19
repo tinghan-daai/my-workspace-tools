@@ -200,7 +200,7 @@
 <body>
 
 <h1>🩺 衛教<span>圖卡</span>產生器</h1>
-<p class="subtitle">輸入衛教文章 → 生成設計提示詞 → 貼到 Claude 取得圖卡內容與設計建議</p>
+<p class="subtitle">輸入衛教文章 → 生成設計提示詞 → 貼到 Claude／Gemini／GPT 取得圖卡內容與設計建議</p>
 
 <div class="layout">
 
@@ -227,7 +227,7 @@
 
     <div>
       <label>衛教文章原文（貼上後 AI 自動摘要）</label>
-      <textarea id="article" rows="6" placeholder="將衛教文章、衛教單張文字貼入此處，Claude 會從中提取重點…"></textarea>
+      <textarea id="article" rows="6" placeholder="將衛教文章、衛教單張文字貼入此處，AI 會從中提取重點…"></textarea>
     </div>
 
     <div>
@@ -298,13 +298,13 @@
   <div class="panel">
     <div class="panel-title">產生的提示詞</div>
     <div class="output-box" id="output">
-      <span class="output-placeholder">填入左側資料後，點「產生提示詞」，\n複製後貼到 Claude 即可取得衛教圖卡設計建議。</span>
+      <span class="output-placeholder">填入左側資料後，點「產生提示詞」，複製後貼到任意 AI（Claude／Gemini／GPT）即可取得衛教圖卡設計建議。</span>
     </div>
     <div class="btn-row">
       <button class="btn btn-copy" id="copyBtn" onclick="copyPrompt()" disabled>複製提示詞</button>
     </div>
     <p style="font-size:0.76rem;color:var(--muted);line-height:1.6;">
-      💡 <strong>使用方式：</strong>複製後開啟 Claude 對話貼入，Claude 會幫你提取重點並提供圖卡文字稿與設計建議，再帶入設計軟體製作。
+      💡 <strong>使用方式：</strong>複製後貼入任意 AI 對話（Claude、Gemini、GPT 皆可），AI 會幫你提取重點並提供圖卡文字稿與設計建議，再帶入設計軟體製作。
     </p>
   </div>
 
@@ -409,7 +409,7 @@ ${count > 3 ? '✅ 重點四\n' : ''}${count > 4 ? '✅ 重點五\n' : ''}${coun
     if (!generatedPrompt) return;
     navigator.clipboard.writeText(generatedPrompt).then(() => {
       const btn = document.getElementById('copyBtn');
-      btn.textContent = '已複製！去貼到 Claude ✓';
+      btn.textContent = '已複製！去貼到 AI ✓';
       btn.classList.add('copied');
       setTimeout(() => {
         btn.textContent = '複製提示詞';
@@ -424,7 +424,7 @@ ${count > 3 ? '✅ 重點四\n' : ''}${count > 4 ? '✅ 重點五\n' : ''}${coun
       document.execCommand('copy');
       document.body.removeChild(el);
       const btn = document.getElementById('copyBtn');
-      btn.textContent = '已複製！去貼到 Claude ✓';
+      btn.textContent = '已複製！去貼到 AI ✓';
       btn.classList.add('copied');
       setTimeout(() => {
         btn.textContent = '複製提示詞';

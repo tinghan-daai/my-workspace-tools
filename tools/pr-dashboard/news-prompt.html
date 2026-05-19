@@ -219,7 +219,7 @@
 
 <header>
   <h1>新聞稿產生器</h1>
-  <p>填入活動資訊 → 一鍵產生新聞稿 Prompt → 貼到 Claude 生成初稿</p>
+  <p>填入活動資訊 → 一鍵產生新聞稿 Prompt → 貼到 Claude／Gemini／GPT 生成初稿</p>
 </header>
 
 <!-- 新聞稿類型 -->
@@ -336,8 +336,8 @@
   <div class="step-hint">
     <strong>接下來怎麼用？</strong><br>
     1. 按「複製 Prompt」<br>
-    2. 打開 <strong>Claude.ai</strong> 或 <strong>Claude Code</strong>，貼上送出<br>
-    3. Claude 會生成新聞稿初稿，你再潤稿即可
+    2. 打開任意 AI（<strong>Claude</strong>、<strong>Gemini</strong>、<strong>GPT</strong>），貼上送出<br>
+    3. AI 會生成新聞稿初稿，你再潤稿即可
   </div>
   <div class="result-block">
     <h3>新聞稿 Prompt</h3>
@@ -421,7 +421,7 @@ ${typeBlock ? `\n${typeBlock}` : ''}
     const text = document.getElementById('promptBox').textContent
     navigator.clipboard.writeText(text).then(() => {
       const btn = document.getElementById('copyBtn')
-      btn.textContent = '已複製！去貼到 Claude ✓'
+      btn.textContent = '已複製！去貼到 AI ✓'
       btn.classList.add('copied')
       setTimeout(() => {
         btn.textContent = '複製 Prompt'
