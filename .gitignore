@@ -15,3 +15,12 @@ credentials.*
 # Node.js
 node_modules/
 package-lock.json
+
+# 台日長照論壇 — 素材原始檔與歷史資料（檔案大，留在 GDrive 同步即可）
+台日長照論壇/素材/
+台日長照論壇/舊資料/
+
+# Google Drive 捷徑檔（git 無法讀取）
+*.gdoc
+*.gsheet
+*.gslides
