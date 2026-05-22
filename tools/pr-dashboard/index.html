@@ -97,6 +97,13 @@
       transform: translateY(-2px);
     }
 
+    .tool-card.featured {
+      border-color: rgba(245, 166, 35, 0.65);
+      background: linear-gradient(135deg, rgba(245, 166, 35, 0.14), rgba(62, 207, 142, 0.06)), var(--card);
+    }
+
+    .tool-card.featured:hover { border-color: var(--accent2); }
+
     .tool-card .icon {
       font-size: 1.6rem;
       margin-bottom: 10px;
@@ -418,6 +425,50 @@
     }
 
     .memo-save-state.saved { color: var(--accent2); }
+
+    .forum-alert-grid {
+      max-width: 960px;
+      margin: -22px auto 36px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .forum-alert {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .forum-alert.urgent { border-color: rgba(245, 91, 91, 0.6); }
+    .forum-alert.warn { border-color: rgba(245, 166, 35, 0.65); }
+
+    .forum-alert h3 {
+      font-size: 0.96rem;
+      margin-bottom: 6px;
+    }
+
+    .forum-alert p {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+
+    .forum-count {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: var(--accent3);
+      font-size: 0.78rem;
+      border: 1px solid rgba(245,166,35,0.38);
+      background: rgba(245,166,35,0.1);
+      border-radius: 20px;
+      padding: 3px 9px;
+    }
+
+    @media (max-width: 640px) {
+      .forum-alert-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -486,16 +537,34 @@
 <!-- 台日長照論壇 -->
 <div class="section-title">台日長照論壇 115B17</div>
 <div class="tools-grid">
-  <a class="tool-card" href="../../台日長照論壇/公傳室中控表板_台日長照論壇115B17.html" target="_blank">
+  <a class="tool-card featured" href="../taiwan-japan-care-forum/index.html">
+    <span class="icon">🇹🇼🇯🇵</span>
+    <strong>論壇正式專區</strong>
+    <p>J-3 廣編稿、J 類廣告追蹤、表板與 6/3、6/19 截止提醒</p>
+  </a>
+  <a class="tool-card" href="../../台日長照論壇/公傳室中控表板_台日長照論壇115B17.html">
     <span class="icon">📋</span>
     <strong>公傳室中控表板</strong>
     <p>文宣製作進度、分工追蹤、截止日期一覽</p>
   </a>
-  <a class="tool-card" href="../../台日長照論壇/中控表板_台日長照論壇115B17.html" target="_blank">
+  <a class="tool-card" href="../../台日長照論壇/中控表板_台日長照論壇115B17.html">
     <span class="icon">🗂</span>
     <strong>論壇總中控表板</strong>
     <p>全案進度、各組任務、整體時程追蹤</p>
   </a>
+</div>
+
+<div class="forum-alert-grid">
+  <div class="forum-alert urgent">
+    <span class="forum-count" id="forumJ5Count">倒數計算中</span>
+    <h3>2026/6/3：J-5 網路關鍵字廣告</h3>
+    <p>最早截止。至少 20 則搜尋、社群、電子報或網路廣告紀錄，需保存平台、日期、截圖與連結。</p>
+  </div>
+  <div class="forum-alert warn">
+    <span class="forum-count" id="forumJDeadlineCount">倒數計算中</span>
+    <h3>2026/6/19：J-1 / J-3 / J-4</h3>
+    <p>報紙廣告、10 則數位廣編稿與 4,000 檔電視牆/電子看板同日截止，是主要扣款風險集中點。</p>
+  </div>
 </div>
 
 <!-- 雙欄：待辦 + 快速連結 -->
@@ -733,6 +802,23 @@
 
 
   renderTodos()
+
+  function renderForumCountdown() {
+    const items = [
+      ['forumJ5Count', '2026-06-03T23:59:59'],
+      ['forumJDeadlineCount', '2026-06-19T23:59:59'],
+    ]
+    items.forEach(([id, date]) => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const days = Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      if (days < 0) el.textContent = `已過 ${Math.abs(days)} 天`
+      else if (days === 0) el.textContent = '今日截止'
+      else el.textContent = `倒數 ${days} 天`
+    })
+  }
+
+  renderForumCountdown()
 
   // ── 備忘錄 ──
   const MEMO_KEY = 'pr_dashboard_memo'

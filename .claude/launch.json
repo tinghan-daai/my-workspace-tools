@@ -24,6 +24,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3004", "tools/ai-reader"],
       "port": 3004
+    },
+    {
+      "name": "台日長照論壇專區",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3005", "tools/taiwan-japan-care-forum"],
+      "port": 3005
     }
   ]
 }
