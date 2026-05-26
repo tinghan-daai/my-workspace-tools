@@ -908,6 +908,24 @@
   </div>
 </div>
 
+<!-- ── Link Picker Modal ── -->
+<div class="modal-bg" id="modal-link-picker">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <span class="modal-kicker">連結影片</span>
+      <h2 id="link-picker-title">選擇要連結的影片</h2>
+      <button class="modal-close" data-close>✕</button>
+    </div>
+    <div style="padding:16px 24px 0;">
+      <input id="link-picker-search" type="text" placeholder="搜尋標題…"
+        style="width:100%;padding:7px 10px;border:1px solid var(--line);background:var(--paper);
+               font:inherit;font-size:13px;outline:none;margin-bottom:10px;">
+    </div>
+    <div id="link-picker-list" style="max-height:380px;overflow-y:auto;padding:0 0 8px;"></div>
+    <footer class="modal-foot"><button class="btn ghost" data-close>取消</button></footer>
+  </div>
+</div>
+
 <script type="module">
 'use strict';
 
@@ -1057,25 +1075,41 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// ── group YT+FB by title ──
+// ── group YT+FB by groupId (manual link) or title ──
 function normalizeTitle(t) {
   return String(t || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 function groupVideos(records) {
   const groups = new Map();
+
+  const applyToGroup = (g, v) => {
+    if (v.platform === 'youtube') { g.yt = v; g.title = v.title; }
+    else if (v.platform === 'facebook') { g.fb = v; if (!g.yt) g.title = v.title; }
+    if (v.publishedAt && (!g.publishedAt || v.publishedAt < g.publishedAt))
+      g.publishedAt = v.publishedAt;
+  };
+
+  // First pass: explicit groupId links
+  const linkedIds = new Set();
   for (const v of records) {
+    if (!v.groupId) continue;
+    linkedIds.add(v.id);
+    const key = '__gid__' + v.groupId;
+    if (!groups.has(key))
+      groups.set(key, { key, title: v.title, topic: v.topic, publishedAt: v.publishedAt, yt: null, fb: null, groupId: v.groupId });
+    applyToGroup(groups.get(key), v);
+  }
+
+  // Second pass: fallback to title matching (skip already linked)
+  for (const v of records) {
+    if (linkedIds.has(v.id)) continue;
     const key = normalizeTitle(v.title);
     if (!key) continue;
-    if (!groups.has(key)) {
+    if (!groups.has(key))
       groups.set(key, { key, title: v.title, topic: v.topic, publishedAt: v.publishedAt, yt: null, fb: null });
-    }
-    const g = groups.get(key);
-    if (v.platform === 'youtube') g.yt = v;
-    else if (v.platform === 'facebook') g.fb = v;
-    if (v.publishedAt && (!g.publishedAt || v.publishedAt < g.publishedAt)) {
-      g.publishedAt = v.publishedAt;
-    }
+    applyToGroup(groups.get(key), v);
   }
+
   return groups;
 }
 function getCombinedMetrics(group) {
@@ -1647,6 +1681,11 @@ async function saveVideo() {
   const title = trim('title');
   if (!title) { alert('請填寫影片標題'); return; }
 
+  // preserve groupId if already linked
+  const existingGroupId = editingId
+    ? (Storage.load().find(x => x.id === editingId)?.groupId || null)
+    : null;
+
   const video = {
     id: editingId, title,
     platform: get('platform'),
@@ -1655,6 +1694,7 @@ async function saveVideo() {
     vendor: trim('vendor'),
     topic: get('topic'),
     budget: num('budget'),
+    ...(existingGroupId ? { groupId: existingGroupId } : {}),
     metrics: {
       views: num('views'), likes: num('likes'), comments: num('comments'),
       shares: num('shares'), saves: num('saves'),
@@ -1682,6 +1722,67 @@ async function deleteVideo() {
   closeModals();
 }
 
+// ── 手動連結：把兩支影片設相同 groupId ──
+let linkPickerSourceId = null;
+
+function openLinkPicker(sourceId, oppPlatform) {
+  linkPickerSourceId = sourceId;
+  const label = oppPlatform === 'youtube' ? 'YouTube' : 'Facebook';
+  document.getElementById('link-picker-title').textContent = `選擇要連結的 ${label} 影片`;
+  renderLinkPickerList(oppPlatform, '');
+  document.getElementById('link-picker-search').value = '';
+  document.getElementById('modal-link-picker').classList.add('show');
+}
+
+function renderLinkPickerList(platform, query) {
+  const q = query.toLowerCase();
+  const list = Storage.load()
+    .filter(v => v.platform === platform && v.id !== linkPickerSourceId)
+    .filter(v => !q || (v.title || '').toLowerCase().includes(q))
+    .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+  const el = document.getElementById('link-picker-list');
+  if (!list.length) {
+    el.innerHTML = `<div style="padding:20px;color:var(--mute);text-align:center;font-style:italic;">找不到影片</div>`;
+    return;
+  }
+  el.innerHTML = list.map(v => `
+    <div class="link-picker-item" data-link-id="${escapeHtml(v.id)}" style="
+      padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;
+      display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:2px;">${escapeHtml(v.title)}</div>
+        <div style="font-size:11px;color:var(--mute);font-family:'JetBrains Mono',monospace;">${v.publishedAt || '—'}${v.groupId ? ' · 已連結' : ''}</div>
+      </div>
+      <button class="btn ghost" style="font-size:11px;white-space:nowrap;">選擇</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.link-picker-item').forEach(row => {
+    row.addEventListener('click', () => confirmLink(row.dataset.linkId));
+  });
+}
+
+async function confirmLink(targetId) {
+  if (!linkPickerSourceId || !targetId) return;
+  const groupId = [linkPickerSourceId, targetId].sort().join('_');
+  const list = Storage.load();
+  const vA = list.find(x => x.id === linkPickerSourceId);
+  const vB = list.find(x => x.id === targetId);
+  if (!vA || !vB) return;
+  await Storage.upsert({ ...vA, groupId });
+  await Storage.upsert({ ...vB, groupId });
+  closeModals();
+}
+
+async function unlinkVideos(idA, idB) {
+  if (!confirm('確定解除連結？解除後兩支影片將各自獨立顯示。')) return;
+  const list = Storage.load();
+  const vA = list.find(x => x.id === idA);
+  const vB = list.find(x => x.id === idB);
+  if (vA) { const upd = { ...vA }; delete upd.groupId; await Storage.upsert(upd); }
+  if (vB) { const upd = { ...vB }; delete upd.groupId; await Storage.upsert(upd); }
+  closeModals();
+}
+
 function openCombinedView(groupKey) {
   const groups = groupVideos(Storage.load());
   const g = groups.get(groupKey);
@@ -1689,11 +1790,13 @@ function openCombinedView(groupKey) {
   const m = getCombinedMetrics(g);
   const rating = Math.max(g.yt?.review?.rating || 0, g.fb?.review?.rating || 0);
 
-  const platformBlock = (rec, label, pillCls) => {
+  const platformBlock = (rec, label, pillCls, oppPlatform, existingId) => {
     if (!rec) {
-      return `<div class="detail-block" style="opacity:0.55;">
+      return `<div class="detail-block" style="opacity:0.8;">
         <div class="detail-label">${label}</div>
-        <div class="detail-value mute" style="font-style:italic;">— 沒有此平台資料</div>
+        <div class="detail-value mute" style="font-style:italic;margin-bottom:10px;">— 沒有此平台資料</div>
+        <button class="btn ghost" id="btn-link-${oppPlatform}" data-source-id="${escapeHtml(existingId)}" data-opp="${escapeHtml(oppPlatform)}"
+          style="font-size:11px;width:100%;">🔗 連結 ${label} 影片</button>
       </div>`;
     }
     const rm = rec.metrics || {};
@@ -1769,9 +1872,15 @@ function openCombinedView(groupKey) {
       <span style="font-size:10px;letter-spacing:0.22em;background:var(--ink);color:var(--paper);padding:2px 7px;">分平台</span>
       <h3 style="font-size:16px;">兩平台分開看</h3>
     </div>
+    ${g.groupId ? `
+    <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--mute);">🔗 手動連結中</span>
+      <button class="btn ghost" id="btn-unlink" style="font-size:11px;"
+        data-id-a="${escapeHtml(g.yt?.id || '')}" data-id-b="${escapeHtml(g.fb?.id || '')}">解除連結</button>
+    </div>` : ''}
     <div class="detail-grid">
-      ${platformBlock(g.yt, 'YouTube', 'yt')}
-      ${platformBlock(g.fb, 'Facebook', 'fb')}
+      ${platformBlock(g.yt, 'YouTube', 'yt', 'youtube', g.fb?.id || '')}
+      ${platformBlock(g.fb, 'Facebook', 'fb', 'facebook', g.yt?.id || '')}
     </div>
 
     <div style="display:flex;align-items:baseline;gap:10px;padding-bottom:6px;border-bottom:1px dotted var(--line);margin:18px 0 14px;">
@@ -1790,6 +1899,23 @@ function openCombinedView(groupKey) {
       openEdit(btn.dataset.editId);
     });
   });
+
+  // 連結按鈕
+  document.querySelectorAll('#view-body button[data-opp]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openLinkPicker(btn.dataset.sourceId, btn.dataset.opp);
+    });
+  });
+
+  // 解除連結按鈕
+  const unlinkBtn = document.getElementById('btn-unlink');
+  if (unlinkBtn) {
+    unlinkBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      unlinkVideos(unlinkBtn.dataset.idA, unlinkBtn.dataset.idB);
+    });
+  }
 
   const primaryEdit = g.yt?.id || g.fb?.id || '';
   document.getElementById('btn-edit-from-view').dataset.id = primaryEdit;
@@ -2327,6 +2453,14 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAll();
 
   Storage.subscribe(renderAll);
+
+  // Link picker search
+  document.getElementById('link-picker-search').addEventListener('input', e => {
+    const opp = linkPickerSourceId
+      ? (Storage.load().find(x => x.id === linkPickerSourceId)?.platform === 'youtube' ? 'facebook' : 'youtube')
+      : 'youtube';
+    renderLinkPickerList(opp, e.target.value);
+  });
 });
 </script>
 </body>
