@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 臺中長照台日論壇 | 跨域共融・智啟長照新時代</title>
+  <meta name="description" content="2026年7月3日，裕元花園酒店B1國際演講廳。臺中市政府衛生局主辦，台日頂尖專家齊聚，探討長照3.0、失智共生、科技長照新趨勢。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #1B3A5C;
+      --navy-dark: #0d2035;
+      --teal:      #2C6E8A;
+      --gold:      #C4962A;
+      --gold-lt:   #e8c76a;
+      --white:     #ffffff;
+      --bg-light:  #f5f7fa;
+      --gray:      #888;
+      --text:      #2c3e50;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.7;
+    }
+
+    /* ─── HERO ─────────────────────────────── */
+    .hero {
+      position: relative;
+      width: 100%;
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: url('assets/hero01.jpg') center/cover no-repeat;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(150deg,
+        rgba(13,32,53,0.88) 0%,
+        rgba(27,58,92,0.62) 55%,
+        rgba(13,32,53,0.78) 100%
+      );
+    }
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      color: white;
+      padding: 3rem 1.5rem 4rem;
+      max-width: 960px;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--gold);
+      color: var(--navy-dark);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      padding: 0.4rem 1.4rem;
+      border-radius: 3px;
+      margin-bottom: 1.8rem;
+    }
+    .hero-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(2rem, 5.5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 0.6rem;
+    }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2.8vw, 1.5rem);
+      color: var(--gold-lt);
+      font-weight: 300;
+      letter-spacing: 0.18em;
+      margin-bottom: 2.8rem;
+    }
+    .hero-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem 1.6rem;
+      justify-content: center;
+      margin-bottom: 3rem;
+    }
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(255,255,255,0.13);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.22);
+      padding: 0.55rem 1.3rem;
+      border-radius: 5px;
+      font-size: 0.95rem;
+    }
+    .btn-hero {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--navy-dark);
+      font-size: 1.15rem;
+      font-weight: 700;
+      padding: 1rem 3.2rem;
+      border-radius: 5px;
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      box-shadow: 0 6px 28px rgba(196,150,42,0.42);
+      transition: all .22s ease;
+    }
+    .btn-hero:hover {
+      background: var(--gold-lt);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 36px rgba(196,150,42,0.55);
+    }
+
+    /* ─── COUNTDOWN BAR ─────────────────────── */
+    .cd-bar {
+      background: var(--navy-dark);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      padding: 1.1rem 1.5rem;
+    }
+    .cd-label { font-size: 0.85rem; color: var(--gold-lt); letter-spacing: 0.1em; }
+    .cd-units { display: flex; gap: 1.8rem; }
+    .cd-unit { text-align: center; }
+    .cd-num {
+      display: block;
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .cd-lbl { font-size: 0.65rem; color: var(--gold-lt); letter-spacing: 0.1em; }
+
+    /* ─── SECTIONS ──────────────────────────── */
+    .sec { padding: 5.5rem 1.5rem; }
+    .sec-inner { max-width: 1120px; margin: 0 auto; }
+    .sec-tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--gold);
+      border-bottom: 2px solid var(--gold);
+      padding-bottom: 3px;
+      margin-bottom: 1rem;
+    }
+    .sec-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(1.5rem, 3vw, 2.3rem);
+      color: var(--navy);
+      margin-bottom: 2.8rem;
+    }
+
+    /* ─── EVENT INFO ────────────────────────── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.4rem;
+    }
+    .info-card {
+      background: var(--bg-light);
+      border-left: 4px solid var(--gold);
+      padding: 1.4rem 1.6rem;
+      border-radius: 0 8px 8px 0;
+    }
+    .info-icon { font-size: 1.7rem; margin-bottom: 0.4rem; }
+    .info-lbl  { font-size: 0.72rem; color: var(--gray); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+    .info-val  { font-size: 1rem; font-weight: 600; color: var(--navy); }
+    .info-sub  { font-size: 0.82rem; color: var(--gray); margin-top: 0.2rem; }
+
+    /* ─── ORGANIZERS ────────────────────────── */
+    .org-strip {
+      background: var(--bg-light);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .org-header { font-size: 0.72rem; color: var(--gray); letter-spacing: 0.14em; margin-bottom: 1rem; font-weight: 700; }
+    .org-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      justify-content: center;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .org-badge {
+      font-size: 0.82rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 4px;
+      border: 1px solid #cbd5e0;
+      background: white;
+      color: var(--navy);
+      white-space: nowrap;
+    }
+    .org-badge.primary   { background: var(--navy); color: white; border-color: var(--navy); }
+    .org-badge.secondary { background: var(--gold);  color: white; border-color: var(--gold);  }
+
+    /* ─── AGENDA ────────────────────────────── */
+    .agenda-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media(max-width:768px){ .agenda-grid{ grid-template-columns:1fr; } }
+
+    .agenda-session {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .sess-hd {
+      padding: 1.1rem 1.5rem;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .sess-hd.am { background: var(--navy); }
+    .sess-hd.pm { background: var(--teal); }
+    .sess-sub { font-size: 0.78rem; opacity: .8; font-weight: 400; margin-top: 0.2rem; }
+
+    .ai {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 0.5rem 0.9rem;
+      padding: 0.85rem 1.3rem;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .ai:last-child { border-bottom: none; }
+    .ai.br { background: rgba(0,0,0,0.025); }
+    .ai-time  { font-size: 0.75rem; color: var(--gold); font-weight: 700; padding-top: 0.1rem; line-height: 1.4; }
+    .ai-topic { font-size: 0.88rem; font-weight: 500; color: var(--navy); line-height: 1.4; }
+    .ai-spk   { font-size: 0.78rem; color: var(--gray); margin-top: 0.25rem; line-height: 1.4; }
+    .ai-topic.tbd { color: var(--gray); font-style: italic; }
+    .tbd-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffc107;
+      padding: 0.1rem 0.45rem;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-left: 0.4rem;
+    }
+
+    /* ─── SPEAKERS ──────────────────────────── */
+    .spk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 2rem;
+    }
+    .spk-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .spk-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 36px rgba(0,0,0,0.14);
+    }
+    .spk-photo {
+      width: 100%;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      background: #dde4ec;
+      position: relative;
+    }
+    .spk-photo img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+    .spk-placeholder {
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4.5rem;
+      color: #b0bec5;
+      background: linear-gradient(135deg, #e8edf4, #d4dce8);
+    }
+    .spk-flag {
+      position: absolute;
+      top: .75rem; right: .75rem;
+      font-size: 1.5rem;
+      background: rgba(0,0,0,0.48);
+      width: 2.2rem; height: 2.2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .spk-info { padding: 1.2rem 1.5rem; }
+    .spk-name {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.2rem;
+    }
+    .spk-title { font-size: 0.78rem; color: var(--gray); line-height: 1.5; margin-bottom: 0.8rem; }
+    .spk-topic {
+      font-size: 0.86rem;
+      background: var(--bg-light);
+      padding: 0.5rem 0.9rem;
+      border-left: 3px solid var(--gold);
+      border-radius: 0 5px 5px 0;
+      line-height: 1.5;
+    }
+    .spk-topic.tbd { color: var(--gray); font-style: italic; border-left-color: #ccc; }
+
+    /* ─── SECOND VISUAL ─────────────────────── */
+    .vis-banner {
+      width: 100%;
+      max-height: 460px;
+      overflow: hidden;
+      position: relative;
+    }
+    .vis-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .vis-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(13,32,53,0.65));
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 2.5rem;
+    }
+    .vis-text {
+      color: white;
+      text-align: center;
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 700;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    }
+
+    /* ─── CTA ───────────────────────────────── */
+    .cta {
+      background: linear-gradient(135deg, var(--navy-dark), var(--navy));
+      color: white;
+      text-align: center;
+      padding: 6rem 1.5rem;
+    }
+    .cta h2 {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+      margin-bottom: 1rem;
+    }
+    .cta p { color: rgba(255,255,255,0.7); margin-bottom: 2.8rem; font-size: 1rem; }
+    .btn-cta {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--navy-dark);
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 1.2rem 4rem;
+      border-radius: 6px;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      box-shadow: 0 8px 34px rgba(196,150,42,0.5);
+      transition: all .22s ease;
+    }
+    .btn-cta:hover {
+      background: var(--gold-lt);
+      transform: translateY(-3px);
+      box-shadow: 0 14px 44px rgba(196,150,42,0.6);
+    }
+    .cta-url {
+      display: block;
+      margin-top: 1.4rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── FOOTER ────────────────────────────── */
+    footer {
+      background: var(--navy-dark);
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 2rem 1.5rem;
+      font-size: 0.82rem;
+      line-height: 1.8;
+    }
+    footer strong { color: rgba(255,255,255,0.8); }
+
+    /* ─── NAV ───────────────────────────────── */
+    .top-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 2rem;
+      background: rgba(13,32,53,0);
+      transition: background .3s, box-shadow .3s;
+    }
+    .top-nav.scrolled {
+      background: rgba(13,32,53,0.96);
+      box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+    }
+    .nav-brand {
+      color: white;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+    }
+    .nav-brand span { color: var(--gold-lt); }
+    .nav-cta {
+      background: var(--gold);
+      color: var(--navy-dark);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.5rem 1.4rem;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .nav-cta:hover { background: var(--gold-lt); }
+
+    /* ─── BACK BUTTON ───────────────────────── */
+    .back-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      background: rgba(13,32,53,0.85);
+      color: rgba(255,255,255,0.75);
+      font-size: 0.82rem;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      text-decoration: none;
+      backdrop-filter: blur(8px);
+      z-index: 99;
+      transition: opacity .2s;
+    }
+    .back-btn:hover { opacity: 1; color: white; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav" id="topNav">
+  <div class="nav-brand">🇹🇼×🇯🇵 <span>台日長照論壇 2026</span></div>
+  <a href="https://www.beclass.com/rid=30526a96a0e4cc990623" target="_blank" class="nav-cta">立即報名</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">🇹🇼 × 🇯🇵 &nbsp;2026 台日跨域長照論壇</div>
+    <h1 class="hero-title">2026 臺中長照<br>台日論壇</h1>
+    <p class="hero-subtitle">跨域共融・智啟長照新時代</p>
+    <div class="hero-chips">
+      <div class="chip">📅 2026年7月3日（五）</div>
+      <div class="chip">🕗 09:00 – 17:00</div>
+      <div class="chip">📍 裕元花園酒店 B1 國際演講廳</div>
+    </div>
+    <a href="https://www.beclass.com/rid=30526a96a0e4cc990623" target="_blank" class="btn-hero">
+      免費報名 →
+    </a>
+  </div>
+</section>
+
+<!-- COUNTDOWN -->
+<div class="cd-bar">
+  <span class="cd-label">距離論壇開幕</span>
+  <div class="cd-units">
+    <div class="cd-unit"><span class="cd-num" id="cdD">--</span><span class="cd-lbl">天</span></div>
+    <div class="cd-unit"><span class="cd-num" id="cdH">--</span><span class="cd-lbl">時</span></div>
+    <div class="cd-unit"><span class="cd-num" id="cdM">--</span><span class="cd-lbl">分</span></div>
+    <div class="cd-unit"><span class="cd-num" id="cdS">--</span><span class="cd-lbl">秒</span></div>
+  </div>
+</div>
+
+<!-- EVENT INFO -->
+<section class="sec" style="background:white;">
+  <div class="sec-inner">
+    <div class="sec-tag">ABOUT THE FORUM</div>
+    <h2 class="sec-title">活動資訊</h2>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-icon">📅</div>
+        <div class="info-lbl">日期</div>
+        <div class="info-val">中華民國 115年7月3日（五）</div>
+        <div class="info-sub">2026年7月3日（星期五）</div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">🕗</div>
+        <div class="info-lbl">時間</div>
+        <div class="info-val">09:00 – 17:00</div>
+        <div class="info-sub">08:30 開始報到</div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">📍</div>
+        <div class="info-lbl">地點</div>
+        <div class="info-val">裕元花園酒店 B1 國際演講廳</div>
+        <div class="info-sub">台中市西屯區（近逢甲商圈）</div>
+      </div>
+      <div class="info-card">
+        <div class="info-icon">🎫</div>
+        <div class="info-lbl">報名</div>
+        <div class="info-val">免費參加・名額有限</div>
+        <div class="info-sub">線上報名，即早預留席次</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ORGANIZERS -->
+<div class="org-strip">
+  <div class="org-header">主辦・協辦單位</div>
+  <div class="org-row">
+    <span class="org-badge primary">指導｜衛生福利部</span>
+    <span class="org-badge secondary">主辦｜臺中市政府衛生局</span>
+    <span class="org-badge">委辦｜台中慈濟醫院</span>
+    <span class="org-badge">協辦｜慈濟基金會長照推展中心</span>
+    <span class="org-badge">協辦｜台灣高齡產業創新發展協會</span>
+    <span class="org-badge">協辦｜輕安健康關懷協會</span>
+    <span class="org-badge">協辦｜臺中市立仁愛綜合長照機構</span>
+    <span class="org-badge">協辦｜台中慈濟護理之家</span>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<section class="sec" style="background:var(--bg-light);">
+  <div class="sec-inner">
+    <div class="sec-tag">PROGRAM SCHEDULE</div>
+    <h2 class="sec-title">論壇議程</h2>
+    <div class="agenda-grid">
+
+      <!-- 上午場 -->
+      <div class="agenda-session">
+        <div class="sess-hd am">
+          ☀️ 上午場：長照政策國際交流
+          <div class="sess-sub">引言人：臺中市衛生局 曾梓展 局長</div>
+        </div>
+
+        <div class="ai br">
+          <div class="ai-time">08:30</div>
+          <div><div class="ai-topic" style="color:var(--gray);">開放報到</div></div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">09:00–09:30</div>
+          <div>
+            <div class="ai-topic">開幕致詞</div>
+            <div class="ai-spk">臺中市政府 副市長｜衛生福利部 石崇良 部長</div>
+          </div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">09:30–10:10</div>
+          <div>
+            <div class="ai-topic">邁向台灣長照3.0新時代</div>
+            <div class="ai-spk">🇹🇼 衛生福利部 石崇良 部長</div>
+          </div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">10:10–10:50</div>
+          <div>
+            <div class="ai-topic">以提升長照品質與效能為目標之科學化照護資訊系統 — LIFE</div>
+            <div class="ai-spk">🇯🇵 日本國立長壽醫療研究中心 大浦智子 教授</div>
+          </div>
+        </div>
+        <div class="ai br">
+          <div class="ai-time">10:50–11:05</div>
+          <div><div class="ai-topic" style="color:var(--gray);">中場休息 Tea Break</div></div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">11:05–11:45</div>
+          <div>
+            <div class="ai-topic">成功老化 —— 幸齡人生的方程式</div>
+            <div class="ai-spk">🇯🇵 日本心靈與身體診所院長 和田秀樹 醫師</div>
+          </div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">11:45–12:05</div>
+          <div>
+            <div class="ai-topic">雙向與談</div>
+            <div class="ai-spk">主持：林峻暉會長｜石崇良部長、大浦智子教授、和田秀樹醫師</div>
+          </div>
+        </div>
+        <div class="ai br">
+          <div class="ai-time">12:05–13:20</div>
+          <div><div class="ai-topic" style="color:var(--gray);">午餐休息</div></div>
+        </div>
+      </div>
+
+      <!-- 下午場 -->
+      <div class="agenda-session">
+        <div class="sess-hd pm">
+          🌙 下午場：失智共生與科技長照
+          <div class="sess-sub">引言人：台中慈濟醫院 簡守信 院長</div>
+        </div>
+
+        <div class="ai">
+          <div class="ai-time">13:20–14:00</div>
+          <div>
+            <div class="ai-topic">（議題確認中）<span class="tbd-badge">即將公布</span></div>
+            <div class="ai-spk">🇹🇼 臺中市政府衛生局 曾梓展 局長</div>
+          </div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">14:00–14:40</div>
+          <div>
+            <div class="ai-topic">邁向失智症共生社會的實現</div>
+            <div class="ai-spk">🇯🇵 日本東北大學加齡研究所 川島隆太 教授</div>
+          </div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">14:40–15:20</div>
+          <div>
+            <div class="ai-topic">以人為本的智慧醫養與失智照護</div>
+            <div class="ai-spk">🇹🇼 台中慈濟醫院 莊淑婷 副院長</div>
+          </div>
+        </div>
+        <div class="ai br">
+          <div class="ai-time">15:20–15:40</div>
+          <div><div class="ai-topic" style="color:var(--gray);">中場休息 Tea Break</div></div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">15:40–16:20</div>
+          <div>
+            <div class="ai-topic">介護數位轉型（DX）的新趨勢</div>
+            <div class="ai-spk">🇯🇵 日本 STAR Consulting Group 糠谷和弘 社長</div>
+          </div>
+        </div>
+        <div class="ai">
+          <div class="ai-time">16:20–17:00</div>
+          <div>
+            <div class="ai-topic">雙向與談</div>
+            <div class="ai-spk">主持：林峻暉會長｜曾梓展局長、川島隆太教授、糠谷和弘社長、莊淑婷副院長</div>
+          </div>
+        </div>
+        <div class="ai br">
+          <div class="ai-time">17:00</div>
+          <div><div class="ai-topic" style="color:var(--gray);">賦歸</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SPEAKERS -->
+<section class="sec" style="background:white;">
+  <div class="sec-inner">
+    <div class="sec-tag">KEYNOTE SPEAKERS</div>
+    <h2 class="sec-title">講師陣容</h2>
+    <div class="spk-grid">
+
+      <!-- 石崇良 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <div class="spk-placeholder">👤</div>
+          <div class="spk-flag">🇹🇼</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">石崇良 部長</div>
+          <div class="spk-title">衛生福利部</div>
+          <div class="spk-topic">邁向台灣長照3.0新時代</div>
+        </div>
+      </div>
+
+      <!-- 大浦智子 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <img src="assets/speakers/oura.jpg" alt="大浦智子教授" loading="lazy">
+          <div class="spk-flag">🇯🇵</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">大浦智子 教授</div>
+          <div class="spk-title">日本國立長壽醫療研究中心<br>LIFE 專案主持人</div>
+          <div class="spk-topic">以提升長照品質與效能為目標之科學化照護資訊系統 — LIFE</div>
+        </div>
+      </div>
+
+      <!-- 和田秀樹 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <img src="assets/speakers/wada.jpg" alt="和田秀樹醫師" loading="lazy">
+          <div class="spk-flag">🇯🇵</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">和田秀樹 醫師</div>
+          <div class="spk-title">日本心靈與身體診所 院長</div>
+          <div class="spk-topic">成功老化 —— 幸齡人生的方程式</div>
+        </div>
+      </div>
+
+      <!-- 曾梓展 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <div class="spk-placeholder">👤</div>
+          <div class="spk-flag">🇹🇼</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">曾梓展 局長</div>
+          <div class="spk-title">臺中市政府衛生局</div>
+          <div class="spk-topic tbd">議題確認中，敬請期待</div>
+        </div>
+      </div>
+
+      <!-- 川島隆太 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <img src="assets/speakers/kawashima.jpg" alt="川島隆太教授" loading="lazy">
+          <div class="spk-flag">🇯🇵</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">川島隆太 教授</div>
+          <div class="spk-title">日本東北大學加齡研究所<br>川島研究室</div>
+          <div class="spk-topic">邁向失智症共生社會的實現</div>
+        </div>
+      </div>
+
+      <!-- 莊淑婷 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <img src="assets/speakers/zhuang.jpg" alt="莊淑婷副院長" loading="lazy">
+          <div class="spk-flag">🇹🇼</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">莊淑婷 副院長</div>
+          <div class="spk-title">台中慈濟醫院</div>
+          <div class="spk-topic">以人為本的智慧醫養與失智照護</div>
+        </div>
+      </div>
+
+      <!-- 糠谷和弘 -->
+      <div class="spk-card">
+        <div class="spk-photo">
+          <img src="assets/speakers/nukaya.jpg" alt="糠谷和弘社長" loading="lazy">
+          <div class="spk-flag">🇯🇵</div>
+        </div>
+        <div class="spk-info">
+          <div class="spk-name">糠谷和弘 社長</div>
+          <div class="spk-title">日本 STAR Consulting Group</div>
+          <div class="spk-topic">介護數位轉型（DX）的新趨勢</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SECOND VISUAL BANNER -->
+<div class="vis-banner">
+  <img src="assets/hero03.jpg" alt="2026臺中長照台日論壇" loading="lazy">
+  <div class="vis-overlay">
+    <div class="vis-text">台日頂尖專家齊聚・共探長照新未來</div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>立即報名，搶先占位</h2>
+  <p>免費參加 · 名額有限 · 敬請從速報名</p>
+  <a href="https://www.beclass.com/rid=30526a96a0e4cc990623" target="_blank" class="btn-cta">
+    線上免費報名 →
+  </a>
+  <span class="cta-url">beclass.com / 台日長照論壇 2026</span>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p><strong>主辦單位</strong>：臺中市政府衛生局 &nbsp;|&nbsp; <strong>委辦單位</strong>：佛教慈濟醫療財團法人台中慈濟醫院</p>
+  <p style="margin-top:.4rem;"><strong>指導單位</strong>：衛生福利部</p>
+  <p style="margin-top:.8rem; font-size:.75rem;">© 2026 臺中長照台日論壇 · 跨域共融智啟長照新時代</p>
+</footer>
+
+<!-- BACK TO DASHBOARD -->
+<a href="index.html" class="back-btn">← 論壇專區</a>
+
+<script>
+  // Navbar scroll effect
+  const nav = document.getElementById('topNav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // Countdown timer to 2026-07-03 09:00 CST
+  (function() {
+    const target = new Date('2026-07-03T09:00:00+08:00').getTime();
+    function pad(n) { return String(n).padStart(2,'0'); }
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        ['cdD','cdH','cdM','cdS'].forEach(id => document.getElementById(id).textContent = '00');
+        return;
+      }
+      document.getElementById('cdD').textContent = pad(Math.floor(diff / 86400000));
+      document.getElementById('cdH').textContent = pad(Math.floor(diff % 86400000 / 3600000));
+      document.getElementById('cdM').textContent = pad(Math.floor(diff % 3600000  / 60000));
+      document.getElementById('cdS').textContent = pad(Math.floor(diff % 60000   / 1000));
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+</script>
+</body>
+</html>
