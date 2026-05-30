@@ -30,6 +30,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3005", "tools/taiwan-japan-care-forum"],
       "port": 3005
+    },
+    {
+      "name": "台日論壇主視覺動畫",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3006", "台日長照論壇/主視覺動畫"],
+      "port": 3006
     }
   ]
 }

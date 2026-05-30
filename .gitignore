@@ -24,3 +24,7 @@ package-lock.json
 *.gdoc
 *.gsheet
 *.gslides
+
+# 設計原始檔（PSD/AI 太大，留 Google Drive 同步，不進 git）
+*.psd
+*.ai
