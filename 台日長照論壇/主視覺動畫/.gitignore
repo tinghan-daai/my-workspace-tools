@@ -2,3 +2,5 @@ frames/
 node_modules/
 .tmp/
 package-lock.json
+test/
+_framesdir.txt
