@@ -405,6 +405,21 @@
       </div>
     </div>
 
+    <div>
+      <label>圖卡數量</label>
+      <div class="row-2">
+        <label class="color-option selected" onclick="selectCardCount(this)" style="justify-content:center;">
+          <input type="radio" name="card-count" value="1" checked>1 張
+        </label>
+        <label class="color-option" onclick="selectCardCount(this)" style="justify-content:center;">
+          <input type="radio" name="card-count" value="2">2 張
+        </label>
+        <label class="color-option" onclick="selectCardCount(this)" style="justify-content:center;">
+          <input type="radio" name="card-count" value="3">3 張
+        </label>
+      </div>
+    </div>
+
     <div class="btn-row">
       <button class="btn btn-primary" onclick="generate()">🪄 產生提示詞</button>
       <button class="btn btn-copy" onclick="clearAll()">清除</button>
@@ -489,7 +504,14 @@
 
   // ── Color 單選 ────────────────────────────────────
   function selectColor(el) {
-    document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+    document.querySelectorAll('#colorOptions .color-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input[type="radio"]').checked = true;
+  }
+
+  // ── CardCount 單選 ────────────────────────────────
+  function selectCardCount(el) {
+    document.querySelectorAll('input[name="card-count"]').forEach(r => r.closest('.color-option').classList.remove('selected'));
     el.classList.add('selected');
     el.querySelector('input[type="radio"]').checked = true;
   }
@@ -510,6 +532,7 @@
     const color       = document.querySelector('input[name="color"]:checked').value;
     const style       = document.getElementById('design-style').value;
     const pointCount  = document.getElementById('point-count').value;
+    const cardCount   = parseInt(document.querySelector('input[name="card-count"]:checked').value);
 
     const formats = [...document.querySelectorAll('#formatOptions input:checked')].map(i => i.value);
 
@@ -534,11 +557,27 @@
     prompt += `\n### 新聞重點\n${points}\n`;
     if (quote) prompt += `\n### 關鍵金句\n${quote}\n`;
 
+    // 多張圖卡的分卡說明
+    const cardStructure = {
+      1: `共 1 張圖卡，集中呈現標題與全部重點。`,
+      2: `共 2 張圖卡，請分開設計：
+  - 第 1 張（封面卡）：大標題 + 副標，視覺衝擊為主，文字精簡
+  - 第 2 張（重點卡）：列出全部 ${pointCount} 個重點，搭配圖示`,
+      3: `共 3 張圖卡，請分開設計：
+  - 第 1 張（封面卡）：大標題 + 副標，視覺衝擊為主
+  - 第 2 張（重點卡）：列出全部 ${pointCount} 個重點，搭配圖示
+  - 第 3 張（金句卡／CTA）：${quote ? `放入金句「${quote}」` : '精選一句最有力的重點做為金句，大字排版'}`,
+    }[cardCount];
+
     prompt += `\n## 圖卡設計規格
+- 圖卡數量：${cardCount} 張
 - 圖卡格式：${formats.join('、')}
 - 配色主題：${color}
 - 設計風格：${style}
-- 圖卡重點數量：${pointCount} 點
+- 每張圖卡重點數量：${pointCount} 點
+
+### 圖卡結構規劃
+${cardStructure}
 
 ## 工作任務
 請依序完成以下工作：
@@ -555,7 +594,7 @@
 - 副標補充說明核心亮點
 
 **3. 設計版面建議**
-說明圖卡版面配置，包括：
+說明每張圖卡的版面配置，包括：
 - 各區塊功能（頂部標籤區、主體重點區、底部日期區）
 - 配色應用（背景色、強調色、文字色的實際 Hex 建議）
 - 字型大小層次：
@@ -565,8 +604,8 @@
   • 日期資訊：24–28pt
 - 視覺元素建議（Icon 風格、線條、幾何裝飾）
 
-**4. 完整圖卡文字稿**
-用 Markdown 輸出圖卡上的所有文字：
+**4. 完整圖卡文字稿（每張分開輸出）**
+${cardCount === 1 ? `用 Markdown 輸出圖卡上的所有文字：
 \`\`\`
 【主標題】
 【副標題（選填）】
@@ -574,8 +613,14 @@
 ▌ 重點一
 ▌ 重點二
 ▌ 重點三
-${pointCount > 3 ? '▌ 重點四\n' : ''}${pointCount > 4 ? '▌ 重點五\n' : ''}
-${quote ? `【金句】${quote}\n` : ''}\`\`\`
+${pointCount > 3 ? '▌ 重點四\n' : ''}${pointCount > 4 ? '▌ 重點五\n' : ''}${quote ? `【金句】${quote}\n` : ''}\`\`\`` :
+Array.from({length: cardCount}, (_,i) => {
+  const labels = ['封面卡', '重點卡', '金句卡／CTA'];
+  return `\`\`\`
+【第 ${i+1} 張：${labels[i]}】
+（請依上方結構規劃填入此張的所有文字內容）
+\`\`\``;
+}).join('\n')}
 
 ## 文字風格規範
 - 語氣專業但親切，代表慈濟精神
