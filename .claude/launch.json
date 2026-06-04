@@ -36,6 +36,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3006", "台日長照論壇/主視覺動畫"],
       "port": 3006
+    },
+    {
+      "name": "新聞稿圖卡產生器",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3007", "tools/press-release-card"],
+      "port": 3007
     }
   ]
 }
