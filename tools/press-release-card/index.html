@@ -215,6 +215,39 @@
     .btn-copy.copied { border-color: var(--accent2); color: var(--accent2); }
     .btn:hover { opacity: 0.88; }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-check { background: var(--surface); border: 1px solid var(--accent3); color: var(--accent3); }
+
+    /* S1 品管面板 */
+    #s1-panel {
+      margin-top: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      display: none;
+    }
+    #s1-panel.show { display: block; }
+    .s1-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .s1-rule { margin-bottom: 8px; }
+    .s1-rule-label { font-weight: 600; }
+    .s1-pass { color: var(--accent2); }
+    .s1-fail { color: #f87171; }
+    .s1-hit { color: var(--muted); margin-left: 12px; font-size: 0.78rem; }
+    .s1-summary {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-weight: 700;
+    }
+    .s1-summary.ok { color: var(--accent2); }
+    .s1-summary.fail { color: #f87171; }
 
     /* 貼入新聞稿快捷 */
     .paste-hint {
@@ -442,7 +475,9 @@
     <div class="btn-row">
       <button class="btn btn-copy" id="copyBtn" onclick="copyPrompt()" disabled>複製提示詞</button>
       <button class="btn btn-secondary" id="copyCardBtn" onclick="copyCardPrompt()" disabled style="display:none;">複製圖卡文字稿</button>
+      <button class="btn btn-check" onclick="runS1Check()">S1 文字品管</button>
     </div>
+    <div id="s1-panel"></div>
     <div class="tip">
       💡 <strong>使用流程：</strong>複製提示詞 → 貼到任意 AI 對話 → AI 輸出圖卡文字稿與設計建議 → 帶入 Canva/Figma 製作 → 完成！
     </div>
@@ -623,6 +658,120 @@ ${pointCount > 3 ? `▌ 重點 ${i+1}-4\n` : ''}${i === cardCount-1 && quote ? `
     // Extract just the card text draft section
     const match = generatedPrompt.match(/```([\s\S]*?)```/);
     if (match) copyText(match[1].trim(), 'copyCardBtn', '複製圖卡文字稿', '已複製圖卡文字稿 ✓');
+  }
+
+  // ── S1 機械品管（台灣中文硬規則）────────────────────
+  function runS1Check() {
+    const raw = document.getElementById('full-text').value.trim()
+             || document.getElementById('title').value + '\n'
+             + document.getElementById('points').value + '\n'
+             + document.getElementById('quote').value;
+    if (!raw) { alert('請先貼入新聞稿全文（或至少填入標題與重點）'); return; }
+
+    const rules = [
+      {
+        label: '大陸用語',
+        words: ['視頻','在線','網絡','批量','項目','數據','軟件','信息','質量','默認','鏈接','互聯網','範式轉換','公眾號'],
+        type: 'word',
+      },
+      {
+        label: 'API 術語（慈濟新聞不適用）',
+        words: ['打 API call','呼叫 API','API 呼叫','打 API','API call'],
+        type: 'word',
+      },
+      {
+        label: '開場推銷詞',
+        words: ['該停下來看','值得重視','不可不知','不得不','你必須','建議先收藏','再不學就來不及'],
+        type: 'word',
+      },
+      {
+        label: '結論引導／雜訊框架詞',
+        patterns: [
+          /(?:^|[。！？；])\s*(其實|老實說|坦白說|坦白講|說真的|講真的|我記得|不得不說|怎麼說呢)/,
+          /真正(難|值錢|重要|關鍵)的/,
+          /說穿了/,
+          /歸根究[底柢]/,
+          /這正?是重點/,
+          /值得(注意|一提)的是/,
+        ],
+        type: 'pattern',
+      },
+      {
+        label: '段落引導語贅字（第 N 個 X）',
+        patterns: [/第[一二三四五六七八九十]個(趨勢|發現|觀察|重點|反直覺|關鍵)/],
+        type: 'pattern',
+      },
+      {
+        label: '半形標點（中文上下文）',
+        type: 'halfpunct',
+      },
+    ];
+
+    const lines = raw.split('\n');
+    let anyFail = false;
+    let html = '<div class="s1-title">S1 機械閘掃描結果</div>';
+
+    for (const rule of rules) {
+      let hits = [];
+
+      if (rule.type === 'word') {
+        lines.forEach((line, i) => {
+          rule.words.forEach(w => {
+            if (line.includes(w)) hits.push(`L${i+1}: …${line.slice(Math.max(0,line.indexOf(w)-6), line.indexOf(w)+w.length+6)}…`);
+          });
+        });
+      } else if (rule.type === 'pattern') {
+        lines.forEach((line, i) => {
+          rule.patterns.forEach(p => {
+            if (p.test(line)) {
+              const m = line.match(p);
+              hits.push(`L${i+1}: …${m ? m[0] : line.slice(0,20)}…`);
+            }
+          });
+        });
+      } else if (rule.type === 'halfpunct') {
+        const cjk = /[一-鿿　-〿＀-￯]/;
+        const half = new Set([',',':','?','(',')',';','!']);
+        lines.forEach((line, i) => {
+          // 跳過 URL 和 code
+          const cleaned = line.replace(/https?:\/\/\S+/g, '').replace(/`[^`]+`/g, '');
+          for (let j = 0; j < cleaned.length; j++) {
+            if (!half.has(cleaned[j])) continue;
+            const left = j > 0 ? cleaned[j-1] : '';
+            const right = j < cleaned.length-1 ? cleaned[j+1] : '';
+            if (left.match(/\d/) && right.match(/\d/)) continue;
+            if (!cjk.test(left) && !cjk.test(right)) continue;
+            const ctx = cleaned.slice(Math.max(0,j-5), j+6);
+            hits.push(`L${i+1}: 半形 "${cleaned[j]}" → …${ctx}…`);
+          }
+        });
+      }
+
+      const pass = hits.length === 0;
+      if (!pass) anyFail = true;
+      html += `<div class="s1-rule">`;
+      html += `<span class="s1-rule-label ${pass ? 's1-pass' : 's1-fail'}">${pass ? '✅' : '❌'} ${rule.label}`;
+      if (!pass) html += ` (${hits.length} 處)`;
+      html += '</span>';
+      if (!pass) {
+        hits.slice(0, 5).forEach(h => {
+          html += `<div class="s1-hit">${h.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+        });
+        if (hits.length > 5) html += `<div class="s1-hit">… 共 ${hits.length} 處，顯示前 5</div>`;
+      }
+      html += '</div>';
+    }
+
+    html += `<div class="s1-summary ${anyFail ? 'fail' : 'ok'}">`;
+    html += anyFail
+      ? '❌ 有命中項，請修正後重新掃描。'
+      : '✅ S1 全數通過！可繼續 S2 自審。';
+    html += '</div>';
+
+    const panel = document.getElementById('s1-panel');
+    panel.innerHTML = html;
+    panel.classList.add('show');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function copyText(text, btnId, defaultLabel, copiedLabel) {
