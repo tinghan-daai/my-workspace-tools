@@ -533,6 +533,7 @@
 
   // ── Format 多選 ──────────────────────────────────
   function toggleFmt(el) {
+    event.preventDefault();
     el.classList.toggle('selected');
     el.querySelector('input[type="checkbox"]').checked = el.classList.contains('selected');
   }
