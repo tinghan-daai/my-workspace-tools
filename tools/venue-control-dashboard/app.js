@@ -1,4 +1,5 @@
 const storageKey = "venue-control-dashboard-v1";
+const publicDashboardUrl = "file:///Users/tcdopc003/Library/CloudStorage/GoogleDrive-tinghan@gmail.com/%E6%88%91%E7%9A%84%E9%9B%B2%E7%AB%AF%E7%A1%AC%E7%A2%9F/my-workspace-tools/tools/pr-dashboard/index.html";
 
 const seedItems = [
   ["指示牌", 1, "活動會場方向", "2", "60x160", "", "待確認", "中"],
@@ -46,9 +47,14 @@ const els = {
   categoryFilter: document.querySelector("#categoryFilter"),
   exportCsv: document.querySelector("#exportCsv"),
   resetData: document.querySelector("#resetData"),
+  backDashboard: document.querySelector("#backDashboard"),
 };
 
 let items = loadItems();
+
+if (location.protocol === "file:" && location.pathname.includes("/2026codex/outputs/venue-control-dashboard-web/")) {
+  els.backDashboard.href = publicDashboardUrl;
+}
 
 function isoDateAfter(days) {
   const date = new Date();
