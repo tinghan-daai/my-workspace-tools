@@ -365,28 +365,28 @@
 
     <!-- 格式 -->
     <div>
-      <label>圖卡格式 <small style="font-size:0.78rem;color:var(--muted)">（可複選）</small></label>
+      <label>圖卡格式</label>
       <div class="format-options" id="formatOptions">
-        <label class="fmt-option selected" onclick="toggleFmt(this)">
-          <input type="checkbox" value="4:3 橫式（1200×900px，新聞圖卡）" checked>
+        <label class="fmt-option selected" onclick="selectFmt(this)">
+          <input type="radio" name="fmt" value="4:3 橫式（1200×900px，新聞圖卡）" checked>
           <div class="fmt-thumb" style="width:52px;height:39px;"></div>
           <div class="fmt-name">4:3 橫式</div>
           <div class="fmt-desc">新聞圖卡</div>
         </label>
-        <label class="fmt-option" onclick="toggleFmt(this)">
-          <input type="checkbox" value="1:1 方形（1080×1080px，IG 貼文）">
+        <label class="fmt-option" onclick="selectFmt(this)">
+          <input type="radio" name="fmt" value="1:1 方形（1080×1080px，IG 貼文）">
           <div class="fmt-thumb" style="width:40px;height:40px;"></div>
           <div class="fmt-name">1:1 方形</div>
           <div class="fmt-desc">IG 貼文</div>
         </label>
-        <label class="fmt-option" onclick="toggleFmt(this)">
-          <input type="checkbox" value="16:9 橫式（1200×675px，FB 封面）">
+        <label class="fmt-option" onclick="selectFmt(this)">
+          <input type="radio" name="fmt" value="16:9 橫式（1200×675px，FB 封面）">
           <div class="fmt-thumb" style="width:56px;height:32px;"></div>
           <div class="fmt-name">16:9 橫式</div>
           <div class="fmt-desc">FB 封面</div>
         </label>
-        <label class="fmt-option" onclick="toggleFmt(this)">
-          <input type="checkbox" value="9:16 直式（1080×1920px，限時動態）">
+        <label class="fmt-option" onclick="selectFmt(this)">
+          <input type="radio" name="fmt" value="9:16 直式（1080×1920px，限時動態）">
           <div class="fmt-thumb" style="width:28px;height:50px;"></div>
           <div class="fmt-name">9:16 直式</div>
           <div class="fmt-desc">限時動態</div>
@@ -531,11 +531,12 @@
     if (points.length) document.getElementById('points').value = points.join('\n');
   }
 
-  // ── Format 多選 ──────────────────────────────────
-  function toggleFmt(el) {
+  // ── Format 單選 ──────────────────────────────────
+  function selectFmt(el) {
     event.preventDefault();
-    el.classList.toggle('selected');
-    el.querySelector('input[type="checkbox"]').checked = el.classList.contains('selected');
+    document.querySelectorAll('#formatOptions .fmt-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input[type="radio"]').checked = true;
   }
 
   // ── Color 單選 ────────────────────────────────────
@@ -570,7 +571,8 @@
     const pointCount  = document.getElementById('point-count').value;
     const cardCount   = parseInt(document.querySelector('input[name="card-count"]:checked').value);
 
-    const formats = [...document.querySelectorAll('#formatOptions input:checked')].map(i => i.value);
+    const fmtChecked = document.querySelector('#formatOptions input[type="radio"]:checked');
+    const formats = fmtChecked ? [fmtChecked.value] : [];
 
     if (!title) {
       alert('請填入新聞標題！');
