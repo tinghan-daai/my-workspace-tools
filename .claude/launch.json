@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "儀表板",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3000", "."],
+      "port": 3000
+    },
+    {
       "name": "座標獵人",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3001", "tools/coordinate-hunter"],
