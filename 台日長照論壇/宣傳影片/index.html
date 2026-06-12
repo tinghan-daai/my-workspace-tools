@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>2026 臺中長照台日論壇 宣傳影片</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0e1d35;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+
+  /* ── KV background ── */
+  .bg {
+    position: absolute; inset: 0;
+    background: url('assets/kv.jpg') center/cover no-repeat;
+    transform-origin: center;
+  }
+  .bg-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(10,24,50,0.82) 0%, rgba(10,24,50,0.55) 60%, rgba(10,24,50,0.78) 100%);
+  }
+
+  /* ── Pages ── */
+  .page {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+  }
+  .page.active { opacity: 1; pointer-events: auto; }
+
+  /* ── Gold shimmer keyframe ── */
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  @keyframes slideRight {
+    from { opacity: 0; transform: translateX(-60px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .gold {
+    background: linear-gradient(90deg, #c9a84c 0%, #f0d060 40%, #c9a84c 60%, #f0d060 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  /* ======= P1 — Hook ======= */
+  #p1 .center-block {
+    text-align: center;
+    animation: fadeIn 1s ease both;
+  }
+  #p1 .tag {
+    font-size: 28px; letter-spacing: 6px; color: #c9a84c;
+    margin-bottom: 32px; animation: fadeUp 0.8s 0.3s ease both;
+  }
+  #p1 .main-title {
+    font-size: 100px; font-weight: 900; line-height: 1.15;
+    color: #fff; text-shadow: 0 4px 32px rgba(0,0,0,0.7);
+    animation: fadeUp 0.9s 0.5s ease both;
+  }
+  #p1 .sub-title {
+    font-size: 36px; color: #e0d0b0; letter-spacing: 4px; margin-top: 24px;
+    animation: fadeUp 0.8s 0.9s ease both;
+  }
+
+  /* ======= P2 — 基本資訊 ======= */
+  #p2 .info-block {
+    display: flex; flex-direction: column; align-items: center; gap: 40px;
+    text-align: center;
+  }
+  #p2 .label {
+    font-size: 26px; letter-spacing: 8px; color: #c9a84c;
+    animation: fadeIn 0.6s 0.2s ease both;
+  }
+  #p2 .big-date {
+    font-size: 120px; font-weight: 900; color: #fff; line-height: 1;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+  #p2 .divider {
+    width: 200px; height: 3px; background: #c9a84c;
+    animation: fadeIn 0.6s 0.8s ease both;
+  }
+  #p2 .venue {
+    font-size: 40px; color: #e8f0f8; letter-spacing: 2px;
+    animation: fadeUp 0.8s 1s ease both;
+  }
+  #p2 .time-info {
+    font-size: 28px; color: #c9a84c;
+    animation: fadeUp 0.6s 1.2s ease both;
+  }
+
+  /* ======= P3 — 主題亮點 ======= */
+  #p3 .theme-block {
+    display: flex; flex-direction: column; align-items: center; gap: 48px;
+    text-align: center; padding: 0 120px;
+  }
+  #p3 .theme-title {
+    font-size: 56px; font-weight: 900; letter-spacing: 4px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+  #p3 .cards {
+    display: flex; gap: 40px;
+  }
+  #p3 .card {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 16px; padding: 40px 48px; width: 480px;
+    backdrop-filter: blur(8px);
+  }
+  #p3 .card:nth-child(1) { animation: fadeUp 0.7s 0.5s ease both; }
+  #p3 .card:nth-child(2) { animation: fadeUp 0.7s 0.8s ease both; }
+  #p3 .card:nth-child(3) { animation: fadeUp 0.7s 1.1s ease both; }
+  #p3 .card-icon { font-size: 48px; margin-bottom: 16px; }
+  #p3 .card-head { font-size: 30px; font-weight: 700; color: #c9a84c; margin-bottom: 12px; }
+  #p3 .card-body { font-size: 22px; color: #e0d0b0; line-height: 1.6; }
+
+  /* ======= P4 — 講者 ======= */
+  #p4 .speaker-block {
+    display: flex; flex-direction: column; align-items: center; gap: 40px;
+    text-align: center;
+  }
+  #p4 .sec-label {
+    font-size: 28px; letter-spacing: 6px; color: #c9a84c;
+    animation: fadeIn 0.6s 0.2s ease both;
+  }
+  #p4 .speakers {
+    display: flex; gap: 48px; align-items: flex-start;
+  }
+  #p4 .spk {
+    display: flex; flex-direction: column; align-items: center; gap: 12px; width: 340px;
+  }
+  #p4 .spk:nth-child(1) { animation: fadeUp 0.7s 0.4s ease both; }
+  #p4 .spk:nth-child(2) { animation: fadeUp 0.7s 0.7s ease both; }
+  #p4 .spk:nth-child(3) { animation: fadeUp 0.7s 1.0s ease both; }
+  #p4 .spk-avatar {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: rgba(201,168,76,0.2); border: 3px solid #c9a84c;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px;
+  }
+  #p4 .spk-name { font-size: 34px; font-weight: 700; color: #fff; }
+  #p4 .spk-role { font-size: 20px; color: #c9a84c; line-height: 1.5; }
+  #p4 .spk-title { font-size: 18px; color: #b0c0d8; line-height: 1.5; }
+
+  /* ======= P5 — 主辦 ======= */
+  #p5 .org-block {
+    display: flex; flex-direction: column; align-items: center; gap: 48px;
+    text-align: center;
+  }
+  #p5 .sec-label {
+    font-size: 28px; letter-spacing: 6px; color: #c9a84c;
+    animation: fadeIn 0.6s 0.2s ease both;
+  }
+  #p5 .org-row {
+    display: flex; flex-direction: column; gap: 24px;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+  #p5 .org-item { display: flex; align-items: center; gap: 20px; }
+  #p5 .org-badge {
+    font-size: 18px; padding: 6px 18px; border-radius: 20px;
+    background: rgba(201,168,76,0.2); border: 1px solid #c9a84c;
+    color: #c9a84c; white-space: nowrap;
+  }
+  #p5 .org-name { font-size: 32px; color: #fff; font-weight: 600; text-align: left; }
+  #p5 .guidance {
+    font-size: 24px; color: #b0c0d8;
+    animation: fadeIn 0.6s 1s ease both;
+  }
+
+  /* ======= P6 — QR Code ======= */
+  #p6 .qr-block {
+    display: flex; flex-direction: column; align-items: center; gap: 40px;
+  }
+  #p6 .sec-label {
+    font-size: 32px; letter-spacing: 6px; color: #c9a84c;
+    animation: fadeIn 0.6s 0.2s ease both;
+  }
+  #p6 .qr-row {
+    display: flex; gap: 80px; align-items: flex-start;
+    animation: scaleIn 0.8s 0.4s ease both;
+  }
+  #p6 .qr-item {
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+  }
+  #p6 .qr-frame {
+    background: #fff; padding: 16px; border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #p6 .qr-frame img { width: 220px; height: 220px; display: block; }
+  #p6 .qr-label {
+    font-size: 26px; color: #fff; font-weight: 700; letter-spacing: 2px;
+  }
+  #p6 .qr-sub { font-size: 18px; color: #c9a84c; }
+
+  /* ======= P7 — Outro ======= */
+  #p7 .outro-block {
+    text-align: center; animation: fadeIn 1.2s 0.3s ease both;
+  }
+  #p7 .outro-sub {
+    font-size: 32px; letter-spacing: 8px; color: #c9a84c; margin-bottom: 24px;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+  #p7 .outro-title {
+    font-size: 90px; font-weight: 900; line-height: 1.2; color: #fff;
+    text-shadow: 0 4px 32px rgba(0,0,0,0.6);
+    animation: fadeUp 0.9s 0.7s ease both;
+  }
+  #p7 .outro-year {
+    font-size: 36px; color: #c9a84c; margin-top: 20px; letter-spacing: 4px;
+    animation: fadeUp 0.7s 1s ease both;
+  }
+
+  /* ── render mode: hide cursor overlay ── */
+  body.render * { cursor: none !important; }
+</style>
+</head>
+<body>
+
+<!-- KV Background -->
+<div class="bg" id="bg"></div>
+<div class="bg-overlay"></div>
+
+<!-- P1: Hook -->
+<div class="page" id="p1">
+  <div class="center-block">
+    <div class="tag">2026 TAICHUNG LONG-TERM CARE FORUM</div>
+    <div class="main-title"><span class="gold">台日長照論壇</span></div>
+    <div class="sub-title">當台灣遇見日本，長照的未來，在這裡展開</div>
+  </div>
+</div>
+
+<!-- P2: 日期地點 -->
+<div class="page" id="p2">
+  <div class="info-block">
+    <div class="label">活動資訊</div>
+    <div class="big-date"><span class="gold">7.3</span></div>
+    <div class="divider"></div>
+    <div class="venue">裕元花園酒店 B1 國際演講廳</div>
+    <div class="time-info">115年7月3日（五）9:00 – 17:00　｜　8:30 開始報到</div>
+  </div>
+</div>
+
+<!-- P3: 主題亮點 -->
+<div class="page" id="p3">
+  <div class="theme-block">
+    <div class="theme-title"><span class="gold">跨域共融</span>　智啟長照新時代</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-head">長照 3.0 政策</div>
+        <div class="card-body">台灣長照政策最新方向，邁向新時代照護藍圖</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔬</div>
+        <div class="card-head">科學化照護</div>
+        <div class="card-body">日本 LIFE 系統實踐，以實證提升長照品質效能</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌿</div>
+        <div class="card-head">成功老化</div>
+        <div class="card-body">幸齡人生方程式，日本專家分享高齡健康智慧</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P4: 講者 -->
+<div class="page" id="p4">
+  <div class="speaker-block">
+    <div class="sec-label">主講嘉賓</div>
+    <div class="speakers">
+      <div class="spk">
+        <div class="spk-avatar">🎖️</div>
+        <div class="spk-name">石崇良 部長</div>
+        <div class="spk-role">衛生福利部</div>
+        <div class="spk-title">邁向台灣長照 3.0 新時代</div>
+      </div>
+      <div class="spk">
+        <div class="spk-avatar">🔬</div>
+        <div class="spk-name">大浦智子 教授</div>
+        <div class="spk-role">日本國立長壽<br>醫療研究中心</div>
+        <div class="spk-title">LIFE 科學化照護資訊系統</div>
+      </div>
+      <div class="spk">
+        <div class="spk-avatar">🌿</div>
+        <div class="spk-name">和田秀樹 醫師</div>
+        <div class="spk-role">日本心靈與<br>身體診所院長</div>
+        <div class="spk-title">成功老化 — 幸齡人生的方程式</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P5: 主辦單位 -->
+<div class="page" id="p5">
+  <div class="org-block">
+    <div class="sec-label">主辦單位</div>
+    <div class="org-row">
+      <div class="org-item">
+        <span class="org-badge">指導</span>
+        <span class="org-name">衛生福利部</span>
+      </div>
+      <div class="org-item">
+        <span class="org-badge">主辦</span>
+        <span class="org-name">臺中市政府衛生局</span>
+      </div>
+      <div class="org-item">
+        <span class="org-badge">承辦</span>
+        <span class="org-name">佛教慈濟醫療財團法人台中慈濟醫院</span>
+      </div>
+    </div>
+    <div class="guidance">聚焦高齡照護的每一個細節</div>
+  </div>
+</div>
+
+<!-- P6: QR Code -->
+<div class="page" id="p6">
+  <div class="qr-block">
+    <div class="sec-label">立即參與</div>
+    <div class="qr-row">
+      <div class="qr-item">
+        <div class="qr-frame">
+          <img src="assets/qr-register.png" alt="活動報名">
+        </div>
+        <div class="qr-label">活動報名</div>
+        <div class="qr-sub">掃碼完成報名</div>
+      </div>
+      <div class="qr-item">
+        <div class="qr-frame">
+          <img src="assets/qr-website.png" alt="官方網站">
+        </div>
+        <div class="qr-label">官方網站</div>
+        <div class="qr-sub">了解更多資訊</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- P7: Outro -->
+<div class="page" id="p7">
+  <div class="outro-block">
+    <div class="outro-sub">2026 TAICHUNG</div>
+    <div class="outro-title"><span class="gold">臺中長照</span><br>台日論壇</div>
+    <div class="outro-year">等你來　— 115年7月3日</div>
+  </div>
+</div>
+
+<script>
+const PAGES = [
+  { id: 'p1', dur: 7000  },
+  { id: 'p2', dur: 10000 },
+  { id: 'p3', dur: 15000 },
+  { id: 'p4', dur: 11000 },
+  { id: 'p5', dur: 10000 },
+  { id: 'p6', dur: 10000 },
+  { id: 'p7', dur: 7000  },
+];
+
+const isRender = new URLSearchParams(location.search).get('render') === 'true';
+if (isRender) document.body.classList.add('render');
+
+let current = 0;
+const audios = PAGES.map(p => {
+  const a = new Audio(`assets/${p.id}.mp3`);
+  a.preload = 'auto';
+  return a;
+});
+
+function showPage(idx) {
+  PAGES.forEach((p, i) => {
+    const el = document.getElementById(p.id);
+    el.classList.toggle('active', i === idx);
+  });
+}
+
+async function play() {
+  showPage(current);
+  if (!isRender) audios[current].play().catch(() => {});
+
+  await new Promise(r => setTimeout(r, PAGES[current].dur));
+
+  // cross-fade
+  const curr = document.getElementById(PAGES[current].id);
+  curr.style.transition = 'opacity 0.6s';
+  curr.style.opacity = '0';
+  await new Promise(r => setTimeout(r, 600));
+  curr.style.transition = '';
+  curr.style.opacity = '';
+
+  current = (current + 1) % PAGES.length;
+  play();
+}
+
+window.addEventListener('load', () => {
+  // slow KV zoom
+  document.getElementById('bg').style.transition = 'transform 70s linear';
+  document.getElementById('bg').style.transform = 'scale(1.08)';
+  setTimeout(play, 300);
+});
+</script>
+</body>
+</html>

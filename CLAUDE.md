@@ -24,6 +24,7 @@
 - **檔案轉 Markdown** `tools/file-to-md/` — PDF / Word / PPT / 圖片 → .md，純瀏覽器；掃描檔走 tesseract.js OCR（繁中＋英文）
 - **AI 代理人入門** `tools/ai-agent-intro/` — 給同事的 10 張簡報 + 5 頁報告（.pptx / .docx）；附 build 腳本可重新生成
 - **Cozy Rain Piano** `tools/cozy-rain-piano/` — 全自動 YouTube 睡眠音樂 pipeline：CC0 圖像 + Ken Burns ffmpeg + Claude SEO + YouTube API 每日自動上傳；英文市場關鍵字 `Cozy Rain Piano`
+- **生成圖片客製化機器** `tools/ai-image-params/` — AI 生圖 7 大參數（Prompt／Negative／Steps／CFG／Seed／長寬比／解析度）滑桿＋下拉即時調節，輸出文字／YAML／偽代碼三格式可一鍵複製；純瀏覽器
 - **影片製作 Kit** `tools/video-kit/` — 給 Claude Code 用的三類影片製作範本（活動紀錄／教學／社群科普）：純 CSS/JS + Playwright + Edge-TTS 旁白 + ffmpeg，已內建 Windows/中文/GDrive 避坑（見 `GOTCHAS.md`）。做影片時讀 `tools/video-kit/CLAUDE.md` 進流程；鐵律＝先寫 SCRIPT.md + DESIGN.md 給我審、說「go」才動工。來源 fork 自 mathruffian-dot/claude-code-video-kit
 
 ## 設計工具（open-design）

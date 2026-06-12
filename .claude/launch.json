@@ -42,6 +42,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3007", "tools/press-release-card"],
       "port": 3007
+    },
+    {
+      "name": "生成圖片客製化機器",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3008", "tools/ai-image-params"],
+      "port": 3008
     }
   ]
 }
