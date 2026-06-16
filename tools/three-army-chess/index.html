@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三軍棋 — 陸海空對戰</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1b1f17;
+    color: #e8e4d8;
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px 60px;
+  }
+  h1 {
+    font-size: 1.8rem;
+    color: #d4af37;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    text-shadow: 0 0 10px #d4af3755;
+  }
+  .subtitle { font-size: 0.8rem; color: #9a9586; margin-bottom: 16px; }
+
+  .layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ── 控制列 ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    background: #3a4030;
+    color: #e8e4d8;
+    border: 1px solid #6b6f55;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button:hover { background: #4d5440; }
+  button:disabled { opacity: 0.4; cursor: default; }
+
+  .status {
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    background: #262b1f;
+    border: 1px solid #4a4f3c;
+    min-width: 280px;
+    text-align: center;
+  }
+  .status.win { color: #7ad17a; border-color: #7ad17a; }
+  .status.lose { color: #d17a7a; border-color: #d17a7a; }
+  .status.turn-human { color: #6fb3d4; }
+  .status.turn-ai { color: #d49a6f; }
+
+  /* ── 棋盤 ── */
+  #board {
+    display: grid;
+    grid-template-columns: repeat(11, 42px);
+    grid-template-rows: repeat(12, 42px);
+    gap: 2px;
+    background: #0e110a;
+    padding: 4px;
+    border-radius: 8px;
+    border: 2px solid #4a4f3c;
+  }
+  .cell {
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+    position: relative;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: default;
+    user-select: none;
+  }
+  .cell.land-A { background: #3a2f2f; }
+  .cell.land-B { background: #2b3a2f; }
+  .cell.water { background: #1e3a4d; }
+  .cell.bridge { background: #4d4030; }
+  .cell.camp::after {
+    content: ''; position: absolute; inset: 4px;
+    border: 1px dashed #d4af3799; border-radius: 3px; pointer-events: none;
+  }
+  .cell.city { box-shadow: inset 0 0 0 2px #d4af3766; }
+  .cell.airport { box-shadow: inset 0 0 0 2px #6fb3d466; }
+  .cell.rail::before {
+    content: ''; position: absolute; left: 2px; right: 2px; top: 50%;
+    height: 2px; background: repeating-linear-gradient(90deg,#999 0 4px,transparent 4px 7px);
+    transform: translateY(-50%); pointer-events: none; opacity: .5;
+  }
+  .cell.selectable { cursor: pointer; }
+  .cell.selectable:hover { outline: 2px solid #d4af37; }
+  .cell.legal-move { outline: 2px solid #6fd46f; }
+  .cell.legal-capture { outline: 2px solid #d46f6f; }
+  .cell.selected { outline: 3px solid #ffffff; }
+
+  .piece {
+    width: 36px; height: 36px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 900;
+    box-shadow: 0 1px 3px #0008;
+    border: 1px solid #0006;
+  }
+  .piece.side-B { background: #3f6fa8; color: #fff; }
+  .piece.side-A { background: #a8463f; color: #fff; }
+  .piece.hidden { background: #555; color: #ccc; font-size: 0.7rem; }
+  .piece.revealed.side-A { background: #a8463f; }
+  .piece.dead-flag { background: #d4af37; color: #1b1f17; }
+
+  /* ── 側欄 ── */
+  .sidebar {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .panel {
+    background: #232a1c;
+    border: 1px solid #4a4f3c;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+  .panel h3 { font-size: 0.85rem; color: #d4af37; margin-bottom: 8px; }
+  .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-chip {
+    width: 22px; height: 22px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 900; color: #fff; background: #555;
+    flex-shrink: 0;
+  }
+  details summary { cursor: pointer; color: #9fc97f; margin-bottom: 6px; }
+  .log {
+    max-height: 160px; overflow-y: auto;
+    font-size: 0.74rem; color: #b8b3a3;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+</style>
+</head>
+<body>
+
+<h1>⚔️ 三軍棋 — 陸海空對戰</h1>
+<div class="subtitle">單人 vs 電腦・規則完整版（見右側說明）</div>
+
+<div class="controls">
+  <button id="newGameBtn">開始新局 / 重新佈陣</button>
+  <button id="rulesBtn">顯示/隱藏規則摘要</button>
+</div>
+
+<div class="status turn-human" id="statusBar">準備開始</div>
+
+<div class="layout">
+  <div id="board"></div>
+
+  <div class="sidebar">
+    <div class="panel" id="rulesPanel" style="display:none;">
+      <h3>規則摘要</h3>
+      <p>🔵 你（藍）在下方，🔴 電腦（紅）在上方。點自己的棋子看可走的格子（綠框=可走，紅框=可吃），再點目的地移動。</p>
+      <p style="margin-top:6px;">虛線格＝行營（站進去不會被吃）。內框金色＝城市（軍旗藏在裡面）。內框藍色＝機場（飛機起點）。斜線格＝鐵路（陸軍可滑行任意距離）。</p>
+      <p style="margin-top:6px;">完整規則見同資料夾 <code>RULES.md</code>。</p>
+    </div>
+    <div class="panel">
+      <h3>戰力對照表</h3>
+      <div class="legend-grid">
+        <div class="legend-item"><div class="legend-chip">司</div>司令 11</div>
+        <div class="legend-item"><div class="legend-chip">機</div>戰鬥機 20</div>
+        <div class="legend-item"><div class="legend-chip">軍</div>軍長 10</div>
+        <div class="legend-item"><div class="legend-chip">主</div>主力艦 9</div>
+        <div class="legend-item"><div class="legend-chip">師</div>師長 9</div>
+        <div class="legend-item"><div class="legend-chip">巡</div>巡洋艦 8</div>
+        <div class="legend-item"><div class="legend-chip">團</div>團長 8</div>
+        <div class="legend-item"><div class="legend-chip">騎</div>騎兵 7</div>
+        <div class="legend-item"><div class="legend-chip">驅</div>驅逐艦 6</div>
+        <div class="legend-item"><div class="legend-chip">營</div>營長 6</div>
+        <div class="legend-item"><div class="legend-chip">潛</div>潛水艇 5</div>
+        <div class="legend-item"><div class="legend-chip">連</div>連長 5</div>
+        <div class="legend-item"><div class="legend-chip">排</div>排長 4</div>
+        <div class="legend-item"><div class="legend-chip">炮</div>炮艦 3</div>
+        <div class="legend-item"><div class="legend-chip">工</div>工兵 3（拆雷）</div>
+        <div class="legend-item"><div class="legend-chip">偵</div>偵察機 1</div>
+        <div class="legend-item"><div class="legend-chip">雷</div>地雷（陷阱）</div>
+        <div class="legend-item"><div class="legend-chip">炸</div>炸彈（同歸於盡）</div>
+        <div class="legend-item"><div class="legend-chip">旗</div>軍旗（被吃即敗）</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>戰報</h3>
+      <div class="log" id="logPanel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 常數與棋盤定義 ============ */
+const ROWS = 12, COLS = 11;
+
+function inZoneA(r){ return r>=0 && r<=4; }
+function inZoneB(r){ return r>=7 && r<=11; }
+function isSeaRow(r){ return r===5 || r===6; }
+
+const CAMPS = [[2,3],[2,7],[3,4],[3,6],[9,3],[9,7],[8,4],[8,6]];
+const CITIES = [[0,0],[0,5],[0,10],[11,0],[11,5],[11,10]];
+const AIRPORTS = [[1,0],[1,10],[10,0],[10,10]];
+const RAIL_ROWS = [0,5,10];
+
+function key(r,c){ return r+'_'+c; }
+function has(list,r,c){ return list.some(p=>p[0]===r&&p[1]===c); }
+
+function terrainOf(r,c){
+  if(inZoneA(r) || inZoneB(r)) return 'land';
+  if(isSeaRow(r)) return (c===0||c===10) ? 'bridge' : 'water';
+  return 'void';
+}
+function zoneOf(r,c){
+  if(inZoneA(r)) return 'A';
+  if(inZoneB(r)) return 'B';
+  return 'sea';
+}
+function isCamp(r,c){ return has(CAMPS,r,c); }
+function isCity(r,c){ return has(CITIES,r,c); }
+function isAirport(r,c){ return has(AIRPORTS,r,c); }
+function isRail(r,c){
+  if(!RAIL_ROWS.includes(r)) return false;
+  const t = terrainOf(r,c);
+  return t==='land' || t==='bridge';
+}
+
+/* ============ 棋子定義 ============ */
+// domain: ground / navy / air   type 用於特殊規則判斷
+const ROSTER = [
+  {type:'flag', label:'旗', count:1, rank:0, domain:'ground'},
+  {type:'commander', label:'司', count:1, rank:11, domain:'ground'},
+  {type:'general', label:'軍', count:1, rank:10, domain:'ground'},
+  {type:'division', label:'師', count:1, rank:9, domain:'ground'},
+  {type:'regiment', label:'團', count:2, rank:8, domain:'ground'},
+  {type:'cavalry', label:'騎', count:1, rank:7, domain:'ground'},
+  {type:'battalion', label:'營', count:2, rank:6, domain:'ground'},
+  {type:'company', label:'連', count:2, rank:5, domain:'ground'},
+  {type:'platoon', label:'排', count:2, rank:4, domain:'ground'},
+  {type:'engineer', label:'工', count:3, rank:3, domain:'ground'},
+  {type:'mine', label:'雷', count:3, rank:null, domain:'ground'},
+  {type:'bomb', label:'炸', count:2, rank:null, domain:'ground'},
+  {type:'fighter', label:'機', count:1, rank:20, domain:'air'},
+  {type:'recon', label:'偵', count:1, rank:1, domain:'air'},
+  {type:'battleship', label:'主', count:1, rank:9, domain:'navy'},
+  {type:'cruiser', label:'巡', count:1, rank:8, domain:'navy'},
+  {type:'destroyer', label:'驅', count:1, rank:6, domain:'navy'},
+  {type:'submarine', label:'潛', count:1, rank:5, domain:'navy'},
+  {type:'gunboat', label:'炮', count:1, rank:3, domain:'navy'},
+];
+const VALUE = {
+  flag:0, commander:11, general:10, division:9, regiment:8, cavalry:7,
+  battalion:6, company:5, platoon:4, engineer:3, mine:4, bomb:6,
+  fighter:12, recon:2, battleship:9, cruiser:8, destroyer:6, submarine:5, gunboat:3
+};
+
+/* ============ 遊戲狀態 ============ */
+let board; // board[r][c] = pieceId or null
+let pieces; // {id,side,type,label,rank,domain,row,col,alive,revealed}
+let pid = 0;
+let turn = 'human'; // human = B(藍,下方), ai = A(紅,上方)
+let selected = null;
+let legalMoves = [];
+let gameOver = false;
+
+function log(msg){
+  const panel = document.getElementById('logPanel');
+  const div = document.createElement('div');
+  div.textContent = msg;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+/* ============ 隨機部署 ============ */
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function deployZone(side){
+  const isA = side==='A';
+  // 陸軍部署區：前 3 列（不含城市/機場/行營）
+  const landRows = isA ? [0,1,2] : [9,10,11];
+  const groundSlots = [];
+  for(const r of landRows){
+    for(let c=0;c<COLS;c++){
+      if(isCity(r,c) || isAirport(r,c) || isCamp(r,c)) continue;
+      groundSlots.push([r,c]);
+    }
+  }
+  shuffle(groundSlots);
+
+  const navyRow = isA ? 5 : 6;
+  const navySlots = [];
+  for(let c=1;c<=9;c++) navySlots.push([navyRow,c]);
+  shuffle(navySlots);
+
+  const airSlots = isA ? [[1,0],[1,10]] : [[10,0],[10,10]];
+  shuffle(airSlots);
+
+  const cityList = isA ? [[0,0],[0,5],[0,10]] : [[11,0],[11,5],[11,10]];
+  const flagCity = cityList[Math.floor(Math.random()*cityList.length)];
+
+  let groundIdx = 0, navyIdx = 0, airIdx = 0;
+
+  for(const def of ROSTER){
+    for(let i=0;i<def.count;i++){
+      let r,c;
+      if(def.type==='flag'){
+        [r,c] = flagCity;
+      } else if(def.domain==='ground'){
+        [r,c] = groundSlots[groundIdx++];
+      } else if(def.domain==='navy'){
+        [r,c] = navySlots[navyIdx++];
+      } else { // air
+        [r,c] = airSlots[airIdx++];
+      }
+      const p = {
+        id: 'p'+(pid++), side, type:def.type, label:def.label,
+        rank:def.rank, domain:def.domain, row:r, col:c, alive:true, revealed:false
+      };
+      pieces.push(p);
+      board[r][c] = p.id;
+    }
+  }
+}
+
+function pieceById(id){ return id ? pieces.find(p=>p.id===id) : null; }
+function pieceAt(r,c){
+  if(r<0||r>=ROWS||c<0||c>=COLS) return null;
+  return pieceById(board[r][c]);
+}
+
+function newGame(){
+  board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
+  pieces = [];
+  pid = 0;
+  selected = null;
+  legalMoves = [];
+  turn = 'human';
+  gameOver = false;
+  deployZone('A');
+  deployZone('B');
+  document.getElementById('logPanel').innerHTML = '';
+  log('🎲 新局開始，雙方已隨機佈陣。你是藍方（下方），先走。');
+  setStatus('輪到你了，點選你的棋子','turn-human');
+  render();
+}
+
+/* ============ 移動規則 ============ */
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1]];
+
+function canEnterTerrain(piece, r, c){
+  const t = terrainOf(r,c);
+  if(t==='void') return false;
+  if(piece.domain==='ground') return t==='land' || t==='bridge';
+  if(piece.domain==='navy') return t==='water';
+  return true; // air：任何地形
+}
+
+function getLegalMoves(piece){
+  if(piece.type==='flag' || piece.type==='mine' || piece.type==='bomb') return [];
+  const results = [];
+  const sliding = piece.domain!=='ground'
+    ? true // navy/air 一律可滑行
+    : (piece.type==='cavalry' || isRail(piece.row, piece.col));
+
+  for(const [dr,dc] of DIRS){
+    let step = 1;
+    while(true){
+      const nr = piece.row + dr*step, nc = piece.col + dc*step;
+      if(nr<0||nr>=ROWS||nc<0||nc>=COLS) break;
+      if(!canEnterTerrain(piece, nr, nc)) break;
+      const occ = pieceAt(nr,nc);
+      if(occ){
+        if(occ.side === piece.side) break; // 擋住，不能跳過己方
+        if(isCamp(nr,nc)) break; // 行營內敵方棋子不可被攻擊
+        results.push({row:nr,col:nc,capture:true});
+        break; // 吃子後不可再繼續滑行
+      } else {
+        results.push({row:nr,col:nc,capture:false});
+      }
+      if(!sliding) break;
+      step++;
+    }
+  }
+  return results;
+}
+
+/* ============ 戰鬥判定 ============ */
+// 回傳 {result, attackerSurvives, defenderSurvives, flagCaptured}
+function resolveCombat(attacker, defender){
+  if(defender.type==='flag'){
+    return {attackerSurvives:true, defenderSurvives:false, flagCaptured:true};
+  }
+  if(defender.type==='mine'){
+    if(attacker.type==='engineer'){
+      return {attackerSurvives:true, defenderSurvives:false, flagCaptured:false};
+    }
+    if(attacker.domain==='air'){
+      return {attackerSurvives:true, defenderSurvives:false, flagCaptured:false};
+    }
+    return {attackerSurvives:false, defenderSurvives:false, flagCaptured:false};
+  }
+  if(defender.type==='bomb' || attacker.type==='bomb'){
+    return {attackerSurvives:false, defenderSurvives:false, flagCaptured:false};
+  }
+  if(attacker.rank > defender.rank) return {attackerSurvives:true, defenderSurvives:false, flagCaptured:false};
+  if(attacker.rank < defender.rank) return {attackerSurvives:false, defenderSurvives:true, flagCaptured:false};
+  return {attackerSurvives:false, defenderSurvives:false, flagCaptured:false};
+}
+
+function pieceName(p){
+  const names = {
+    flag:'軍旗',commander:'兵團司令',general:'軍長',division:'師長',regiment:'團長',
+    cavalry:'騎兵',battalion:'營長',company:'連長',platoon:'排長',engineer:'工兵',
+    mine:'地雷',bomb:'炸彈',fighter:'戰鬥機',recon:'偵察機',battleship:'主力艦',
+    cruiser:'巡洋艦',destroyer:'驅逐艦',submarine:'潛水艇',gunboat:'炮艦'
+  };
+  return names[p.type] || p.type;
+}
+
+function applyMove(piece, dest){
+  const defender = pieceAt(dest.row, dest.col);
+  board[piece.row][piece.col] = null;
+
+  if(defender){
+    const outcome = resolveCombat(piece, defender);
+    piece.revealed = true;
+    defender.revealed = true;
+    const atkSide = piece.side==='A' ? '電腦' : '你';
+    const defSide = defender.side==='A' ? '電腦' : '你';
+
+    if(outcome.flagCaptured){
+      board[dest.row][dest.col] = piece.id;
+      piece.row = dest.row; piece.col = dest.col;
+      defender.alive = false;
+      log(`🚩 ${atkSide}的${pieceName(piece)}攻陷了${defSide}的軍旗！`);
+      endGame(piece.side);
+      return;
+    }
+    if(outcome.attackerSurvives && outcome.defenderSurvives){
+      // 不會發生，保留以防
+    }
+    if(!outcome.defenderSurvives){
+      defender.alive = false;
+    }
+    if(outcome.attackerSurvives){
+      board[dest.row][dest.col] = piece.id;
+      piece.row = dest.row; piece.col = dest.col;
+      log(`💥 ${atkSide}的${pieceName(piece)} 擊敗 ${defSide}的${pieceName(defender)}`);
+    } else if(outcome.defenderSurvives){
+      piece.alive = false;
+      log(`💥 ${defSide}的${pieceName(defender)} 擊退了 ${atkSide}的${pieceName(piece)}`);
+    } else {
+      piece.alive = false;
+      board[dest.row][dest.col] = null;
+      log(`💢 ${atkSide}的${pieceName(piece)} 與 ${defSide}的${pieceName(defender)} 同歸於盡`);
+    }
+  } else {
+    board[dest.row][dest.col] = piece.id;
+    piece.row = dest.row; piece.col = dest.col;
+  }
+}
+
+function hasAnyLegalMove(side){
+  return pieces.some(p=>p.alive && p.side===side && getLegalMoves(p).length>0);
+}
+
+function endGame(winnerSide){
+  gameOver = true;
+  if(winnerSide==='B'){
+    setStatus('🎉 你贏了！奪下電腦的軍旗','win');
+    log('🏆 遊戲結束：你獲勝！');
+  } else {
+    setStatus('💀 電腦贏了，再接再厲','lose');
+    log('🏁 遊戲結束：電腦獲勝。');
+  }
+}
+
+/* ============ AI ============ */
+function simulateOutcomeScore(piece, dest){
+  const defender = pieceAt(dest.row, dest.col);
+  if(!defender) return {score:0, flagCaptured:false};
+  const outcome = resolveCombat(piece, defender);
+  if(outcome.flagCaptured) return {score:1e6, flagCaptured:true};
+  let score;
+  if(outcome.attackerSurvives && !outcome.defenderSurvives){
+    score = VALUE[defender.type] || 0;
+  } else if(!outcome.attackerSurvives && outcome.defenderSurvives){
+    score = -(VALUE[piece.type]||0) - 5;
+  } else {
+    score = (VALUE[defender.type]||0) - (VALUE[piece.type]||0);
+  }
+  return {score, flagCaptured:false};
+}
+
+function wouldSurviveAfter(piece, dest){
+  // 粗略檢查：移動後，敵方是否有棋子能在下一回合吃掉它（且打得贏）
+  const enemySide = piece.side==='A' ? 'B' : 'A';
+  for(const enemy of pieces){
+    if(!enemy.alive || enemy.side!==enemySide) continue;
+    if(enemy.row===dest.row && enemy.col===dest.col) continue;
+    const moves = getLegalMoves({...enemy});
+    for(const m of moves){
+      if(m.row===dest.row && m.col===dest.col){
+        const outcome = resolveCombat(enemy, piece);
+        if(outcome.attackerSurvives) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function aiTakeTurn(){
+  const aiPieces = pieces.filter(p=>p.alive && p.side==='A');
+  let best = null, bestScore = -Infinity;
+  const candidates = [];
+
+  for(const piece of aiPieces){
+    const moves = getLegalMoves(piece);
+    for(const dest of moves){
+      const {score, flagCaptured} = simulateOutcomeScore(piece, dest);
+      let total = score;
+      if(!flagCaptured){
+        const safe = wouldSurviveAfter(piece, dest);
+        if(!safe) total -= (VALUE[piece.type]||0) * 0.6;
+      }
+      total += (Math.random()-0.5); // 增加一點隨機性，避免每次都一樣
+      candidates.push({piece, dest, total, flagCaptured});
+    }
+  }
+
+  if(candidates.length===0){
+    endGame('B');
+    return;
+  }
+  candidates.sort((a,b)=>b.total-a.total);
+  best = candidates[0];
+
+  applyMove(best.piece, best.dest);
+  render();
+
+  if(gameOver) return;
+  if(!hasAnyLegalMove('B')){
+    endGame('A');
+    render();
+    return;
+  }
+  turn = 'human';
+  setStatus('輪到你了，點選你的棋子','turn-human');
+}
+
+/* ============ 互動 ============ */
+function onCellClick(r,c){
+  if(gameOver || turn!=='human') return;
+  const occ = pieceAt(r,c);
+
+  if(selected){
+    const move = legalMoves.find(m=>m.row===r && m.col===c);
+    if(move){
+      applyMove(selected, move);
+      selected = null;
+      legalMoves = [];
+      render();
+      if(gameOver) return;
+      if(!hasAnyLegalMove('A')){
+        endGame('B');
+        render();
+        return;
+      }
+      turn = 'ai';
+      setStatus('電腦思考中…','turn-ai');
+      setTimeout(aiTakeTurn, 500);
+      return;
+    }
+    // 點別的己方棋子 → 換選取；點空白/不合法處 → 取消選取
+    if(occ && occ.side==='B'){
+      selected = occ;
+      legalMoves = getLegalMoves(occ);
+    } else {
+      selected = null;
+      legalMoves = [];
+    }
+    render();
+    return;
+  }
+
+  if(occ && occ.side==='B'){
+    selected = occ;
+    legalMoves = getLegalMoves(occ);
+    render();
+  }
+}
+
+/* ============ 畫面渲染 ============ */
+function setStatus(text, cls){
+  const bar = document.getElementById('statusBar');
+  bar.textContent = text;
+  bar.className = 'status ' + (cls||'');
+}
+
+function render(){
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell = document.createElement('div');
+      const t = terrainOf(r,c);
+      const z = zoneOf(r,c);
+      let cls = 'cell ';
+      if(t==='land') cls += (z==='A' ? 'land-A' : 'land-B') + ' ';
+      else if(t==='water') cls += 'water ';
+      else if(t==='bridge') cls += 'bridge ';
+      if(isCamp(r,c)) cls += 'camp ';
+      if(isCity(r,c)) cls += 'city ';
+      if(isAirport(r,c)) cls += 'airport ';
+      if(isRail(r,c)) cls += 'rail ';
+
+      const isLegal = legalMoves.find(m=>m.row===r&&m.col===c);
+      if(isLegal) cls += (isLegal.capture ? 'legal-capture ' : 'legal-move ');
+      if(selected && selected.row===r && selected.col===c) cls += 'selected ';
+
+      const occ = pieceAt(r,c);
+      if(occ || (terrainOf(r,c)!=='void')) cls += 'selectable ';
+      cell.className = cls.trim();
+      cell.addEventListener('click', ()=>onCellClick(r,c));
+
+      if(occ && occ.alive){
+        const pieceEl = document.createElement('div');
+        const showFace = occ.side==='B' || occ.revealed;
+        pieceEl.className = 'piece side-'+occ.side + (showFace ? ' revealed' : ' hidden');
+        pieceEl.textContent = showFace ? occ.label : '？';
+        cell.appendChild(pieceEl);
+      }
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+/* ============ 啟動 ============ */
+document.getElementById('newGameBtn').addEventListener('click', newGame);
+document.getElementById('rulesBtn').addEventListener('click', ()=>{
+  const p = document.getElementById('rulesPanel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+});
+
+newGame();
+</script>
+</body>
+</html>

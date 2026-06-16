@@ -26,6 +26,7 @@
 - **Cozy Rain Piano** `tools/cozy-rain-piano/` — 全自動 YouTube 睡眠音樂 pipeline：CC0 圖像 + Ken Burns ffmpeg + Claude SEO + YouTube API 每日自動上傳；英文市場關鍵字 `Cozy Rain Piano`
 - **生成圖片客製化機器** `tools/ai-image-params/` — AI 生圖 7 大參數（Prompt／Negative／Steps／CFG／Seed／長寬比／解析度）滑桿＋下拉即時調節，輸出文字／YAML／偽代碼三格式可一鍵複製；純瀏覽器
 - **影片製作 Kit** `tools/video-kit/` — 給 Claude Code 用的三類影片製作範本（活動紀錄／教學／社群科普）：純 CSS/JS + Playwright + Edge-TTS 旁白 + ffmpeg，已內建 Windows/中文/GDrive 避坑（見 `GOTCHAS.md`）。做影片時讀 `tools/video-kit/CLAUDE.md` 進流程；鐵律＝先寫 SCRIPT.md + DESIGN.md 給我審、說「go」才動工。來源 fork 自 mathruffian-dot/claude-code-video-kit
+- **三軍棋** `tools/three-army-chess/` — 單人 vs 電腦的陸海空三軍棋（軍旗／地雷／炸彈／工兵拆雷／行營／鐵路滑行／戰爭迷霧），純瀏覽器；規則細節見 `tools/three-army-chess/RULES.md`
 
 ## 設計工具（open-design）
 - **平台**：Windows 桌面版（v0.10.0 起，來源 `nexu-io/open-design`）。舊的 Mac 版已不再用。

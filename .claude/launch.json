@@ -54,6 +54,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3008", "tools/ai-image-params"],
       "port": 3008
+    },
+    {
+      "name": "三軍棋",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3009", "tools/three-army-chess"],
+      "port": 3009
     }
   ]
 }
