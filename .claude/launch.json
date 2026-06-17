@@ -60,6 +60,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3009", "tools/three-army-chess"],
       "port": 3009
+    },
+    {
+      "name": "淘金者",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "3010", "tools/lode-runner"],
+      "port": 3010
     }
   ]
 }

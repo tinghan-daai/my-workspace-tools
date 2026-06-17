@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>淘金者 Lode Runner</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0d1117;
+  color: #e0ddd5;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 16px 8px 40px;
+}
+h1 {
+  font-size: 1.6rem;
+  color: #f0c040;
+  letter-spacing: 0.15em;
+  margin-bottom: 2px;
+  text-shadow: 0 0 12px #f0c04066;
+}
+.subtitle { font-size: 0.75rem; color: #7a7060; margin-bottom: 10px; }
+
+.hud {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: #c0b890;
+}
+.hud span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.hud .label { font-size: 0.65rem; color: #7a7060; text-transform: uppercase; letter-spacing: 0.1em; }
+.hud .value { font-size: 1.1rem; font-weight: bold; color: #f0c040; }
+
+canvas {
+  border: 2px solid #3a3220;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.controls-hint {
+  margin-top: 10px;
+  font-size: 0.7rem;
+  color: #5a5040;
+  text-align: center;
+  line-height: 1.8;
+}
+
+#overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.75);
+  border-radius: 0;
+  gap: 12px;
+}
+.canvas-wrap { position: relative; }
+#overlay h2 { font-size: 1.4rem; color: #f0c040; letter-spacing: 0.1em; }
+#overlay p { font-size: 0.85rem; color: #c0b890; text-align: center; line-height: 1.6; }
+#overlay button {
+  background: #3a2e10;
+  color: #f0c040;
+  border: 2px solid #f0c040;
+  padding: 10px 32px;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  transition: background 0.15s;
+}
+#overlay button:hover { background: #5a4820; }
+
+.level-badge {
+  font-size: 0.75rem;
+  color: #7a7060;
+  background: #1a1810;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+<h1>淘金者</h1>
+<p class="subtitle">Lode Runner — 收集所有金磚，小心守衛！</p>
+<div class="hud">
+  <span><span class="label">關卡</span><span class="value" id="hud-level">1</span></span>
+  <span><span class="label">金磚</span><span class="value" id="hud-gold">0/0</span></span>
+  <span><span class="label">生命</span><span class="value" id="hud-lives">3</span></span>
+  <span><span class="label">分數</span><span class="value" id="hud-score">0</span></span>
+</div>
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <div id="overlay">
+    <h2 id="ov-title">淘金者</h2>
+    <p id="ov-msg">收集關卡內所有金磚、找到梯子出口<br>用 Z/X 向左右挖坑來困住守衛</p>
+    <button id="ov-btn">開始遊戲</button>
+  </div>
+</div>
+<div class="controls-hint">
+  方向鍵 / WASD 移動 &nbsp;|&nbsp; Z 向左挖 &nbsp;|&nbsp; X 向右挖<br>
+  手機：畫面下方虛擬按鍵
+</div>
+
+<!-- 虛擬按鍵（手機） -->
+<div id="vpad" style="margin-top:14px;display:grid;grid-template-columns:repeat(5,48px);grid-template-rows:repeat(2,48px);gap:6px;">
+  <button class="vb" data-action="digL" style="grid-column:1;grid-row:1;background:#3a2010;border:1px solid #7a5020;color:#f0a020;border-radius:6px;font-size:1rem;cursor:pointer;">⛏L</button>
+  <button class="vb" data-action="up"   style="grid-column:3;grid-row:1;background:#222;border:1px solid #555;color:#ccc;border-radius:6px;font-size:1.3rem;cursor:pointer;">▲</button>
+  <button class="vb" data-action="digR" style="grid-column:5;grid-row:1;background:#3a2010;border:1px solid #7a5020;color:#f0a020;border-radius:6px;font-size:1rem;cursor:pointer;">⛏R</button>
+  <button class="vb" data-action="left" style="grid-column:2;grid-row:2;background:#222;border:1px solid #555;color:#ccc;border-radius:6px;font-size:1.3rem;cursor:pointer;">◀</button>
+  <button class="vb" data-action="down" style="grid-column:3;grid-row:2;background:#222;border:1px solid #555;color:#ccc;border-radius:6px;font-size:1.3rem;cursor:pointer;">▼</button>
+  <button class="vb" data-action="right"style="grid-column:4;grid-row:2;background:#222;border:1px solid #555;color:#ccc;border-radius:6px;font-size:1.3rem;cursor:pointer;">▶</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// TILE CONSTANTS
+// ══════════════════════════════════════════════════
+const T = {
+  EMPTY:  0,
+  BRICK:  1,  // 可挖的磚
+  SOLID:  2,  // 不可挖的鋼鐵
+  LADDER: 3,
+  ROPE:   4,
+  GOLD:   5,
+  TRAP:   6,  // 挖出的洞（還會復原）
+  EXIT_LADDER: 7,  // 金磚全收後才出現
+};
+
+// ══════════════════════════════════════════════════
+// LEVELS  (28×16 grid, row by row)
+// 字元對應: '.'=EMPTY ' '=EMPTY '#'=BRICK '='=SOLID
+//           'H'=LADDER '~'=ROPE 'G'=GOLD 'X'=EXIT_LADDER(隱藏)
+// ══════════════════════════════════════════════════
+const LEVEL_STRINGS = [
+// ── 關卡 1 ─────────────────────────────────────────
+`============================
+=.........................=
+=.....G.........G........=
+=#####################..H=
+=..........G.............H=
+=.################.......H=
+=.H..............H.......H=
+=.H....G.........H..G....H=
+=.H####.###########......H=
+=.H....H.................H=
+=.H....H....G........X...H=
+=.H####H####.############H=
+=.H....H.................H=
+=.H....H.................H=
+=.HHHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 2 ─────────────────────────────────────────
+`============================
+=..........................=
+=.G...G...G...G...G...G..=
+=.####.####.####.####.###=
+=.H..H.H..H.H..H.H..H...=
+=.H..H.H..H.H..H.H..H...=
+=~H..H~H~~H~H~~H~H~~H~X~=
+=.H..H.H..H.H..H.H..H...=
+=.H..H.H..H.H..H.H..H...=
+=.####.####.####.####.###=
+=.H....H....H....H.......=
+=.H.G..H.G..H.G..H.G....=
+=.H####H####H####H####...=
+=.H....H....H....H.......=
+=.HHHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 3 ─────────────────────────────────────────
+`============================
+=...........G.............=
+=..######################=
+=..H....................H.=
+=..H....G.........G....H.=
+=..H.################..H.=
+=..H.H..G.........G.H..H.=
+=..H.H.##############H..H.=
+=..H.H.H..X........HH..H.=
+=..H.H.H.##########HH..H.=
+=..H.H.H...........HH..H.=
+=..H.H.HHHHHHHHHHHHHH..H.=
+=..H.H.................H.=
+=..H.HHHHHHHHHHHHHHHHHH..=
+=..HHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 4 ─────────────────────────────────────────
+`============================
+=.G.G.G.G.G.G.G.G.G.G.G.=
+=.#.#.#.#.#.#.#.#.#.#.#.=
+=........................X=
+=.#.#.#.#.#.#.#.#.#.#.#.=
+=.G.G.G.G.G.G.G.G.G.G.G.=
+=.#.#.#.#.#.#.#.#.#.#.#.=
+=.........................=
+=.#.#.#.#.#.#.#.#.#.#.#.=
+=.G.G.G.G.G.G.G.G.G.G.G.=
+=.#.#.#.#.#.#.#.#.#.#.#.=
+=.........................=
+=.#.#.#.#.#.#.#.#.#.#.#.=
+=.G.G.G.G.G.G.G.G.G.G.G.=
+=HHHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 5 ─────────────────────────────────────────
+`============================
+=.G........................=
+=######################..=
+=.....................H...=
+=....G.....G.....G...H...=
+=.######.######.######...=
+=.H....H.H....H.H....H...=
+=.H....H.H....H.H....H...=
+=~H~~~~H~H~~~~H~H~~~~H~X~=
+=.H....H.H....H.H....H...=
+=.H....H.H....H.H....H...=
+=.######.######.######...=
+=.H.G...........G........=
+=.H.##########################=
+=.HHHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 6 ─────────────────────────────────────────
+`============================
+=..........................=
+=.G.G.G.G.G.G.G.G.G.G.G.=
+=.##########################=
+=..........................=
+=.G..G..G..G..G..G..G..G.=
+=.###.###.###.###.###.###.=
+=..........................=
+=X.G..G..G..G..G..G..G..G=
+=.###.###.###.###.###.###.=
+=..........................=
+=.G..G..G..G..G..G..G..G.=
+=.###.###.###.###.###.###.=
+=..........................=
+=HHHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 7 ─────────────────────────────────────────
+`============================
+=..........................=
+=.HHHHHHHHHHHHHHHHHHHHHHH=
+=.H........................=
+=.H.HHHHHHHHHHHHHHHHHHHHH=
+=.H.H.....................=
+=.H.H.HHHHHHHHHHHHHHHHHH=
+=.H.H.H...G.G.G.G.G.G.GX=
+=.H.H.H.################=
+=.H.H.H...............H..=
+=.H.H.HHHHHHHHHHHHHHHH...=
+=.H.H.................H...=
+=.H.HHHHHHHHHHHHHHHHHH...=
+=.H...................H...=
+=.HHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+
+// ── 關卡 8 ─────────────────────────────────────────
+`============================
+=X.........................=
+=.##########################=
+=.H.......................H=
+=.H.G.G.G.G.G.G.G.G.G.G.H=
+=.H.################.####H=
+=.H.H..............H.H...H=
+=.H.H..............H.H...H=
+=.H.H..............H.H...H=
+=.H.H..G.G.G.G.G...H.H...H=
+=.H.H..####.########H...H=
+=.H.H..H............H...H=
+=.H.H..H............H...H=
+=.H.HHHH............HHHH.=
+=.HHHHHHHHHHHHHHHHHHHHHHHH=
+============================`,
+];
+
+// ══════════════════════════════════════════════════
+// ENEMY STARTING POSITIONS PER LEVEL  [col, row][]
+// ══════════════════════════════════════════════════
+const ENEMY_STARTS = [
+  [[14,3],[20,7]],          // lv1
+  [[6,3],[18,3]],           // lv2
+  [[8,5],[18,5]],           // lv3
+  [[5,1],[15,1],[23,4]],    // lv4
+  [[10,4],[20,4]],          // lv5
+  [[6,2],[14,5],[22,8]],    // lv6
+  [[10,7],[18,7]],          // lv7
+  [[8,4],[16,4],[22,9]],    // lv8
+];
+
+// ══════════════════════════════════════════════════
+// PLAYER STARTING POSITIONS
+// ══════════════════════════════════════════════════
+const PLAYER_STARTS = [
+  [1,13],[1,13],[1,13],[1,13],
+  [1,13],[1,13],[1,13],[1,13],
+];
+
+// ══════════════════════════════════════════════════
+// GAME CONFIG
+// ══════════════════════════════════════════════════
+const COLS = 28, ROWS = 16;
+const TW = 28, TH = 28;          // tile size in px
+const TRAP_FILL_TIME = 180;       // frames until hole fills
+const TRAP_WARN_TIME = 40;        // frames warning before fill
+const MOVE_DELAY = 5;             // frames per player step
+const ENEMY_MOVE_DELAY = 10;      // frames per enemy step
+
+// ══════════════════════════════════════════════════
+// CANVAS SETUP
+// ══════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+canvas.width  = COLS * TW;
+canvas.height = ROWS * TH;
+
+// ══════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════
+let state = 'title'; // title | playing | dead | win | gameover | nextlevel
+let level = 0;
+let lives = 3;
+let score = 0;
+let grid = [];
+let traps = [];      // {col, row, timer, origTile}
+let player = {};
+let enemies = [];
+let goldTotal = 0;
+let goldLeft  = 0;
+let exitOpen  = false;
+let moveTimer = 0;
+let enemyTimer= 0;
+let stateTimer= 0;
+let keys = {};
+let justPressed = {};
+
+// ══════════════════════════════════════════════════
+// PARSE LEVEL
+// ══════════════════════════════════════════════════
+function parseLevel(idx) {
+  const lines = LEVEL_STRINGS[idx].split('\n').filter(l => l.length > 0);
+  grid = [];
+  traps = [];
+  goldTotal = 0;
+  goldLeft  = 0;
+  exitOpen  = false;
+
+  for (let r = 0; r < ROWS; r++) {
+    grid[r] = [];
+    const line = lines[r] || '';
+    for (let c = 0; c < COLS; c++) {
+      const ch = line[c] || ' ';
+      let tile = T.EMPTY;
+      switch(ch) {
+        case '#': tile = T.BRICK;  break;
+        case '=': tile = T.SOLID;  break;
+        case 'H': tile = T.LADDER; break;
+        case '~': tile = T.ROPE;   break;
+        case 'G': tile = T.GOLD;   goldTotal++; goldLeft++; break;
+        case 'X': tile = T.EXIT_LADDER; break; // hidden until gold done
+        default:  tile = T.EMPTY;
+      }
+      grid[r][c] = tile;
+    }
+  }
+
+  // player
+  const ps = PLAYER_STARTS[idx] || [1, ROWS-2];
+  player = { col: ps[0], row: ps[1], dx:0, dy:0, falling:false, onRope:false, alive:true, frame:0, dir:1, digCooldown:0 };
+
+  // enemies
+  enemies = (ENEMY_STARTS[idx] || []).map(([ec, er]) => ({
+    col: ec, row: er, falling: false, onRope: false,
+    trapped: 0, trapRow: -1, trapCol: -1,
+    frame: 0, dir: 1,
+    moveTimer: Math.floor(Math.random() * ENEMY_MOVE_DELAY),
+    gold: false,
+  }));
+
+  updateHUD();
+}
+
+// ══════════════════════════════════════════════════
+// TILE QUERIES
+// ══════════════════════════════════════════════════
+function tileAt(c, r) {
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return T.SOLID;
+  return grid[r][c];
+}
+function isFloor(c, r) {
+  const t = tileAt(c, r);
+  return t === T.BRICK || t === T.SOLID || t === T.LADDER || t === T.TRAP;
+}
+function isLadder(c, r) { return tileAt(c,r) === T.LADDER || (exitOpen && tileAt(c,r) === T.EXIT_LADDER); }
+function isRope(c, r)   { return tileAt(c,r) === T.ROPE; }
+function isWalkable(c, r) {
+  const t = tileAt(c, r);
+  return t === T.EMPTY || t === T.GOLD || t === T.ROPE || t === T.LADDER ||
+         (exitOpen && t === T.EXIT_LADDER) || t === T.TRAP;
+}
+function isSolid(c, r)  {
+  const t = tileAt(c, r);
+  return t === T.BRICK || t === T.SOLID;
+}
+function standable(c, r) {
+  // entity at (c,r) is standing: floor below or on ladder or in trap
+  const t = tileAt(c, r);
+  if (t === T.LADDER) return true;
+  if (t === T.TRAP)   return true;
+  if (isRope(c, r))   return false;
+  return isFloor(c, r+1);
+}
+function canEnterTile(c, r) {
+  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return false;
+  const t = tileAt(c, r);
+  return t !== T.BRICK && t !== T.SOLID;
+}
+
+// ══════════════════════════════════════════════════
+// DIGGING
+// ══════════════════════════════════════════════════
+function dig(col, row) {
+  if (tileAt(col, row) !== T.BRICK) return false;
+  grid[row][col] = T.TRAP;
+  traps.push({ col, row, timer: TRAP_FILL_TIME });
+  return true;
+}
+
+function digLeft() {
+  if (player.digCooldown > 0) return;
+  const dc = player.col - 1;
+  const dr = player.row + 1;
+  if (dig(dc, dr)) { player.digCooldown = 20; score += 5; updateHUD(); }
+}
+function digRight() {
+  if (player.digCooldown > 0) return;
+  const dc = player.col + 1;
+  const dr = player.row + 1;
+  if (dig(dc, dr)) { player.digCooldown = 20; score += 5; updateHUD(); }
+}
+
+// ══════════════════════════════════════════════════
+// PLAYER MOVEMENT
+// ══════════════════════════════════════════════════
+function movePlayer() {
+  if (!player.alive) return;
+
+  const onLadder = isLadder(player.col, player.row);
+  const onRope   = isRope(player.col, player.row);
+  const onFloor  = standable(player.col, player.row);
+  const inTrap   = tileAt(player.col, player.row) === T.TRAP;
+
+  // gravity
+  if (!onLadder && !onRope && !inTrap) {
+    const belowBlocked = isFloor(player.col, player.row + 1);
+    if (!belowBlocked) {
+      if (canEnterTile(player.col, player.row + 1)) {
+        player.row++;
+        player.falling = true;
+        return;
+      }
+    } else {
+      player.falling = false;
+    }
+  } else {
+    player.falling = false;
+  }
+
+  // horizontal
+  let dx = 0, dy = 0;
+  if (keys['ArrowLeft']  || keys['a'] || keys['A']) dx = -1;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) dx =  1;
+  if (keys['ArrowUp']    || keys['w'] || keys['W']) dy = -1;
+  if (keys['ArrowDown']  || keys['s'] || keys['S']) dy =  1;
+
+  if (dx !== 0 && dy === 0) {
+    const nc = player.col + dx;
+    const nr = player.row;
+    if (canEnterTile(nc, nr)) {
+      // can walk on rope or if floor below or if on ladder
+      const wontFall = isFloor(nc, nr+1) || isLadder(nc, nr) || isRope(nc, nr) || tileAt(nc,nr)===T.TRAP;
+      if (wontFall || onRope || onLadder) {
+        player.col = nc;
+        player.dir = dx;
+      }
+    }
+  }
+
+  if (dy === -1) {
+    // climb up: need ladder at current or above
+    if (onLadder) {
+      const nr = player.row - 1;
+      if (nr >= 0 && canEnterTile(player.col, nr)) {
+        player.row = nr;
+      }
+    }
+  }
+  if (dy === 1) {
+    // climb down or drop
+    if (onLadder) {
+      const nr = player.row + 1;
+      if (nr < ROWS && canEnterTile(player.col, nr)) {
+        player.row = nr;
+      }
+    } else if (!onFloor) {
+      // already handled by gravity
+    } else {
+      // try descend into ladder below
+      if (isLadder(player.col, player.row+1) && canEnterTile(player.col, player.row+1)) {
+        player.row++;
+      }
+    }
+  }
+
+  // collect gold
+  if (tileAt(player.col, player.row) === T.GOLD) {
+    grid[player.row][player.col] = T.EMPTY;
+    goldLeft--;
+    score += 50;
+    if (goldLeft === 0) {
+      exitOpen = true;
+    }
+    updateHUD();
+  }
+
+  // exit
+  if (exitOpen && tileAt(player.col, player.row) === T.EXIT_LADDER) {
+    // need to climb to top of exit ladder
+    if (player.row === 0 || !isLadder(player.col, player.row-1)) {
+      triggerWin();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+// ENEMY AI
+// ══════════════════════════════════════════════════
+function moveEnemy(e) {
+  if (e.trapped > 0) {
+    e.trapped--;
+    if (e.trapped === 0) {
+      // respawn enemy at top
+      e.col = Math.floor(Math.random() * (COLS-2)) + 1;
+      e.row = 1;
+      e.gold = false;
+    }
+    return;
+  }
+
+  const onLadder = isLadder(e.col, e.row);
+  const onRope   = isRope(e.col, e.row);
+  const inTrap   = tileAt(e.col, e.row) === T.TRAP;
+
+  // gravity
+  if (!onLadder && !onRope && !inTrap) {
+    if (!isFloor(e.col, e.row + 1)) {
+      if (canEnterTile(e.col, e.row + 1)) {
+        e.row++;
+        e.falling = true;
+        return;
+      }
+    } else {
+      e.falling = false;
+    }
+  } else {
+    e.falling = false;
+  }
+
+  // if in trap, check if trap is filling
+  if (inTrap) {
+    const trap = traps.find(tr => tr.col === e.col && tr.row === e.row);
+    if (!trap || trap.timer <= 0) {
+      // escape or get killed
+      e.trapped = 80;
+    }
+    return;
+  }
+
+  // chase player
+  const pc = player.col, pr = player.row;
+  const ec = e.col, er = e.row;
+  let bestDx = 0, bestDy = 0;
+
+  // simple chase: prefer horizontal then vertical
+  if (pc !== ec) bestDx = pc > ec ? 1 : -1;
+  if (pr !== er) bestDy = pr > er ? 1 : -1;
+
+  // try to climb ladder toward player
+  if (bestDy === -1 && onLadder) {
+    const nr = er - 1;
+    if (nr >= 0 && canEnterTile(ec, nr)) { e.row = nr; return; }
+  }
+  if (bestDy === 1 && (onLadder || isLadder(ec, er+1))) {
+    const nr = er + 1;
+    if (nr < ROWS && canEnterTile(ec, nr)) { e.row = nr; return; }
+  }
+
+  // horizontal move
+  if (bestDx !== 0) {
+    const nc = ec + bestDx;
+    if (canEnterTile(nc, er)) {
+      const wontFall = isFloor(nc, er+1) || isLadder(nc, er) || isRope(nc, er) || tileAt(nc,er)===T.TRAP;
+      if (wontFall || onRope || onLadder) {
+        e.col = nc;
+        e.dir = bestDx;
+        return;
+      }
+    }
+  }
+
+  // try alternate direction
+  if (bestDx !== 0) {
+    const nc = ec - bestDx;
+    if (canEnterTile(nc, er)) {
+      const wontFall = isFloor(nc, er+1) || isLadder(nc, er) || isRope(nc, er);
+      if (wontFall || onRope || onLadder) {
+        e.col = nc;
+        e.dir = -bestDx;
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+// TRAP UPDATE
+// ══════════════════════════════════════════════════
+function updateTraps() {
+  for (let i = traps.length - 1; i >= 0; i--) {
+    const tr = traps[i];
+    tr.timer--;
+    if (tr.timer <= 0) {
+      // check if player is in this trap
+      if (player.col === tr.col && player.row === tr.row) {
+        killPlayer();
+      }
+      grid[tr.row][tr.col] = T.BRICK;
+      traps.splice(i, 1);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+// COLLISION — player vs enemies
+// ══════════════════════════════════════════════════
+function checkCollisions() {
+  for (const e of enemies) {
+    if (e.trapped > 0) continue;
+    if (e.col === player.col && e.row === player.row) {
+      killPlayer();
+      return;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+// KILL / WIN / NEXT LEVEL
+// ══════════════════════════════════════════════════
+function killPlayer() {
+  if (!player.alive) return;
+  player.alive = false;
+  lives--;
+  stateTimer = 80;
+  state = 'dead';
+}
+
+function triggerWin() {
+  score += 200 + goldLeft * 30;
+  state = 'nextlevel';
+  stateTimer = 90;
+  updateHUD();
+}
+
+// ══════════════════════════════════════════════════
+// HUD
+// ══════════════════════════════════════════════════
+function updateHUD() {
+  document.getElementById('hud-level').textContent = level + 1;
+  document.getElementById('hud-gold').textContent  = (goldTotal - goldLeft) + '/' + goldTotal;
+  document.getElementById('hud-lives').textContent = lives;
+  document.getElementById('hud-score').textContent = score;
+}
+
+// ══════════════════════════════════════════════════
+// DRAW HELPERS
+// ══════════════════════════════════════════════════
+const COL_BG      = '#0d1117';
+const COL_BRICK   = '#8b5a2b';
+const COL_BRICKHI = '#c4813d';
+const COL_SOLID   = '#4a4a6a';
+const COL_SOLIDHI = '#7a7aaa';
+const COL_LADDER  = '#c89030';
+const COL_ROPE    = '#c09060';
+const COL_GOLD    = '#f0c040';
+const COL_PLAYER  = '#40c0f0';
+const COL_ENEMY   = '#f04040';
+const COL_TRAP    = '#2a1a0a';
+const COL_EXIT    = '#40f080';
+
+function drawTile(c, r) {
+  const x = c * TW, y = r * TH;
+  const t = grid[r][c];
+
+  ctx.clearRect(x, y, TW, TH);
+
+  switch(t) {
+    case T.BRICK:
+      ctx.fillStyle = COL_BRICK;
+      ctx.fillRect(x, y, TW, TH);
+      ctx.fillStyle = COL_BRICKHI;
+      ctx.fillRect(x+1, y+1, TW-2, 4);
+      ctx.fillRect(x+1, y+TH/2, TW-2, 4);
+      // mortar lines
+      ctx.strokeStyle = '#5a3010';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y+TH/2); ctx.lineTo(x+TW, y+TH/2);
+      ctx.moveTo(x+TW/2, y); ctx.lineTo(x+TW/2, y+TH/2);
+      ctx.moveTo(x+TW/4, y+TH/2); ctx.lineTo(x+TW/4, y+TH);
+      ctx.stroke();
+      break;
+    case T.SOLID:
+      ctx.fillStyle = COL_SOLID;
+      ctx.fillRect(x, y, TW, TH);
+      ctx.fillStyle = COL_SOLIDHI;
+      ctx.fillRect(x+1, y+1, TW-2, 3);
+      break;
+    case T.LADDER: {
+      // rails
+      ctx.strokeStyle = COL_LADDER;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x+8, y); ctx.lineTo(x+8, y+TH);
+      ctx.moveTo(x+TW-8, y); ctx.lineTo(x+TW-8, y+TH);
+      ctx.stroke();
+      // rungs
+      ctx.lineWidth = 2;
+      for (let ry = 4; ry < TH; ry += 7) {
+        ctx.beginPath();
+        ctx.moveTo(x+8, y+ry); ctx.lineTo(x+TW-8, y+ry);
+        ctx.stroke();
+      }
+      break;
+    }
+    case T.ROPE:
+      ctx.strokeStyle = COL_ROPE;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y+6); ctx.lineTo(x+TW, y+6);
+      ctx.stroke();
+      // texture
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#907050';
+      for (let rx = 2; rx < TW; rx += 5) {
+        ctx.beginPath();
+        ctx.moveTo(x+rx, y+4); ctx.lineTo(x+rx+2, y+8);
+        ctx.stroke();
+      }
+      break;
+    case T.GOLD: {
+      const cx = x + TW/2, cy = y + TH/2;
+      ctx.fillStyle = COL_GOLD;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 7, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#ffe080';
+      ctx.beginPath();
+      ctx.arc(cx-2, cy-2, 3, 0, Math.PI*2);
+      ctx.fill();
+      break;
+    }
+    case T.TRAP: {
+      ctx.fillStyle = COL_TRAP;
+      ctx.fillRect(x, y+TH*0.6, TW, TH*0.4);
+      // flash when about to refill
+      const trap = traps.find(tr => tr.col === c && tr.row === r);
+      if (trap && trap.timer < TRAP_WARN_TIME && Math.floor(trap.timer / 6) % 2 === 0) {
+        ctx.fillStyle = '#5a2010';
+        ctx.fillRect(x+2, y+TH*0.6+2, TW-4, TH*0.4-2);
+      }
+      break;
+    }
+    case T.EXIT_LADDER:
+      if (exitOpen) {
+        ctx.strokeStyle = COL_EXIT;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x+8, y); ctx.lineTo(x+8, y+TH);
+        ctx.moveTo(x+TW-8, y); ctx.lineTo(x+TW-8, y+TH);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        for (let ry = 4; ry < TH; ry += 7) {
+          ctx.beginPath();
+          ctx.moveTo(x+8, y+ry); ctx.lineTo(x+TW-8, y+ry);
+          ctx.stroke();
+        }
+      }
+      break;
+  }
+}
+
+function drawCharacter(col, row, color, isPlayer, dir, trapped) {
+  const x = col * TW + TW/2;
+  const y = row * TH + TH/2;
+
+  if (trapped > 0) {
+    // in hole: only head visible
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y + 6, 5, 0, Math.PI*2);
+    ctx.fill();
+    return;
+  }
+
+  ctx.fillStyle = color;
+  // body
+  ctx.fillRect(x-5, y-4, 10, 10);
+  // head
+  ctx.beginPath();
+  ctx.arc(x, y-8, 6, 0, Math.PI*2);
+  ctx.fill();
+  // eyes
+  ctx.fillStyle = '#000';
+  const eyeX = dir > 0 ? x+2 : x-2;
+  ctx.beginPath();
+  ctx.arc(eyeX, y-9, 1.5, 0, Math.PI*2);
+  ctx.fill();
+  // legs
+  ctx.fillStyle = color;
+  ctx.fillRect(x-4, y+6, 3, 6);
+  ctx.fillRect(x+1, y+6, 3, 6);
+  // arms
+  if (isPlayer) {
+    ctx.fillRect(x+(dir*5), y-2, 4*dir, 3);
+  }
+}
+
+function drawAll() {
+  ctx.fillStyle = COL_BG;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      drawTile(c, r);
+    }
+  }
+
+  // enemies
+  for (const e of enemies) {
+    drawCharacter(e.col, e.row, COL_ENEMY, false, e.dir, e.trapped);
+  }
+
+  // player
+  if (player.alive) {
+    drawCharacter(player.col, player.row, COL_PLAYER, true, player.dir, 0);
+  }
+}
+
+// ══════════════════════════════════════════════════
+// OVERLAY CONTROL
+// ══════════════════════════════════════════════════
+const overlay  = document.getElementById('overlay');
+const ovTitle  = document.getElementById('ov-title');
+const ovMsg    = document.getElementById('ov-msg');
+const ovBtn    = document.getElementById('ov-btn');
+
+function showOverlay(title, msg, btn) {
+  ovTitle.textContent = title;
+  ovMsg.innerHTML = msg;
+  ovBtn.textContent = btn;
+  overlay.style.display = 'flex';
+}
+function hideOverlay() {
+  overlay.style.display = 'none';
+}
+
+ovBtn.addEventListener('click', () => {
+  if (state === 'title') {
+    startGame();
+  } else if (state === 'gameover') {
+    level = 0; lives = 3; score = 0;
+    startGame();
+  } else if (state === 'win') {
+    level = 0; lives = 3; score = 0;
+    startGame();
+  }
+});
+
+function startGame() {
+  state = 'playing';
+  hideOverlay();
+  parseLevel(level);
+}
+
+// ══════════════════════════════════════════════════
+// INPUT
+// ══════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!keys[e.key]) justPressed[e.key] = true;
+  keys[e.key] = true;
+
+  if (state === 'playing') {
+    if (e.key === 'z' || e.key === 'Z') { digLeft();  e.preventDefault(); }
+    if (e.key === 'x' || e.key === 'X') { digRight(); e.preventDefault(); }
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) e.preventDefault();
+  }
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// virtual pad
+document.querySelectorAll('.vb').forEach(btn => {
+  const action = btn.dataset.action;
+  const setKey = (on) => {
+    if (action === 'left')  keys['ArrowLeft']  = on;
+    if (action === 'right') keys['ArrowRight'] = on;
+    if (action === 'up')    keys['ArrowUp']    = on;
+    if (action === 'down')  keys['ArrowDown']  = on;
+    if (action === 'digL' && on && state==='playing') digLeft();
+    if (action === 'digR' && on && state==='playing') digRight();
+  };
+  btn.addEventListener('touchstart', e => { e.preventDefault(); setKey(true); }, {passive:false});
+  btn.addEventListener('touchend',   e => { e.preventDefault(); setKey(false);}, {passive:false});
+  btn.addEventListener('mousedown',  () => setKey(true));
+  btn.addEventListener('mouseup',    () => setKey(false));
+  btn.addEventListener('mouseleave', () => setKey(false));
+});
+
+// ══════════════════════════════════════════════════
+// MAIN LOOP
+// ══════════════════════════════════════════════════
+function loop() {
+  requestAnimationFrame(loop);
+
+  if (state === 'playing') {
+    // player move
+    moveTimer++;
+    if (moveTimer >= MOVE_DELAY) {
+      moveTimer = 0;
+      movePlayer();
+    }
+    if (player.digCooldown > 0) player.digCooldown--;
+
+    // enemy move
+    enemyTimer++;
+    if (enemyTimer >= ENEMY_MOVE_DELAY) {
+      enemyTimer = 0;
+      for (const e of enemies) moveEnemy(e);
+    }
+
+    updateTraps();
+    checkCollisions();
+    drawAll();
+
+  } else if (state === 'dead') {
+    drawAll();
+    stateTimer--;
+    if (stateTimer <= 0) {
+      if (lives <= 0) {
+        state = 'gameover';
+        showOverlay('遊戲結束', `你的分數：${score}<br>守衛抓到你了！再試一次？`, '重新開始');
+      } else {
+        parseLevel(level);
+        state = 'playing';
+      }
+    }
+  } else if (state === 'nextlevel') {
+    drawAll();
+    stateTimer--;
+    if (stateTimer <= 0) {
+      level++;
+      if (level >= LEVEL_STRINGS.length) {
+        state = 'win';
+        showOverlay('🏆 恭喜通關！', `最終分數：${score}<br>你收集了所有的金磚！`, '再玩一次');
+      } else {
+        parseLevel(level);
+        state = 'playing';
+      }
+    }
+  }
+
+  justPressed = {};
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+parseLevel(0);
+drawAll();
+showOverlay('淘金者', '收集關卡內所有金磚、找到綠色梯子出口<br>用 Z 向左挖坑、X 向右挖坑來困住守衛<br><br>方向鍵 / WASD 移動', '開始遊戲');
+state = 'title';
+loop();
+</script>
+</body>
+</html>
