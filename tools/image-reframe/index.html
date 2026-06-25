@@ -3,41 +3,777 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>圖片重新取景</title>
+  <title>圖片重新取景 — Image Reframe</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --card: #22222f;
+      --border: #2e2e42;
+      --accent: #7c6ef5;
+      --accent-light: #a599ff;
+      --text: #e8e8f0;
+      --muted: #8888aa;
+      --success: #4caf85;
+      --warning: #f5a623;
+      --danger: #e05555;
+      --radius: 12px;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .logo { font-size: 24px; }
+    header h1 { font-size: 18px; font-weight: 700; }
+    header span { font-size: 13px; color: var(--muted); margin-left: 4px; }
+
+    .api-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .api-bar label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+    .api-bar input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: monospace;
+    }
+    .api-bar input:focus { outline: none; border-color: var(--accent); }
+    .api-link { font-size: 12px; color: var(--accent-light); text-decoration: none; }
+    .api-link:hover { text-decoration: underline; }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* Drop zone */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 200px;
+    }
+    #drop-zone:hover, #drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(124,110,245,0.06);
+    }
+    #drop-zone .icon { font-size: 40px; }
+    #drop-zone p { color: var(--muted); font-size: 14px; }
+    #drop-zone strong { color: var(--text); }
+    #file-input { display: none; }
+
+    /* Image preview */
+    .img-wrap {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      max-height: 400px;
+    }
+    .img-wrap img {
+      max-width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      display: block;
+    }
+    .img-info {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .img-info span { display: flex; align-items: center; gap: 4px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-portrait { background: rgba(124,110,245,0.2); color: var(--accent-light); }
+    .badge-landscape { background: rgba(76,175,133,0.2); color: var(--success); }
+    .badge-square { background: rgba(245,166,35,0.2); color: var(--warning); }
+
+    /* Settings */
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .settings-label {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .ratio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .ratio-btn {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 8px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      text-align: center;
+      transition: border-color 0.15s, background 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .ratio-btn:hover { border-color: var(--accent); }
+    .ratio-btn.active { border-color: var(--accent); background: rgba(124,110,245,0.12); }
+    .ratio-btn .ratio-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+    }
+    .ratio-btn .ratio-icon div {
+      background: var(--accent);
+      border-radius: 3px;
+      opacity: 0.7;
+    }
+    .ratio-btn.active .ratio-icon div { opacity: 1; }
+    .ratio-label { font-size: 11px; color: var(--muted); }
+
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 8px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+    .toggle-btn.active { border-color: var(--accent); background: rgba(124,110,245,0.12); color: var(--text); }
+
+    .prompt-area textarea {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 13px;
+      resize: vertical;
+      min-height: 72px;
+      font-family: inherit;
+    }
+    .prompt-area textarea:focus { outline: none; border-color: var(--accent); }
+    .prompt-area textarea::placeholder { color: var(--muted); }
+
+    /* Canvas preview */
+    #preview-canvas-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: repeating-conic-gradient(#1e1e2a 0% 25%, #252535 0% 50%) 0 0 / 16px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 240px;
+      max-height: 400px;
+      flex: 1;
+    }
+    #preview-canvas {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 4px;
+      display: none;
+    }
+    .canvas-placeholder {
+      color: var(--muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 11px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .btn-ghost {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--accent); }
+    .btn-success { background: var(--success); color: #fff; width: 100%; }
+
+    /* Status */
+    #status-bar {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+    #status-bar.info { background: rgba(124,110,245,0.12); color: var(--accent-light); border: 1px solid rgba(124,110,245,0.3); }
+    #status-bar.success { background: rgba(76,175,133,0.12); color: var(--success); border: 1px solid rgba(76,175,133,0.3); }
+    #status-bar.error { background: rgba(224,85,85,0.12); color: var(--danger); border: 1px solid rgba(224,85,85,0.3); }
+
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .actions { display: flex; flex-direction: column; gap: 10px; }
+
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; }
+      header { padding: 16px 20px; }
+      .api-bar { padding: 10px 20px; }
+      main { padding: 16px 20px; }
+    }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .credits {
+      text-align: center;
+      padding: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    .back-btn {
+      position: fixed; bottom: 20px; left: 20px; z-index: 9999;
+      background: rgba(15,17,23,0.88); border: 1px solid #2a3050;
+      border-radius: 20px; padding: 6px 14px; color: #8899bb;
+      text-decoration: none; font-size: 0.82rem;
+      backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: #e4e8f5; border-color: #4f8ef7; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">🖼</div>
-    <h1>圖片重新取景</h1>
-    <p>快速裁切、重組圖片構圖</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
+
+<header>
+  <span class="logo">🖼️</span>
+  <h1>圖片重新取景</h1>
+  <span>直式 ↔ 橫式，AI 智慧延伸畫面</span>
+</header>
+
+<div class="api-bar">
+  <label>Stability AI API Key：</label>
+  <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off" />
+  <a class="api-link" href="https://platform.stability.ai/account/keys" target="_blank">取得免費 API Key →</a>
+</div>
+
+<main>
+  <!-- Left panel: upload + settings -->
+  <div class="panel">
+    <div class="panel-title">① 上傳原始圖片</div>
+
+    <div id="drop-zone">
+      <div class="icon">📤</div>
+      <p><strong>點擊選擇</strong>或拖曳圖片到這裡</p>
+      <p>支援 JPG、PNG、WebP</p>
+    </div>
+    <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" />
+
+    <div id="source-info" style="display:none;">
+      <div class="img-wrap"><img id="source-preview" alt="原圖" /></div>
+      <div class="img-info">
+        <span id="src-dims">—</span>
+        <span id="src-orient-badge"></span>
+      </div>
+    </div>
+
+    <div class="settings-group" id="settings-panel" style="display:none;">
+      <div class="panel-title">② 設定目標比例</div>
+
+      <div>
+        <div class="settings-label">輸出方向</div>
+        <div class="toggle-row">
+          <button class="toggle-btn" id="btn-landscape" onclick="setOrientation('landscape')">
+            <span>⬛</span> 橫式 16:9
+          </button>
+          <button class="toggle-btn" id="btn-portrait" onclick="setOrientation('portrait')">
+            <span>▬</span> 直式 9:16
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="settings-label">比例選擇</div>
+        <div class="ratio-grid" id="ratio-grid">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="prompt-area">
+        <div class="settings-label">AI 提示詞（可選，描述背景）</div>
+        <textarea id="prompt-input" placeholder="例：natural landscape, blurred grass field, golden hour, 8k"></textarea>
+      </div>
+    </div>
   </div>
+
+  <!-- Right panel: preview + generate -->
+  <div class="panel">
+    <div class="panel-title">③ 預覽與生成</div>
+
+    <div id="preview-canvas-wrap">
+      <canvas id="preview-canvas"></canvas>
+      <div class="canvas-placeholder" id="canvas-placeholder">
+        上傳圖片後，這裡顯示預覽框架
+      </div>
+    </div>
+
+    <div id="info-row" class="img-info" style="display:none;">
+      <span id="target-dims">—</span>
+      <span id="extend-info" style="color: var(--warning);"></span>
+    </div>
+
+    <div id="status-bar"></div>
+    <div class="progress-bar-wrap" id="progress-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <div class="actions" id="action-area" style="display:none;">
+      <button class="btn btn-primary" id="generate-btn" onclick="generate()">
+        ✨ AI 生成延伸畫面
+      </button>
+      <div id="result-wrap" style="display:none; flex-direction:column; gap:10px;">
+        <div class="img-wrap"><img id="result-img" alt="結果" /></div>
+        <button class="btn btn-success" id="download-btn" onclick="downloadResult()">
+          ⬇️ 下載圖片
+        </button>
+      </div>
+    </div>
+
+    <div id="action-placeholder" style="color: var(--muted); font-size:14px; text-align:center; padding: 8px 0;">
+      上傳圖片並選好比例後，點擊生成
+    </div>
+  </div>
+</main>
+
+<div class="credits">圖片重新取景 · 使用 Stability AI Stable Image Ultra Outpaint · 圖片不會上傳至第三方伺服器（僅傳送至 Stability AI）</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  file: null,
+  imgW: 0,
+  imgH: 0,
+  orientation: null,   // 'landscape' | 'portrait'
+  ratio: null,         // { w, h, label }
+  resultBlob: null,
+};
+
+const RATIOS = {
+  landscape: [
+    { w: 16, h: 9,  label: '16:9',  icon: { w: 48, h: 27 } },
+    { w: 4,  h: 3,  label: '4:3',   icon: { w: 44, h: 33 } },
+    { w: 3,  h: 2,  label: '3:2',   icon: { w: 45, h: 30 } },
+    { w: 21, h: 9,  label: '21:9',  icon: { w: 56, h: 24 } },
+    { w: 2,  h: 1,  label: '2:1',   icon: { w: 48, h: 24 } },
+    { w: 5,  h: 4,  label: '5:4',   icon: { w: 40, h: 32 } },
+  ],
+  portrait: [
+    { w: 9,  h: 16, label: '9:16',  icon: { w: 27, h: 48 } },
+    { w: 3,  h: 4,  label: '3:4',   icon: { w: 33, h: 44 } },
+    { w: 2,  h: 3,  label: '2:3',   icon: { w: 30, h: 45 } },
+    { w: 9,  h: 21, label: '9:21',  icon: { w: 24, h: 56 } },
+    { w: 1,  h: 2,  label: '1:2',   icon: { w: 24, h: 48 } },
+    { w: 4,  h: 5,  label: '4:5',   icon: { w: 32, h: 40 } },
+  ],
+};
+
+// ── API Key persistence ───────────────────────────────────────────────────
+const apiInput = document.getElementById('api-key-input');
+apiInput.value = localStorage.getItem('stability_api_key') || '';
+apiInput.addEventListener('input', () => {
+  localStorage.setItem('stability_api_key', apiInput.value.trim());
+});
+
+// ── Drop zone ─────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) loadFile(fileInput.files[0]);
+});
+
+function loadFile(file) {
+  if (!file.type.match(/image\/(jpeg|png|webp)/)) {
+    showStatus('請上傳 JPG、PNG 或 WebP 圖片', 'error');
+    return;
+  }
+  state.file = file;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    state.imgW = img.naturalWidth;
+    state.imgH = img.naturalHeight;
+
+    document.getElementById('source-preview').src = url;
+    document.getElementById('source-info').style.display = '';
+    document.getElementById('src-dims').textContent = `${state.imgW} × ${state.imgH} px`;
+
+    const badge = document.getElementById('src-orient-badge');
+    if (state.imgW > state.imgH) {
+      badge.innerHTML = '<span class="badge badge-landscape">橫式</span>';
+    } else if (state.imgW < state.imgH) {
+      badge.innerHTML = '<span class="badge badge-portrait">直式</span>';
+    } else {
+      badge.innerHTML = '<span class="badge badge-square">正方</span>';
+    }
+
+    document.getElementById('settings-panel').style.display = '';
+
+    // Auto-suggest opposite orientation
+    const suggest = state.imgW > state.imgH ? 'portrait' : 'landscape';
+    setOrientation(suggest);
+    clearResult();
+  };
+  img.src = url;
+}
+
+// ── Orientation + ratio ───────────────────────────────────────────────────
+function setOrientation(dir) {
+  state.orientation = dir;
+  state.ratio = null;
+
+  document.getElementById('btn-landscape').classList.toggle('active', dir === 'landscape');
+  document.getElementById('btn-portrait').classList.toggle('active', dir === 'portrait');
+
+  const grid = document.getElementById('ratio-grid');
+  grid.innerHTML = '';
+  RATIOS[dir].forEach((r, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'ratio-btn';
+    btn.innerHTML = `
+      <div class="ratio-icon">
+        <div style="width:${r.icon.w}px;height:${r.icon.h}px;"></div>
+      </div>
+      <div>${r.label}</div>
+      <div class="ratio-label">${r.w}:${r.h}</div>
+    `;
+    btn.onclick = () => selectRatio(r, btn);
+    if (i === 0) { selectRatio(r, btn); }
+    grid.appendChild(btn);
+  });
+}
+
+function selectRatio(r, btn) {
+  state.ratio = r;
+  document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updatePreview();
+}
+
+// ── Canvas preview ────────────────────────────────────────────────────────
+function updatePreview() {
+  if (!state.file || !state.ratio) return;
+
+  const { imgW, imgH, ratio } = state;
+  const targetAspect = ratio.w / ratio.h;
+  const srcAspect = imgW / imgH;
+
+  // Compute output dimensions (keep the constraining side, extend the other)
+  let outW, outH;
+  if (targetAspect >= srcAspect) {
+    // Need to extend width
+    outH = imgH;
+    outW = Math.round(imgH * targetAspect);
+  } else {
+    // Need to extend height
+    outW = imgW;
+    outH = Math.round(imgW / targetAspect);
+  }
+
+  // Extend amounts
+  const extLeft  = Math.floor((outW - imgW) / 2);
+  const extRight = outW - imgW - extLeft;
+  const extTop   = Math.floor((outH - imgH) / 2);
+  const extBot   = outH - imgH - extTop;
+
+  document.getElementById('target-dims').textContent = `目標：${outW} × ${outH} px`;
+  const parts = [];
+  if (extLeft || extRight) parts.push(`左右各延伸 ${extLeft}/${extRight}px`);
+  if (extTop  || extBot)   parts.push(`上下各延伸 ${extTop}/${extBot}px`);
+  document.getElementById('extend-info').textContent = parts.join('，');
+
+  document.getElementById('info-row').style.display = 'flex';
+  document.getElementById('action-area').style.display = 'flex';
+  document.getElementById('action-placeholder').style.display = 'none';
+
+  // Draw canvas preview
+  const canvas = document.getElementById('preview-canvas');
+  const ctx = canvas.getContext('2d');
+  const PREVIEW_MAX = 480;
+  const scale = Math.min(PREVIEW_MAX / outW, PREVIEW_MAX / outH, 1);
+  canvas.width  = Math.round(outW * scale);
+  canvas.height = Math.round(outH * scale);
+
+  const img = document.getElementById('source-preview');
+
+  // Draw checkerboard for extended areas
+  const cSize = 12;
+  for (let y = 0; y < canvas.height; y += cSize) {
+    for (let x = 0; x < canvas.width; x += cSize) {
+      ctx.fillStyle = ((x / cSize + y / cSize) % 2 === 0) ? '#2a2a3a' : '#1e1e2a';
+      ctx.fillRect(x, y, cSize, cSize);
+    }
+  }
+
+  // Draw original image centered
+  const drawX = Math.round(extLeft * scale);
+  const drawY = Math.round(extTop  * scale);
+  const drawW = Math.round(imgW * scale);
+  const drawH = Math.round(imgH * scale);
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+  // Highlight extension regions
+  ctx.fillStyle = 'rgba(124,110,245,0.15)';
+  if (extLeft > 0)  ctx.fillRect(0,             drawY, drawX, drawH);
+  if (extRight > 0) ctx.fillRect(drawX + drawW, drawY, canvas.width - (drawX + drawW), drawH);
+  if (extTop > 0)   ctx.fillRect(0,             0,     canvas.width, drawY);
+  if (extBot > 0)   ctx.fillRect(0,             drawY + drawH, canvas.width, canvas.height - (drawY + drawH));
+
+  // Border on original image
+  ctx.strokeStyle = 'rgba(124,110,245,0.8)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(drawX + 0.75, drawY + 0.75, drawW - 1.5, drawH - 1.5);
+
+  canvas.style.display = 'block';
+  document.getElementById('canvas-placeholder').style.display = 'none';
+
+  state._outW = outW; state._outH = outH;
+  state._extLeft = extLeft; state._extRight = extRight;
+  state._extTop = extTop; state._extBot = extBot;
+}
+
+// ── Generate ──────────────────────────────────────────────────────────────
+async function generate() {
+  const apiKey = apiInput.value.trim();
+  if (!apiKey) {
+    showStatus('請先輸入 Stability AI API Key', 'error');
+    return;
+  }
+  if (!state.file) {
+    showStatus('請先上傳圖片', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> AI 生成中…';
+  clearResult();
+
+  showStatus('正在上傳圖片並請 AI 延伸畫面，約需 15–30 秒…', 'info');
+  showProgress(30);
+
+  try {
+    const formData = new FormData();
+    formData.append('image', state.file);
+    formData.append('output_format', 'png');
+
+    if (state._extLeft  > 0) formData.append('left',   state._extLeft);
+    if (state._extRight > 0) formData.append('right',  state._extRight);
+    if (state._extTop   > 0) formData.append('up',     state._extTop);
+    if (state._extBot   > 0) formData.append('down',   state._extBot);
+
+    const prompt = document.getElementById('prompt-input').value.trim();
+    if (prompt) formData.append('prompt', prompt);
+
+    showProgress(60);
+
+    const res = await fetch('https://api.stability.ai/v2beta/stable-image/edit/outpaint', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Accept': 'image/*',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API 錯誤 ${res.status}: ${err}`);
+    }
+
+    showProgress(90);
+    const blob = await res.blob();
+    state.resultBlob = blob;
+
+    const url = URL.createObjectURL(blob);
+    const resultImg = document.getElementById('result-img');
+    resultImg.src = url;
+    resultImg.onload = () => {
+      document.getElementById('result-wrap').style.display = 'flex';
+      showProgress(100);
+      setTimeout(() => hideProgress(), 600);
+      showStatus(`✅ 生成完成！${resultImg.naturalWidth} × ${resultImg.naturalHeight} px`, 'success');
+    };
+  } catch (e) {
+    showStatus('生成失敗：' + e.message, 'error');
+    hideProgress();
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✨ AI 生成延伸畫面';
+  }
+}
+
+function downloadResult() {
+  if (!state.resultBlob) return;
+  const a = document.createElement('a');
+  const baseName = state.file.name.replace(/\.[^.]+$/, '');
+  const ratio = state.ratio ? state.ratio.label.replace(':', 'x') : 'reframe';
+  a.href = URL.createObjectURL(state.resultBlob);
+  a.download = `${baseName}_${ratio}.png`;
+  a.click();
+}
+
+function clearResult() {
+  document.getElementById('result-wrap').style.display = 'none';
+  document.getElementById('result-img').src = '';
+  state.resultBlob = null;
+  hideStatus();
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────
+function showStatus(msg, type = 'info') {
+  const bar = document.getElementById('status-bar');
+  bar.textContent = msg;
+  bar.className = type;
+  bar.style.display = 'block';
+}
+function hideStatus() {
+  document.getElementById('status-bar').style.display = 'none';
+}
+
+function showProgress(pct) {
+  const wrap = document.getElementById('progress-wrap');
+  const bar  = document.getElementById('progress-bar');
+  wrap.style.display = 'block';
+  bar.style.width = pct + '%';
+}
+function hideProgress() {
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('progress-bar').style.width = '0%';
+}
+</script>
 </body>
 </html>
