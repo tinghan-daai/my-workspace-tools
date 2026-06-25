@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 音樂提示詞生成器</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117;
+      --surface: #161b25;
+      --card: #1c2232;
+      --card-hover: #212840;
+      --border: #253050;
+      --accent: #4f8ef7;
+      --accent2: #3ecf8e;
+      --accent3: #f5a623;
+      --accent4: #c47af7;
+      --text: #e2e8f5;
+      --muted: #6b7a9e;
+      --radius: 12px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 20px 80px;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; }
+
+    /* header */
+    .site-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .site-header h1 { font-size: 1.3rem; font-weight: 700; }
+    .site-header h1 span { color: var(--accent4); }
+    .back-link {
+      font-size: 0.82rem; color: var(--muted); text-decoration: none;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 14px;
+    }
+    .back-link:hover { color: var(--text); }
+
+    /* platform tabs */
+    .platform-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .ptab {
+      flex: 1; min-width: 120px; padding: 10px 16px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: var(--radius); cursor: pointer;
+      text-align: center; font-size: 0.88rem; color: var(--muted);
+      transition: all .15s;
+    }
+    .ptab:hover { border-color: var(--accent); color: var(--text); }
+    .ptab.active { border-color: var(--accent4); color: var(--text); font-weight: 600; }
+    .ptab .pbadge {
+      font-size: 0.68rem; padding: 1px 7px; border-radius: 10px;
+      background: rgba(79,142,247,.15); color: var(--accent); margin-left: 5px;
+    }
+    .ptab.active .pbadge { background: rgba(196,122,247,.15); color: var(--accent4); }
+    .platform-tip {
+      font-size: 0.8rem; color: var(--muted); margin-bottom: 20px;
+      padding: 8px 14px; background: var(--surface); border-left: 3px solid var(--accent4);
+      border-radius: 0 8px 8px 0;
+    }
+
+    /* section */
+    .section { margin-bottom: 18px; }
+    .slabel {
+      font-size: 0.72rem; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 8px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 0.82rem; padding: 5px 13px; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); cursor: pointer; transition: all .15s; user-select: none;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--text); }
+    .chip.active { border-color: var(--accent4); color: var(--accent4); background: rgba(196,122,247,.08); font-weight: 500; }
+
+    /* output */
+    .output-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px; margin: 20px 0 10px;
+    }
+    .output-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 8px; letter-spacing:.05em; text-transform:uppercase; }
+    .output-text {
+      font-size: 0.9rem; line-height: 1.65; color: var(--text);
+      font-family: "SF Mono", "Fira Code", monospace; white-space: pre-wrap;
+      min-height: 52px;
+    }
+    .output-text.empty { color: var(--muted); font-style: italic; font-family: inherit; }
+
+    /* actions */
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .btn {
+      flex: 1; min-width: 110px; padding: 9px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text); font-size: 0.85rem;
+      cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .btn:hover { border-color: var(--accent); background: var(--card-hover); }
+    .btn.primary { border-color: var(--accent4); color: var(--accent4); }
+    .btn.primary:hover { background: rgba(196,122,247,.1); }
+
+    /* divider */
+    hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+    /* history */
+    .history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .history-header h2 { font-size: 0.9rem; font-weight: 600; }
+    .htabs { display: flex; gap: 4px; }
+    .htab {
+      font-size: 0.8rem; padding: 4px 12px; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); cursor: pointer; transition: all .12s;
+    }
+    .htab.active { border-color: var(--accent4); color: var(--accent4); }
+    .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+    .hitem {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 9px 13px;
+      display: flex; gap: 10px; align-items: flex-start;
+      cursor: pointer; transition: background .12s;
+    }
+    .hitem:hover { background: var(--card-hover); }
+    .hitem-meta { flex-shrink: 0; font-size: 0.72rem; color: var(--muted); line-height: 1.5; min-width: 52px; }
+    .hitem-text {
+      flex: 1; font-size: 0.8rem; color: var(--muted); line-height: 1.5;
+      font-family: "SF Mono", "Fira Code", monospace;
+      overflow: hidden; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .hitem-fav { cursor: pointer; font-size: 1rem; flex-shrink: 0; color: var(--muted); }
+    .hitem-fav.starred { color: var(--accent3); }
+    .empty-note { font-size: 0.82rem; color: var(--muted); text-align: center; padding: 20px 0; }
+
+    /* toast */
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--accent4); color: #fff; font-size: 0.85rem;
+      padding: 9px 20px; border-radius: 20px; opacity: 0;
+      pointer-events: none; transition: opacity .2s; z-index: 999; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="site-header">
+    <h1>🎵 AI 音樂提示詞生成器 <span>for 公傳室</span></h1>
+    <a class="back-link" href="../pr-dashboard/index.html">← 回儀表板</a>
+  </div>
+
+  <!-- 平台切換 -->
+  <div class="platform-tabs" id="platform-tabs"></div>
+  <div class="platform-tip" id="platform-tip"></div>
+
+  <!-- 選項 -->
+  <div class="section"><div class="slabel">用途</div><div class="chips" id="c-purpose"></div></div>
+  <div class="section"><div class="slabel">情緒氛圍</div><div class="chips" id="c-mood"></div></div>
+  <div class="section"><div class="slabel">曲風（可多選）</div><div class="chips" id="c-genre"></div></div>
+  <div class="section"><div class="slabel">主要樂器（可多選）</div><div class="chips" id="c-instrument"></div></div>
+  <div class="section"><div class="slabel">節奏</div><div class="chips" id="c-tempo"></div></div>
+  <div class="section"><div class="slabel">時長</div><div class="chips" id="c-duration"></div></div>
+  <div class="section"><div class="slabel">人聲</div><div class="chips" id="c-vocal"></div></div>
+
+  <!-- 輸出 -->
+  <div class="output-card">
+    <div class="output-label">生成的提示詞</div>
+    <div class="output-text empty" id="prompt-output">請先選擇用途與情緒氛圍…</div>
+  </div>
+
+  <!-- 操作 -->
+  <div class="actions">
+    <button class="btn primary" onclick="copyPrompt()">📋 複製提示詞</button>
+    <button class="btn" onclick="openPlatform()">🔗 前往平台</button>
+    <button class="btn" onclick="saveAsFav()">⭐ 收藏</button>
+    <button class="btn" onclick="resetAll()">↺ 重設</button>
+  </div>
+
+  <hr>
+
+  <!-- 歷史 -->
+  <div class="history-header">
+    <h2>📁 紀錄與收藏</h2>
+    <div class="htabs">
+      <div class="htab active" onclick="switchTab('history')">歷史</div>
+      <div class="htab" onclick="switchTab('favorites')">已收藏</div>
+    </div>
+  </div>
+  <div class="history-list" id="history-list"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const OPTIONS = {
+  purpose: [
+    { label: '影片背景音樂', val: 'background music for video' },
+    { label: 'Podcast 開場', val: 'podcast intro music' },
+    { label: '廣告配樂', val: 'advertisement background music' },
+    { label: '遊戲場景音樂', val: 'game scene music' },
+    { label: '冥想放鬆', val: 'meditation and relaxation music' },
+    { label: '社群短影片', val: 'social media short video background' },
+    { label: '簡報配樂', val: 'presentation background music' },
+    { label: '電影配樂', val: 'cinematic score' },
+    { label: '醫療衛教影片', val: 'health education video background music' },
+    { label: '活動紀錄片', val: 'event documentary background music' },
+  ],
+  mood: [
+    { label: '歡快活力', val: 'upbeat and energetic' },
+    { label: '溫暖感動', val: 'warm and emotional' },
+    { label: '神秘懸疑', val: 'mysterious and suspenseful' },
+    { label: '史詩壯闊', val: 'epic and grand' },
+    { label: '輕鬆慵懶', val: 'relaxed and laid-back' },
+    { label: '緊張刺激', val: 'tense and thrilling' },
+    { label: '夢幻空靈', val: 'dreamy and ethereal' },
+    { label: '溫柔平靜', val: 'gentle and calm' },
+    { label: '正向積極', val: 'positive and inspiring' },
+    { label: '莊重典雅', val: 'solemn and elegant' },
+  ],
+  genre: [
+    { label: 'Lo-fi', val: 'lo-fi' },
+    { label: '電子 EDM', val: 'electronic EDM' },
+    { label: '管弦樂', val: 'orchestral' },
+    { label: '爵士', val: 'jazz' },
+    { label: '民謠', val: 'folk acoustic' },
+    { label: 'Synthwave', val: 'synthwave' },
+    { label: '環境音樂', val: 'ambient' },
+    { label: '嘻哈 Hip-hop', val: 'hip-hop' },
+    { label: '搖滾', val: 'rock' },
+    { label: '新世紀 New Age', val: 'new age' },
+    { label: '古典', val: 'classical' },
+    { label: '輕音樂', val: 'easy listening' },
+    { label: '世界音樂', val: 'world music' },
+    { label: '企業感', val: 'corporate' },
+  ],
+  instrument: [
+    { label: '鋼琴', val: 'piano' },
+    { label: '吉他', val: 'acoustic guitar' },
+    { label: '弦樂四重奏', val: 'string quartet' },
+    { label: '管弦樂團', val: 'full orchestra' },
+    { label: '電吉他', val: 'electric guitar' },
+    { label: '貝斯', val: 'bass' },
+    { label: '鼓組', val: 'drums' },
+    { label: '合成器', val: 'synthesizer' },
+    { label: '薩克斯風', val: 'saxophone' },
+    { label: '長笛', val: 'flute' },
+    { label: '大提琴', val: 'cello' },
+    { label: '小提琴', val: 'violin' },
+    { label: '木琴', val: 'marimba' },
+    { label: '鋼鼓', val: 'steel drum' },
+    { label: '琵琶', val: 'pipa' },
+    { label: '二胡', val: 'erhu' },
+  ],
+  tempo: [
+    { label: '慢板 ~60 BPM', val: '60' },
+    { label: '中板 ~90 BPM', val: '90' },
+    { label: '快板 ~130 BPM', val: '130' },
+    { label: '不限', val: '' },
+  ],
+  duration: [
+    { label: '30 秒', val: '30 seconds' },
+    { label: '1 分鐘', val: '1 minute' },
+    { label: '2 分鐘', val: '2 minutes' },
+    { label: '3 分鐘以上', val: 'over 3 minutes' },
+  ],
+  vocal: [
+    { label: '純音樂（無人聲）', val: 'instrumental only, no vocals' },
+    { label: '有人聲', val: 'with vocals' },
+    { label: '哼唱（無歌詞）', val: 'wordless humming, no lyrics' },
+  ],
+};
+
+const PLATFORMS = [
+  {
+    id: 'suno', label: 'Suno', badge: '',
+    url: 'https://suno.com',
+    tip: 'Suno 支援自然語言長描述，提示詞可詳細描述情境與音樂質感。',
+    format: (s) => {
+      const parts = [];
+      if (s.mood) parts.push(s.mood);
+      if (s.genre.length) parts.push(s.genre.join(', '));
+      if (s.instrument.length) parts.push('featuring ' + s.instrument.join(', '));
+      if (s.purpose) parts.push(s.purpose);
+      if (s.tempo) parts.push(`${s.tempo} BPM`);
+      if (s.vocal) parts.push(s.vocal);
+      if (s.duration) parts.push(s.duration);
+      return parts.join(', ');
+    }
+  },
+  {
+    id: 'udio', label: 'Udio', badge: '',
+    url: 'https://www.udio.com',
+    tip: 'Udio 偏好簡短、以風格標籤為主的提示詞，關鍵詞越精準效果越好。',
+    format: (s) => {
+      const tags = [];
+      if (s.genre.length) tags.push(...s.genre);
+      if (s.mood) tags.push(s.mood);
+      if (s.instrument.length) tags.push(...s.instrument);
+      if (s.vocal) {
+        if (s.vocal.includes('no vocals') || s.vocal.includes('instrumental')) tags.push('instrumental');
+        else if (s.vocal.includes('humming')) tags.push('wordless vocals');
+        else tags.push('with vocals');
+      }
+      if (s.tempo) tags.push(`${s.tempo}bpm`);
+      const tagLine = tags.join(', ');
+      const ctx = s.purpose ? `[${s.purpose}]` : '';
+      return [ctx, tagLine].filter(Boolean).join(' ');
+    }
+  },
+  {
+    id: 'lyria3', label: 'Lyria 3', badge: 'Google',
+    url: 'https://deepmind.google/technologies/lyria/',
+    tip: 'Lyria 3 由 Google DeepMind 開發，擅長高品質器樂與電影配樂。建議使用結構化描述，包含曲風、樂器、情境與節奏。',
+    format: (s) => {
+      const lines = [];
+      if (s.genre.length || s.mood) {
+        lines.push('Style: ' + [s.mood, ...s.genre].filter(Boolean).join(', '));
+      }
+      if (s.instrument.length) {
+        lines.push('Instrumentation: ' + s.instrument.join(', '));
+      }
+      if (s.purpose) lines.push('Context: ' + s.purpose);
+      if (s.tempo) lines.push('Tempo: ' + s.tempo + ' BPM');
+      if (s.vocal) lines.push('Vocals: ' + (s.vocal.includes('no vocals') ? 'none, instrumental' : s.vocal));
+      if (s.duration) lines.push('Duration: ' + s.duration);
+      return lines.join('\n');
+    }
+  },
+];
+
+const state = { purpose: null, mood: null, genre: [], instrument: [], tempo: null, duration: null, vocal: null, platform: 'suno' };
+let history = JSON.parse(localStorage.getItem('ai-music-hist') || '[]');
+let activeTab = 'history';
+
+function init() {
+  renderChips('c-purpose', 'purpose', false);
+  renderChips('c-mood', 'mood', false);
+  renderChips('c-genre', 'genre', true);
+  renderChips('c-instrument', 'instrument', true);
+  renderChips('c-tempo', 'tempo', false);
+  renderChips('c-duration', 'duration', false);
+  renderChips('c-vocal', 'vocal', false);
+  renderPlatforms();
+  renderHistory();
+  updatePrompt();
+}
+
+function renderChips(elId, key, multi) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  OPTIONS[key].forEach(o => {
+    const d = document.createElement('div');
+    d.className = 'chip';
+    d.textContent = o.label;
+    const isActive = multi ? state[key].includes(o.val) : state[key] === o.val;
+    if (isActive) d.classList.add('active');
+    d.onclick = () => {
+      if (multi) {
+        const i = state[key].indexOf(o.val);
+        if (i >= 0) state[key].splice(i, 1); else state[key].push(o.val);
+      } else {
+        state[key] = state[key] === o.val ? null : o.val;
+      }
+      renderChips(elId, key, multi);
+      updatePrompt();
+    };
+    el.appendChild(d);
+  });
+}
+
+function renderPlatforms() {
+  const el = document.getElementById('platform-tabs');
+  el.innerHTML = '';
+  PLATFORMS.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'ptab' + (state.platform === p.id ? ' active' : '');
+    d.innerHTML = p.label + (p.badge ? `<span class="pbadge">${p.badge}</span>` : '');
+    d.onclick = () => { state.platform = p.id; renderPlatforms(); updatePrompt(); };
+    el.appendChild(d);
+  });
+  const p = PLATFORMS.find(x => x.id === state.platform);
+  document.getElementById('platform-tip').textContent = p ? p.tip : '';
+}
+
+function updatePrompt() {
+  const p = PLATFORMS.find(x => x.id === state.platform);
+  const el = document.getElementById('prompt-output');
+  if (!state.purpose && !state.mood) {
+    el.textContent = '請先選擇用途與情緒氛圍…';
+    el.classList.add('empty');
+    return;
+  }
+  const text = p.format(state);
+  el.textContent = text || '請繼續選擇選項…';
+  el.classList.toggle('empty', !text);
+}
+
+function getPrompt() { return document.getElementById('prompt-output').textContent; }
+
+function copyPrompt() {
+  const t = getPrompt();
+  if (t.startsWith('請')) return showToast('請先選擇選項');
+  navigator.clipboard.writeText(t).then(() => showToast('提示詞已複製！'));
+  addHistory(t, false);
+}
+
+function openPlatform() {
+  const p = PLATFORMS.find(x => x.id === state.platform);
+  if (p) window.open(p.url, '_blank');
+}
+
+function saveAsFav() {
+  const t = getPrompt();
+  if (t.startsWith('請')) return showToast('請先選擇選項');
+  addHistory(t, true);
+  showToast('已加入收藏！');
+}
+
+function addHistory(text, fav) {
+  const existing = history.find(x => x.text === text);
+  if (existing) { if (fav) existing.fav = true; save(); renderHistory(); return; }
+  history.unshift({
+    text, fav, platform: state.platform,
+    time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+  });
+  if (history.length > 60) history.pop();
+  save();
+  renderHistory();
+}
+
+function save() { localStorage.setItem('ai-music-hist', JSON.stringify(history)); }
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.htab').forEach((t, i) => t.classList.toggle('active', (i === 0 && tab === 'history') || (i === 1 && tab === 'favorites')));
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  const items = activeTab === 'favorites' ? history.filter(x => x.fav) : history;
+  if (!items.length) { el.innerHTML = `<div class="empty-note">${activeTab === 'favorites' ? '尚無收藏' : '尚無紀錄'}</div>`; return; }
+  el.innerHTML = '';
+  items.forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'hitem';
+    const pLabel = PLATFORMS.find(x => x.id === item.platform)?.label || item.platform;
+    d.innerHTML = `<div class="hitem-meta">${item.time || ''}<br>${pLabel}</div><div class="hitem-text">${item.text}</div><div class="hitem-fav ${item.fav ? 'starred' : ''}" title="收藏">★</div>`;
+    d.querySelector('.hitem-text').onclick = () => { navigator.clipboard.writeText(item.text).then(() => showToast('已複製')); };
+    d.querySelector('.hitem-fav').onclick = (e) => { e.stopPropagation(); item.fav = !item.fav; save(); renderHistory(); };
+    el.appendChild(d);
+  });
+}
+
+function resetAll() {
+  Object.assign(state, { purpose: null, mood: null, genre: [], instrument: [], tempo: null, duration: null, vocal: null });
+  init();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+init();
+</script>
+</body>
+</html>
