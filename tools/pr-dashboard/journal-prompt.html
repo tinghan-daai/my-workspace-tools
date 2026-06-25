@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日誌文稿產生器 — 公傳室</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --card: #1f2435;
+      --border: #2a3050;
+      --accent: #4f8ef7;
+      --accent2: #3ecf8e;
+      --text: #e4e8f5;
+      --muted: #7a85a8;
+      --radius: 14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 20px 80px;
+    }
+
+    header { max-width: 760px; margin: 0 auto 28px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.9rem; line-height: 1.6; }
+
+    .card {
+      max-width: 760px;
+      margin: 0 auto 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+    }
+
+    .card h2 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    /* 類型切換 */
+    .type-tabs { display: flex; gap: 8px; margin-bottom: 4px; }
+
+    .type-tab {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .type-tab .tab-icon { font-size: 1.4rem; display: block; margin-bottom: 5px; }
+    .type-tab .tab-label { font-size: 0.88rem; font-weight: 600; display: block; }
+    .type-tab .tab-sub { font-size: 0.73rem; color: var(--muted); display: block; margin-top: 3px; line-height: 1.4; }
+
+    .type-tab:hover { border-color: var(--accent); }
+    .type-tab.active { background: rgba(79,142,247,0.12); border-color: var(--accent); }
+    .type-tab.active .tab-label { color: var(--accent); }
+
+    /* 表單欄位 */
+    .field { margin-bottom: 18px; }
+
+    .field label {
+      display: block;
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .field label .req { color: var(--accent); }
+    .field label .hint { color: var(--muted); font-weight: normal; }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus { outline: none; border-color: var(--accent); }
+
+    .field input::placeholder,
+    .field textarea::placeholder { color: var(--muted); }
+
+    .field textarea { resize: vertical; min-height: 82px; line-height: 1.65; }
+
+    .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .field-row .field { flex: 1; min-width: 180px; }
+
+    /* 條件顯示 */
+    .visit-only,
+    .event-only { display: none; }
+    .visit-only.show,
+    .event-only.show { display: block; }
+
+    /* 生成按鈕 */
+    .btn-gen {
+      width: 100%;
+      max-width: 760px;
+      display: block;
+      margin: 0 auto;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-gen:hover { opacity: 0.85; }
+
+    /* 結果區 */
+    .result-section {
+      max-width: 760px;
+      margin: 22px auto 0;
+      display: none;
+    }
+    .result-section.visible { display: block; }
+
+    .result-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .result-block h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .prompt-box {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 0.88rem;
+      line-height: 1.9;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .step-hint {
+      background: #0d1f3c;
+      border: 1px solid #1a3a6e;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.86rem;
+      line-height: 1.8;
+      color: #a0c4ff;
+      margin-bottom: 14px;
+    }
+    .step-hint strong { color: #7fb3ff; }
+
+    .copy-btn {
+      margin-top: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .copy-btn:hover { opacity: 0.85; }
+    .copy-btn.copied { background: var(--accent2); }
+
+    /* 返回按鈕 */
+    .back-btn {
+      position: fixed; bottom: 20px; left: 20px; z-index: 9999;
+      background: rgba(15,17,23,0.88); border: 1px solid #2a3050;
+      border-radius: 20px; padding: 6px 14px; color: #8899bb;
+      text-decoration: none; font-size: 0.82rem;
+      backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: #e4e8f5; border-color: #4f8ef7; }
+
+    /* 分隔線 */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 18px 0;
+    }
+
+    /* 格式說明小標籤 */
+    .format-badge {
+      display: inline-block;
+      background: rgba(79,142,247,0.15);
+      border: 1px solid rgba(79,142,247,0.3);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<a class="back-btn" href="index.html">← 儀表板</a>
+
+<header>
+  <h1>📋 日誌文稿產生器</h1>
+  <p>填入活動資訊 → 一鍵產生日誌 Prompt → 貼到 Claude 生成初稿，格式符合「恭呈 上人慈閱」院方規範</p>
+</header>
+
+<!-- 日誌類型 -->
+<div class="card">
+  <h2>日誌類型</h2>
+  <div class="type-tabs">
+    <div class="type-tab active" id="tab-visit" onclick="setType('visit')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">往診關懷類</span>
+      <span class="tab-sub">院長 / 醫師隨社區志工<br>探訪因病而貧個案</span>
+    </div>
+    <div class="type-tab" id="tab-event" onclick="setType('event')">
+      <span class="tab-icon">🌿</span>
+      <span class="tab-label">病友會 / 活動類</span>
+      <span class="tab-sub">病友聚會、出遊踏青<br>手作講座、關懷活動</span>
+    </div>
+  </div>
+</div>
+
+<!-- 基本資訊（共用） -->
+<div class="card">
+  <h2>基本資訊</h2>
+
+  <div class="field-row">
+    <div class="field">
+      <label>日期 <span class="req">*</span></label>
+      <input type="text" id="date" placeholder="例：2026年1月2日" />
+    </div>
+    <div class="field">
+      <label>撰稿人姓名 <span class="req">*</span></label>
+      <input type="text" id="author" placeholder="例：江柏緯" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label>帶隊主管 <span class="req">*</span> <span class="hint">（職稱＋全名）</span></label>
+    <input type="text" id="leader" placeholder="例：台中慈濟醫院院長 簡守信" />
+  </div>
+
+  <div class="field">
+    <label>標題方向 <span class="hint">（可空白，留空由 AI 自行發想）</span></label>
+    <input type="text" id="titleHint" placeholder="例：2026年開年首場往診 暖心關愛不休息" />
+  </div>
+
+  <!-- 往診類專屬 -->
+  <div class="visit-only show" id="visitBasic">
+    <div class="field">
+      <label>走訪地點 / 區域</label>
+      <input type="text" id="visitArea" placeholder="例：台中市東區、台中市南屯區社區" />
+    </div>
+
+    <div class="field">
+      <label>隨行同仁 <span class="hint">（護理師、人文組，每行一位）</span></label>
+      <textarea id="visitStaff" placeholder="例：&#10;護理師 張瀞文&#10;人文組 陳小明"></textarea>
+    </div>
+
+    <div class="field">
+      <label>志工師兄姊 <span class="hint">（姓名，如有特別背景請說明）</span></label>
+      <textarea id="visitVolunteer" placeholder="例：&#10;謝素珠師姊（中區人醫會醫師謝輝龍院長的妹妹）&#10;陳志明師兄"></textarea>
+    </div>
+  </div>
+
+  <!-- 活動類專屬 -->
+  <div class="event-only" id="eventBasic">
+    <div class="field-row">
+      <div class="field">
+        <label>活動名稱</label>
+        <input type="text" id="eventName" placeholder="例：肝新歡喜病友會" />
+      </div>
+      <div class="field">
+        <label>地點</label>
+        <input type="text" id="eventPlace" placeholder="例：心田聯絡處、飛牛牧場" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>主辦科部</label>
+      <input type="text" id="dept" placeholder="例：台中慈濟醫院器官移植中心、一般外科" />
+    </div>
+
+    <div class="field">
+      <label>護理師 / 社工師 / 協調師 <span class="hint">（每行一位：姓名＋職稱）</span></label>
+      <textarea id="eventStaff" placeholder="例：&#10;賴家鈺醫師&#10;蔡惠珠護理師&#10;賴佩妤社工師&#10;吳佳倩協調師"></textarea>
+    </div>
+
+    <div class="field">
+      <label>參與人數</label>
+      <input type="text" id="attendCount" placeholder="例：六十三位病友與家屬、兩百多位" />
+    </div>
+  </div>
+</div>
+
+<!-- 內容細節 -->
+<div class="card">
+  <h2>內容細節</h2>
+
+  <!-- 往診：個案資訊 -->
+  <div class="visit-only show" id="visitCases">
+    <div class="field">
+      <label>個案概況 <span class="req">*</span> <span class="hint">（每位個案分段描述：化名/年齡/病況/醫師處置/亮點互動）</span></label>
+      <textarea id="cases" style="min-height:140px"
+        placeholder="例：&#10;石先生：獨居、多重疾病（心、肺、泌尿、眼睛、膝關節），量測血壓高達兩百多，院長囑咐按時服藥&#10;&#10;73歲黃伯伯：糖尿病、高血壓，長年肌無力腰痛，行動不便，另一位友人血壓偏高未按時服藥&#10;&#10;徐奶奶：子女往生，與孫子相依，髖骨腿骨多處骨折，半臥在床，服成藥止痛"></textarea>
+    </div>
+  </div>
+
+  <!-- 活動：內容亮點 -->
+  <div class="event-only" id="eventContent">
+    <div class="field">
+      <label>活動主題與內容 <span class="req">*</span> <span class="hint">（條列，每行一項）</span></label>
+      <textarea id="eventHighlights" style="min-height:100px"
+        placeholder="例：&#10;以「提起好心情」為主題&#10;草木染提袋手作（余佩璇老師帶領）&#10;環保陀螺製作與比賽&#10;醫病深情交流"></textarea>
+    </div>
+
+    <div class="field">
+      <label>特色病友故事 <span class="hint">（一兩位病友的亮點，含化名/特徵/引言）</span></label>
+      <textarea id="patientStory"
+        placeholder="例：&#10;換肝25年的「資深學長」，已升格為阿公&#10;&#10;病友林建興，胃癌治療三年多，翻轉四期為一期，分享：「胃癌有些食物真不能碰，吃了容易掛急診」"></textarea>
+    </div>
+  </div>
+
+  <!-- 共用：主管/醫師引言 -->
+  <div class="field">
+    <label>主管 / 醫師引言 <span class="hint">（一兩句，口語感佳）</span></label>
+    <textarea id="quote" placeholder="例：&#10;醫院與社區志工結合，為關懷個案帶來醫療幫忙，也給予心靈支持的力道，幫助他們迎來生命中另一道陽光&#10;&#10;換肝並非治療終點，而是一輩子關懷的起點"></textarea>
+  </div>
+
+  <div class="field">
+    <label>補充資訊 <span class="hint">（數字、特殊細節、背景，可空白）</span></label>
+    <textarea id="extra" placeholder="例：往診後特地準備適合糖尿病患者的營養品、活動後隔天病友還要去花蓮當志工"></textarea>
+  </div>
+</div>
+
+<!-- 輸出設定 -->
+<div class="card">
+  <h2>輸出設定</h2>
+  <div class="field-row">
+    <div class="field">
+      <label>文稿長度</label>
+      <select id="length">
+        <option value="標準（約 700–900 字）">標準（700–900 字）</option>
+        <option value="完整（約 1000–1200 字）">完整（1000–1200 字）</option>
+        <option value="精簡（約 500 字）">精簡（500 字）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>語氣風格</label>
+      <select id="tone">
+        <option value="敘事溫情、符合慈濟人文精神，有現場感與畫面感">溫情敘事（慈濟風）</option>
+        <option value="文筆細膩、情感豐富、帶有文學性">文學細膩</option>
+        <option value="平實自然、像在說故事">平實說故事</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>正文段數</label>
+      <select id="paraCount">
+        <option value="3–4 段">3–4 段</option>
+        <option value="4–5 段">4–5 段</option>
+        <option value="2–3 段（精簡）">2–3 段（精簡）</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<button class="btn-gen" onclick="generate()">✨ 產生日誌 Prompt</button>
+
+<!-- 結果區 -->
+<div class="result-section" id="resultSection">
+  <div class="step-hint">
+    <strong>接下來怎麼用？</strong><br>
+    1. 按「複製 Prompt」<br>
+    2. 打開 <strong>Claude</strong>，貼上送出<br>
+    3. Claude 會生成日誌初稿（含格式），你再潤稿即可
+  </div>
+  <div class="result-block">
+    <h3>日誌文稿 Prompt</h3>
+    <div class="prompt-box" id="promptBox"></div>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">複製 Prompt</button>
+  </div>
+</div>
+
+<script>
+  let currentType = 'visit'
+
+  function setType(type) {
+    currentType = type
+    document.getElementById('tab-visit').classList.toggle('active', type === 'visit')
+    document.getElementById('tab-event').classList.toggle('active', type === 'event')
+
+    document.querySelectorAll('.visit-only').forEach(el => el.classList.toggle('show', type === 'visit'))
+    document.querySelectorAll('.event-only').forEach(el => el.classList.toggle('show', type === 'event'))
+  }
+
+  function val(id) { return (document.getElementById(id)?.value || '').trim() }
+
+  function lines(text) {
+    return text.split('\n').map(l => l.trim()).filter(Boolean)
+  }
+
+  function fmtLines(text, prefix = '- ') {
+    return lines(text).map(l => prefix + l).join('\n')
+  }
+
+  function generate() {
+    const date   = val('date')
+    const author = val('author')
+    const leader = val('leader')
+
+    if (!date || !author || !leader) {
+      const missing = !date ? 'date' : !author ? 'author' : 'leader'
+      document.getElementById(missing).focus()
+      alert('請填入帶星號（*）的必填欄位：日期、撰稿人、帶隊主管')
+      return
+    }
+
+    const titleHint   = val('titleHint')
+    const quote       = val('quote')
+    const extra       = val('extra')
+    const length      = val('length')
+    const tone        = val('tone')
+    const paraCount   = val('paraCount')
+
+    let typeDesc = ''
+    let detailBlock = ''
+
+    if (currentType === 'visit') {
+      const visitArea      = val('visitArea')
+      const visitStaff     = val('visitStaff')
+      const visitVolunteer = val('visitVolunteer')
+      const cases          = val('cases')
+
+      if (!cases) {
+        document.getElementById('cases').focus()
+        alert('請填入個案概況（必填）')
+        return
+      }
+
+      typeDesc = '往診關懷類'
+      detailBlock = `
+【往診資訊】
+走訪地點：${visitArea || '（未填）'}
+${visitStaff ? `隨行同仁：\n${fmtLines(visitStaff)}` : ''}
+${visitVolunteer ? `志工師兄姊：\n${fmtLines(visitVolunteer)}` : ''}
+
+【個案概況】（請依序描述每位個案）
+${cases}`.trim()
+
+    } else {
+      const eventName       = val('eventName')
+      const eventPlace      = val('eventPlace')
+      const dept            = val('dept')
+      const eventStaff      = val('eventStaff')
+      const attendCount     = val('attendCount')
+      const eventHighlights = val('eventHighlights')
+      const patientStory    = val('patientStory')
+
+      if (!eventHighlights) {
+        document.getElementById('eventHighlights').focus()
+        alert('請填入活動主題與內容（必填）')
+        return
+      }
+
+      typeDesc = '病友會／活動類'
+      detailBlock = `
+【活動資訊】
+活動名稱：${eventName || '（未填）'}
+地點：${eventPlace || '（未填）'}
+主辦科部：${dept || '（未填）'}
+${eventStaff ? `護理師 / 社工師 / 協調師：\n${fmtLines(eventStaff)}` : ''}
+參與人數：${attendCount || '（未填）'}
+
+【活動內容亮點】
+${fmtLines(eventHighlights)}
+${patientStory ? `\n【特色病友故事】\n${patientStory}` : ''}`.trim()
+    }
+
+    const prompt = `你是台中慈濟醫院公傳室的資深文稿編輯，請依照以下資訊撰寫一篇台中慈院「日誌」文稿（非新聞稿）。
+
+═══ 基本資訊 ═══
+日誌類型：${typeDesc}
+日期：${date}
+帶隊主管：${leader}${titleHint ? `\n標題方向：${titleHint}` : ''}
+
+═══ 內容資料 ═══
+${detailBlock}
+${quote ? `\n【主管 / 醫師引言】（請自然融入文中）\n${quote}` : ''}
+${extra ? `\n【補充資訊】\n${extra}` : ''}
+
+═══ 輸出規格 ═══
+文稿長度：${length}
+語氣風格：${tone}
+正文段數：${paraCount}
+
+═══ 格式規範（請嚴格遵守）═══
+第一行：恭呈  上人慈閱（「恭呈」後接兩格空白，再接「上人慈閱」）
+第二行：${date.replace(/年|月/g, '-').replace('日', '')}台中慈院日誌（或依日期格式寫成 YYYY-MM-DD台中慈院日誌）
+第三行：【標題】粗體，14–22字，兩段式以空白分隔（如「2026年開年首場台中慈院往診 暖心關愛不休息」）
+第四行：首段導言（100–150字，交代誰、何時、做什麼、重點亮點，末尾可含主管引言）
+第五行：台中慈院日誌團隊恭敬頂禮（獨立一行）
+正文：${paraCount}，每段100–200字，有場景、人物、細節，帶情感溫度
+末行：（文、圖／${author}）
+
+寫作原則：
+• 第三人稱代名詞一律用「他」（包含女性）
+• 引言用「：」帶出，內容用「」框住，口語自然有畫面感
+• 不使用 Markdown 符號（#、**、•）
+• 不加「新聞聯絡人」、不加「照片與圖說」區塊
+• 化名個案不寫真實全名
+• 慈濟核心用語自然帶入，不堆砌：「醫人醫病更醫心」「全人照護」「大愛」「陪伴」「重生」「感恩」
+• 結尾段收束活動意義，呼應慈濟精神，給讀者溫暖感受`
+
+    document.getElementById('promptBox').textContent = prompt
+    const rs = document.getElementById('resultSection')
+    rs.classList.add('visible')
+    rs.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('promptBox').textContent
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn')
+      btn.textContent = '✅ 已複製！'
+      btn.classList.add('copied')
+      setTimeout(() => {
+        btn.textContent = '複製 Prompt'
+        btn.classList.remove('copied')
+      }, 2200)
+    })
+  }
+</script>
+</body>
+</html>
