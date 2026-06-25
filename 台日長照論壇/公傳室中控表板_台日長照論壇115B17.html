@@ -1,43 +1,1448 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>公傳室中控表板</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>公傳室中控表板｜2026 臺中長照台日論壇</title>
+<style>
+/* ── Reset & Root ─────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080c18;
+  --surface:#0e1422;
+  --card:#131b2e;
+  --card2:#182035;
+  --border:#1e2d47;
+  --border2:#253650;
+  --accent:#38bdf8;
+  --accent2:#818cf8;
+  --teal:#2dd4bf;
+  --green:#22c55e;
+  --yellow:#fbbf24;
+  --orange:#f97316;
+  --red:#f43f5e;
+  --purple:#a78bfa;
+  --pink:#ec4899;
+  --text:#e2e8f0;
+  --muted:#64748b;
+  --muted2:#94a3b8;
+  --r:14px;
+  --r-sm:8px;
+}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  min-height:100vh;overflow-x:hidden;
+}
+
+/* ── Particle canvas ─────────────────────────────────── */
+#particles{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.45}
+
+/* ── Animated mesh BG ────────────────────────────────── */
+.mesh-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 55% at 10% 10%, rgba(56,189,248,.09) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 45% at 90% 85%, rgba(129,140,248,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 55% 50%, rgba(45,212,191,.05) 0%, transparent 55%);
+  animation:meshShift 12s ease-in-out infinite alternate;
+}
+@keyframes meshShift{
+  0%{transform:scale(1) rotate(0deg)}
+  100%{transform:scale(1.05) rotate(1deg)}
+}
+
+/* ── Noise overlay ────────────────────────────────────── */
+.noise{
+  position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Layout ──────────────────────────────────────────── */
+.wrap{position:relative;z-index:1;max-width:1680px;margin:0 auto;padding:28px 24px}
+
+/* ── Header ──────────────────────────────────────────── */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;margin-bottom:28px;flex-wrap:wrap;
+}
+.logo-area{display:flex;align-items:center;gap:16px}
+.logo-badge{
+  width:52px;height:52px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,#0ea5e9,#6366f1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;box-shadow:0 0 20px rgba(56,189,248,.35);
+}
+.logo-area h1{
+  font-size:1.45rem;font-weight:800;
+  background:linear-gradient(135deg,#7dd3fc,#c4b5fd,#99f6e4);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1.2;
+}
+.logo-area p{font-size:.75rem;color:var(--muted2);margin-top:3px;letter-spacing:.02em}
+
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.live-badge{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35);
+  color:#4ade80;padding:5px 14px;border-radius:99px;
+  font-size:.72rem;font-weight:700;letter-spacing:.05em;
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.7)}}
+#live-time{font-size:.75rem;color:var(--muted2);font-variant-numeric:tabular-nums}
+.dept-badge{
+  background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(99,102,241,.15));
+  border:1px solid rgba(56,189,248,.3);
+  color:var(--accent);padding:5px 14px;border-radius:99px;
+  font-size:.72rem;font-weight:700;letter-spacing:.05em;
+}
+
+/* ── Countdown ───────────────────────────────────────── */
+.countdown-strip{
+  background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(129,140,248,.08));
+  border:1px solid rgba(56,189,248,.2);border-radius:var(--r);
+  padding:20px 28px;margin-bottom:28px;
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+}
+.countdown-strip::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#38bdf8,#818cf8,#2dd4bf,transparent);
+  animation:scanLine 3s ease-in-out infinite;
+}
+@keyframes scanLine{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+.cd-label{font-size:.75rem;color:var(--muted2);font-weight:500;margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
+.cd-blocks{display:flex;gap:16px;align-items:center}
+.cd-block{
+  text-align:center;
+  background:rgba(0,0,0,.3);border:1px solid var(--border2);border-radius:10px;
+  padding:10px 16px;min-width:70px;
+  position:relative;overflow:hidden;
+}
+.cd-block::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+}
+.cd-num{
+  font-size:2.2rem;font-weight:900;
+  background:linear-gradient(135deg,#7dd3fc,#c4b5fd);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1;display:block;font-variant-numeric:tabular-nums;
+  transition:transform .15s;
+}
+.cd-num.tick{animation:numTick .15s ease}
+@keyframes numTick{50%{transform:translateY(-3px)}}
+.cd-unit{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;display:block}
+.cd-sep{font-size:1.8rem;color:var(--border2);font-weight:300;padding-bottom:12px;animation:sepBlink 1s step-end infinite}
+@keyframes sepBlink{0%,100%{opacity:1}50%{opacity:.2}}
+.cd-right{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.next-block{text-align:right}
+.next-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.next-val{font-size:.95rem;font-weight:700;color:var(--yellow)}
+.next-days{font-size:.72rem;color:var(--orange);margin-top:2px}
+.forum-date{font-size:.75rem;color:var(--muted2)}
+.forum-date strong{color:var(--teal)}
+
+/* ── Urgency alarm bar ────────────────────────────────── */
+.alarm-bar{
+  background:linear-gradient(135deg,rgba(244,63,94,.12),rgba(249,115,22,.08));
+  border:1px solid rgba(244,63,94,.35);border-radius:var(--r);
+  padding:14px 20px;margin-bottom:20px;
+  display:flex;align-items:center;gap:12px;
+  animation:alarmPulse 3s ease-in-out infinite;
+}
+@keyframes alarmPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.15)}50%{box-shadow:0 0 16px 3px rgba(244,63,94,.1)}}
+.alarm-icon{font-size:1.3rem;flex-shrink:0;animation:shake .8s ease-in-out infinite}
+@keyframes shake{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.alarm-text{font-size:.8rem;font-weight:600;color:#fb7185}
+.alarm-text strong{color:#f43f5e}
+
+/* ── KPI row ─────────────────────────────────────────── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:28px}
+.kpi{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;position:relative;overflow:hidden;
+  transition:transform .25s,border-color .25s,box-shadow .25s;cursor:default;
+}
+.kpi:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.5)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.blue::before{background:linear-gradient(90deg,#38bdf8,#6366f1)}
+.kpi.green::before{background:linear-gradient(90deg,#22c55e,#2dd4bf)}
+.kpi.yellow::before{background:linear-gradient(90deg,#fbbf24,#f97316)}
+.kpi.red::before{background:linear-gradient(90deg,#f43f5e,#f97316)}
+.kpi.purple::before{background:linear-gradient(90deg,#a78bfa,#ec4899)}
+.kpi.teal::before{background:linear-gradient(90deg,#2dd4bf,#38bdf8)}
+.kpi-glow{
+  position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;
+  filter:blur(30px);opacity:.12;
+}
+.kpi.blue .kpi-glow{background:#38bdf8}
+.kpi.green .kpi-glow{background:#22c55e}
+.kpi.yellow .kpi-glow{background:#fbbf24}
+.kpi.red .kpi-glow{background:#f43f5e}
+.kpi.purple .kpi-glow{background:#a78bfa}
+.kpi.teal .kpi-glow{background:#2dd4bf}
+.kpi-icon{font-size:1.4rem;margin-bottom:8px}
+.kpi-val{font-size:2rem;font-weight:900;line-height:1;transition:all .5s}
+.kpi.blue .kpi-val{color:#7dd3fc}
+.kpi.green .kpi-val{color:#4ade80}
+.kpi.yellow .kpi-val{color:#fde68a}
+.kpi.red .kpi-val{color:#fb7185}
+.kpi.purple .kpi-val{color:#c4b5fd}
+.kpi.teal .kpi-val{color:#5eead4}
+.kpi-label{font-size:.7rem;color:var(--muted2);margin-top:5px;font-weight:500}
+.kpi-sub{font-size:.65rem;color:var(--muted);margin-top:3px}
+.kpi-spark{position:absolute;bottom:10px;right:14px;opacity:.3}
+
+/* ── Ring chart ──────────────────────────────────────── */
+.ring-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:28px}
+.ring-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px 24px;display:flex;align-items:center;gap:20px;
+  transition:transform .25s;
+}
+.ring-card:hover{transform:translateY(-3px)}
+.ring-wrap{position:relative;width:90px;height:90px;flex-shrink:0}
+.ring-wrap svg{width:90px;height:90px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--border2);stroke-width:8}
+.ring-fg{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1)}
+.ring-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.ring-pct{font-size:1.2rem;font-weight:800}
+.ring-unit{font-size:.55rem;color:var(--muted);margin-top:1px}
+.ring-info h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
+.ring-info p{font-size:.72rem;color:var(--muted2);line-height:1.5}
+
+/* ── Timeline ────────────────────────────────────────── */
+.tl-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 26px;margin-bottom:28px;overflow:hidden;
+}
+.tl-card h3{font-size:.9rem;font-weight:600;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.tl-scroll{overflow-x:auto;padding-bottom:8px}
+.tl-scroll::-webkit-scrollbar{height:4px}
+.tl-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:2px}
+.tl-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tl-track{position:relative;min-width:1100px;height:180px;padding:0 40px}
+.tl-axis{
+  position:absolute;bottom:40px;left:40px;right:40px;height:2px;
+  background:linear-gradient(90deg,#38bdf8,#818cf8,#2dd4bf);
+  border-radius:2px;
+}
+.tl-node{position:absolute;bottom:40px;transform:translateX(-50%);cursor:pointer;z-index:2}
+.tl-dot{
+  width:16px;height:16px;border-radius:50%;border:3px solid var(--bg);
+  margin:0 auto;transition:transform .2s,box-shadow .2s;position:relative;z-index:2;
+}
+.tl-node:hover .tl-dot{transform:scale(1.6);box-shadow:0 0 12px currentColor}
+.tl-node.done .tl-dot{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.5)}
+.tl-node.urgent .tl-dot{background:#f43f5e;animation:dotPulse 1.5s ease-in-out infinite}
+.tl-node.warn .tl-dot{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,.4)}
+.tl-node.normal .tl-dot{background:#38bdf8}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.6)}50%{box-shadow:0 0 0 8px rgba(244,63,94,0)}}
+.tl-label{
+  position:absolute;top:-46px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;font-size:.58rem;font-weight:600;
+  background:var(--card2);border:1px solid var(--border2);
+  padding:3px 8px;border-radius:5px;max-width:120px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:opacity .2s;
+}
+.tl-date{
+  font-size:.55rem;color:var(--muted);text-align:center;
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);white-space:nowrap;
+}
+.tl-tick{
+  position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+  width:1px;height:20px;background:currentColor;opacity:.4;
+}
+.tl-today-line{
+  position:absolute;bottom:30px;width:2px;background:#fbbf24;border-radius:2px;height:30px;z-index:3;
+  box-shadow:0 0 8px rgba(251,191,36,.6);
+}
+.tl-today-tag{
+  position:absolute;bottom:2px;left:50%;transform:translateX(-50%);
+  font-size:.52rem;color:#fbbf24;font-weight:700;white-space:nowrap;
+  text-shadow:0 0 8px rgba(251,191,36,.8);
+}
+
+/* ── Section header ──────────────────────────────────── */
+.section-h{
+  font-size:.9rem;font-weight:700;margin:0 0 16px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-h::before{
+  content:'';display:block;width:4px;height:20px;border-radius:2px;
+  background:linear-gradient(135deg,#38bdf8,#818cf8);flex-shrink:0;
+}
+.section-h .count-badge{
+  margin-left:auto;font-size:.68rem;font-weight:600;
+  background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);
+  color:var(--accent);padding:2px 10px;border-radius:99px;
+}
+
+/* ── Filter chips ─────────────────────────────────────── */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.filter-label{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 13px;border-radius:99px;font-size:.7rem;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);background:transparent;
+  color:var(--muted);transition:all .2s;white-space:nowrap;
+}
+.chip:hover{color:var(--text);transform:translateY(-1px)}
+.chip.active{color:var(--text)}
+.chip.all.active{background:rgba(99,102,241,.2);border-color:#6366f1;color:#a5b4fc}
+.chip.B.active{background:rgba(56,189,248,.15);border-color:#38bdf8;color:#7dd3fc}
+.chip.H.active{background:rgba(167,139,250,.15);border-color:#a78bfa;color:#c4b5fd}
+.chip.J.active{background:rgba(251,191,36,.15);border-color:#fbbf24;color:#fde68a}
+.chip.L.active{background:rgba(249,115,22,.15);border-color:#f97316;color:#fdba74}
+.chip.M.active{background:rgba(244,63,94,.15);border-color:#f43f5e;color:#fda4af}
+.chip.high.active{background:rgba(244,63,94,.15);border-color:#f43f5e;color:#fda4af}
+.chip.medium.active{background:rgba(251,191,36,.15);border-color:#fbbf24;color:#fde68a}
+.chip.status-chip.active{background:rgba(34,197,94,.15);border-color:#22c55e;color:#4ade80}
+
+/* ── Task grid ────────────────────────────────────────── */
+.task-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));
+  gap:16px;margin-bottom:28px;
+}
+.task-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;position:relative;overflow:hidden;
+  transition:transform .25s,border-color .25s,box-shadow .25s;
+  cursor:pointer;
+}
+.task-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,.5)}
+.task-card.hidden{display:none}
+.task-card::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;
+}
+.task-card.cat-B::after{background:linear-gradient(180deg,#38bdf8,#0ea5e9)}
+.task-card.cat-H::after{background:linear-gradient(180deg,#a78bfa,#8b5cf6)}
+.task-card.cat-J::after{background:linear-gradient(180deg,#fbbf24,#f59e0b)}
+.task-card.cat-L::after{background:linear-gradient(180deg,#f97316,#ea580c)}
+.task-card.cat-M::after{background:linear-gradient(180deg,#f43f5e,#e11d48)}
+.task-card.urgent{
+  border-color:rgba(244,63,94,.4);
+  animation:cardUrgent 2.8s ease-in-out infinite;
+}
+@keyframes cardUrgent{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.1)}50%{box-shadow:0 0 18px 3px rgba(244,63,94,.15)}}
+.task-card .card-shine{
+  position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);
+  transition:left .6s ease;pointer-events:none;
+}
+.task-card:hover .card-shine{left:150%}
+
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;padding-left:12px}
+.card-badges{display:flex;gap:6px;flex-wrap:wrap}
+.cat-pill{
+  font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:99px;
+  letter-spacing:.03em;
+}
+.cat-B{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.25)}
+.cat-H{background:rgba(167,139,250,.15);color:#c4b5fd;border:1px solid rgba(167,139,250,.25)}
+.cat-J{background:rgba(251,191,36,.12);color:#fde68a;border:1px solid rgba(251,191,36,.25)}
+.cat-L{background:rgba(249,115,22,.12);color:#fdba74;border:1px solid rgba(249,115,22,.25)}
+.cat-M{background:rgba(244,63,94,.12);color:#fda4af;border:1px solid rgba(244,63,94,.25)}
+.status-pill{font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.s-待辦{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
+.s-進行中{background:rgba(56,189,248,.15);color:#7dd3fc;border:1px solid rgba(56,189,248,.3)}
+.s-完成{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+.s-延誤{background:rgba(244,63,94,.2);color:#fb7185;border:1px solid rgba(244,63,94,.35)}
+.pri-pill{
+  font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:99px;letter-spacing:.05em;
+}
+.pri-高{background:rgba(244,63,94,.2);color:#fb7185}
+.pri-中{background:rgba(251,191,36,.15);color:#fde68a}
+
+.card-title{font-size:.88rem;font-weight:700;line-height:1.4;padding-left:12px;margin-bottom:9px}
+.card-dl{display:flex;align-items:center;gap:8px;padding-left:12px;margin-bottom:8px}
+.dl-icon{font-size:.85rem}
+.dl-text{font-size:.76rem;font-weight:600}
+.dl-urgent{color:#f43f5e}
+.dl-warn{color:#fbbf24}
+.dl-ok{color:var(--muted2)}
+.dl-done{color:#22c55e}
+.days-badge{
+  display:inline-block;padding:1px 8px;border-radius:99px;
+  font-size:.62rem;font-weight:800;margin-left:4px;
+}
+.days-over{background:rgba(244,63,94,.25);color:#f43f5e}
+.days-urgent{background:rgba(249,115,22,.25);color:#f97316}
+.days-warn{background:rgba(251,191,36,.2);color:#fbbf24}
+.days-ok{background:rgba(34,197,94,.15);color:#22c55e}
+
+.card-body{padding-left:12px}
+.card-summary{
+  font-size:.71rem;color:var(--muted2);line-height:1.55;
+  max-height:0;overflow:hidden;transition:max-height .35s ease,opacity .35s ease;
+  opacity:0;
+}
+.task-card:hover .card-summary,.task-card.expanded .card-summary{max-height:140px;opacity:1}
+.card-risk{
+  margin-top:9px;padding:7px 12px 7px 10px;
+  background:linear-gradient(135deg,rgba(244,63,94,.1),rgba(249,115,22,.06));
+  border:1px solid rgba(244,63,94,.25);border-radius:8px;
+  font-size:.67rem;color:#fda4af;line-height:1.45;
+}
+.card-risk strong{color:#f43f5e}
+.card-note{
+  margin-top:7px;padding:7px 10px;
+  background:rgba(255,255,255,.03);border-left:2px solid var(--border2);
+  border-radius:0 6px 6px 0;font-size:.67rem;color:var(--muted);line-height:1.4;
+}
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-left:12px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);
+}
+.card-id{font-size:.62rem;color:var(--muted);font-weight:600;font-family:'Courier New',monospace}
+.card-edit-btn{
+  font-size:.62rem;padding:2px 10px;border-radius:99px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.card-edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Deduction risk panel ─────────────────────────────── */
+.risk-panel{
+  background:var(--card);border:1px solid rgba(244,63,94,.3);border-radius:var(--r);
+  padding:22px 26px;margin-bottom:28px;position:relative;overflow:hidden;
+}
+.risk-panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,#f43f5e,#f97316,#fbbf24);
+}
+.risk-total{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.35);
+  color:#fb7185;padding:3px 12px;border-radius:99px;
+  font-size:.72rem;font-weight:700;margin-left:auto;
+}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.risk-item{
+  background:rgba(244,63,94,.05);border:1px solid rgba(244,63,94,.18);
+  border-radius:10px;padding:14px 16px;
+  transition:border-color .2s,transform .2s;cursor:default;
+}
+.risk-item:hover{border-color:rgba(244,63,94,.4);transform:translateY(-2px)}
+.risk-no{
+  font-size:.6rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;
+  font-family:'Courier New',monospace;
+}
+.risk-title{font-size:.78rem;font-weight:700;color:#fda4af;margin-bottom:6px;line-height:1.4}
+.risk-amount{
+  display:inline-block;font-size:.8rem;font-weight:800;color:#f43f5e;
+  background:rgba(244,63,94,.12);padding:2px 10px;border-radius:6px;margin-bottom:4px;
+}
+.risk-cap{font-size:.65rem;color:var(--muted2);margin-bottom:5px}
+.risk-proof{font-size:.63rem;color:var(--muted);line-height:1.4}
+.risk-proof strong{color:var(--muted2)}
+
+/* ── Gantt mini chart ────────────────────────────────── */
+.gantt-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 26px;margin-bottom:28px;
+}
+.gantt-scroll{overflow-x:auto}
+.gantt-scroll::-webkit-scrollbar{height:4px}
+.gantt-scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:2px}
+.gantt-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.gantt-table{min-width:820px;width:100%;border-collapse:collapse}
+.gantt-table th{
+  font-size:.67rem;color:var(--muted);font-weight:600;
+  padding:6px 10px;border-bottom:1px solid var(--border2);text-align:left;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.gantt-table td{
+  padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:.74rem;vertical-align:middle;
+}
+.gantt-table tr:hover td{background:rgba(255,255,255,.025)}
+.g-id{font-family:'Courier New',monospace;font-size:.67rem;color:var(--muted);font-weight:700}
+.g-task{font-weight:600;max-width:180px}
+.g-dl{font-size:.72rem;font-weight:700;color:var(--red)}
+.g-bar-wrap{position:relative;height:20px;min-width:380px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}
+.g-bar{
+  position:absolute;top:2px;height:16px;border-radius:3px;
+  transition:width 1.2s cubic-bezier(.4,0,.2,1);
+  display:flex;align-items:center;padding:0 6px;overflow:hidden;
+}
+.g-bar-label{font-size:.55rem;font-weight:700;color:rgba(255,255,255,.9);white-space:nowrap}
+.g-today{
+  position:absolute;top:0;bottom:0;width:2px;background:#fbbf24;
+  border-radius:1px;box-shadow:0 0 6px rgba(251,191,36,.6);z-index:2;
+}
+.g-today-tag{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:.5rem;color:#fbbf24;font-weight:700;white-space:nowrap;
+}
+
+/* ── Progress bars ────────────────────────────────────── */
+.progress-section{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 26px;margin-bottom:28px;
+}
+.cat-progress{margin-bottom:16px}
+.cat-progress:last-child{margin-bottom:0}
+.cat-prog-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.cat-prog-name{font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:7px}
+.cat-prog-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-prog-count{font-size:.7rem;color:var(--muted)}
+.prog-bar-outer{background:rgba(255,255,255,.06);border-radius:99px;height:8px;overflow:hidden}
+.prog-bar-inner{
+  height:100%;border-radius:99px;
+  transition:width 1.4s cubic-bezier(.4,0,.2,1);
+  position:relative;overflow:hidden;
+}
+.prog-bar-inner::after{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+  animation:shimmer 2.5s ease-in-out infinite;
+}
+@keyframes shimmer{to{left:200%}}
+
+/* ── Status edit modal ────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--card2);border:1px solid var(--border2);border-radius:18px;
+  padding:28px 32px;width:min(480px,90vw);
+  animation:modalIn .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(16px)}}
+.modal h3{font-size:1rem;font-weight:700;margin-bottom:4px}
+.modal .modal-sub{font-size:.75rem;color:var(--muted2);margin-bottom:20px}
+.modal-btns{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.status-opt{
+  flex:1;min-width:110px;padding:10px;border-radius:10px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);cursor:pointer;
+  font-size:.78rem;font-weight:600;transition:all .2s;text-align:center;
+}
+.status-opt:hover,.status-opt.selected{color:var(--text);border-color:transparent}
+.status-opt[data-v="待辦"].selected{background:rgba(100,116,139,.25);border-color:#64748b;color:#94a3b8}
+.status-opt[data-v="進行中"].selected{background:rgba(56,189,248,.2);border-color:#38bdf8;color:#7dd3fc}
+.status-opt[data-v="完成"].selected{background:rgba(34,197,94,.2);border-color:#22c55e;color:#4ade80}
+.status-opt[data-v="延誤"].selected{background:rgba(244,63,94,.2);border-color:#f43f5e;color:#fb7185}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.btn-cancel{
+  padding:8px 20px;border-radius:99px;border:1px solid var(--border2);
+  background:transparent;color:var(--muted);cursor:pointer;font-size:.78rem;
+  transition:all .2s;
+}
+.btn-cancel:hover{border-color:var(--muted);color:var(--text)}
+.btn-save{
+  padding:8px 24px;border-radius:99px;border:none;
+  background:linear-gradient(135deg,#38bdf8,#818cf8);
+  color:#fff;cursor:pointer;font-size:.78rem;font-weight:700;
+  transition:opacity .2s,transform .2s;
+}
+.btn-save:hover{opacity:.9;transform:translateY(-1px)}
+
+/* ── Toast ────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:200;
+  background:var(--card2);border:1px solid var(--border2);border-radius:12px;
+  padding:14px 20px;font-size:.78rem;font-weight:600;
+  box-shadow:0 12px 32px rgba(0,0,0,.5);
+  transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);
+  display:flex;align-items:center;gap:10px;
+}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.green{border-color:rgba(34,197,94,.4);color:#4ade80}
+.toast.blue{border-color:rgba(56,189,248,.4);color:#7dd3fc}
+
+/* ── Footer ──────────────────────────────────────────── */
+footer{
+  text-align:center;padding:28px 0 8px;
+  font-size:.68rem;color:var(--muted);
+  border-top:1px solid var(--border);margin-top:8px;
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media(max-width:720px){
+  .task-grid{grid-template-columns:1fr}
+  .ring-row{grid-template-columns:1fr}
+  .cd-num{font-size:1.6rem}
+  .cd-block{min-width:54px;padding:8px 10px}
+  .wrap{padding:16px}
+}
+
+/* ── Animations ──────────────────────────────────────── */
+.fade-in{animation:fadeIn .5s ease both}
+.slide-up{animation:slideUp .5s ease both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+[data-delay]{animation-delay:var(--d)}
+.back-btn{position:fixed;bottom:20px;left:20px;z-index:9999;background:rgba(15,17,23,0.88);border:1px solid #333;border-radius:20px;padding:6px 14px;color:#888;text-decoration:none;font-size:0.82rem;backdrop-filter:blur(8px);transition:color .15s,border-color .15s;}
+.back-btn:hover{color:#eee;border-color:#4f8ef7;}
+</style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">📋</div>
-    <h1>公傳室中控表板</h1>
-    <p>文宣製作進度、分工追蹤、截止日期一覽</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+<a class="back-btn" href="../tools/pr-dashboard/index.html">← 儀表板</a>
+
+<!-- Background layers -->
+<canvas id="particles"></canvas>
+<div class="mesh-bg"></div>
+<div class="noise"></div>
+
+<!-- Status edit modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">更新進度狀態</h3>
+    <div class="modal-sub" id="modal-sub">選擇此工作項目的最新狀態</div>
+    <div class="modal-btns">
+      <button class="status-opt" data-v="待辦">⏳ 待辦</button>
+      <button class="status-opt" data-v="進行中">🔵 進行中</button>
+      <button class="status-opt" data-v="完成">✅ 完成</button>
+      <button class="status-opt" data-v="延誤">⚠️ 延誤</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveStatus()">儲存狀態</button>
+    </div>
   </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<div class="wrap">
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<header class="fade-in">
+  <div class="logo-area">
+    <div class="logo-badge">📢</div>
+    <div>
+      <h1>公傳室中控表板</h1>
+      <p>2026 臺中長照台日論壇（案號 115B17）　｜　文宣設計 ＋ 活動推廣　｜　論壇日：2026/7/3（五）</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="dept-badge">📢 公傳室</div>
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+    <span id="live-time"></span>
+  </div>
+</header>
+
+<!-- ── Countdown ─────────────────────────────────────── -->
+<div class="countdown-strip slide-up" style="--d:.1s">
+  <div>
+    <div class="cd-label">距論壇開幕倒數</div>
+    <div class="cd-blocks">
+      <div class="cd-block"><span class="cd-num" id="cd-d">--</span><span class="cd-unit">天</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-h">--</span><span class="cd-unit">時</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-m">--</span><span class="cd-unit">分</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-s">--</span><span class="cd-unit">秒</span></div>
+    </div>
+  </div>
+  <div class="cd-right">
+    <div class="next-block">
+      <div class="next-label">下一個公傳截止日</div>
+      <div class="next-val" id="next-dl">計算中…</div>
+      <div class="next-days" id="next-days"></div>
+    </div>
+    <div class="forum-date">論壇日 <strong>2026年7月3日（週五）</strong></div>
+  </div>
+</div>
+
+<!-- ── Alarm bar ──────────────────────────────────────── -->
+<div class="alarm-bar slide-up" id="alarm-bar" style="--d:.15s;display:none">
+  <div class="alarm-icon">🔔</div>
+  <div class="alarm-text" id="alarm-text"></div>
+</div>
+
+<!-- ── KPI row ────────────────────────────────────────── -->
+<div class="kpi-row">
+  <div class="kpi blue fade-in" style="--d:.2s">
+    <div class="kpi-glow"></div>
+    <div class="kpi-icon">📋</div>
+    <div class="kpi-val" id="kpi-total">13</div>
+    <div class="kpi-label">公傳室工作項目</div>
+    <div class="kpi-sub">B+H+J+L+M 類別</div>
+  </div>
+  <div class="kpi red fade-in" style="--d:.25s">
+    <div class="kpi-glow"></div>
+    <div class="kpi-icon">🚨</div>
+    <div class="kpi-val" id="kpi-urgent">0</div>
+    <div class="kpi-label">緊急（14天內）</div>
+  </div>
+  <div class="kpi yellow fade-in" style="--d:.3s">
+    <div class="kpi-glow"></div>
+    <div class="kpi-icon">⏳</div>
+    <div class="kpi-val" id="kpi-pending">0</div>
+    <div class="kpi-label">待辦中</div>
+  </div>
+  <div class="kpi green fade-in" style="--d:.35s">
+    <div class="kpi-glow"></div>
+    <div class="kpi-icon">✅</div>
+    <div class="kpi-val" id="kpi-done">0</div>
+    <div class="kpi-label">已完成</div>
+  </div>
+  <div class="kpi purple fade-in" style="--d:.4s">
+    <div class="kpi-glow"></div>
+    <div class="kpi-icon">⚠️</div>
+    <div class="kpi-val">7</div>
+    <div class="kpi-label">扣款風險項目</div>
+    <div class="kpi-sub">合計最高潛在扣款額</div>
+  </div>
+  <div class="kpi teal fade-in" style="--d:.45s">
+    <div class="kpi-glow"></div>
+    <div class="kpi-icon">📅</div>
+    <div class="kpi-val" id="kpi-days">--</div>
+    <div class="kpi-label">距論壇天數</div>
+    <div class="kpi-sub">2026/7/3</div>
+  </div>
+</div>
+
+<!-- ── Progress rings ─────────────────────────────────── -->
+<div class="ring-row" id="ring-row"></div>
+
+<!-- ── Timeline ──────────────────────────────────────── -->
+<div class="tl-card fade-in">
+  <h3>
+    <span>🗓</span> 公傳室時程軸
+    <span style="margin-left:auto;font-size:.7rem;color:var(--muted);font-weight:400">← 滑動查看全程 →</span>
+  </h3>
+  <div class="tl-scroll">
+    <div class="tl-track" id="tl-track">
+      <div class="tl-axis"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Category progress ──────────────────────────────── -->
+<div class="progress-section fade-in">
+  <div class="section-h">
+    <span>各類別進度一覽</span>
+    <span class="count-badge" id="overall-pct">0%</span>
+  </div>
+  <div id="cat-progress-list"></div>
+</div>
+
+<!-- ── Filters + Task grid ────────────────────────────── -->
+<div class="section-h">
+  <span>工作項目卡片</span>
+  <span class="count-badge" id="visible-count">13 項</span>
+</div>
+<div class="filter-bar">
+  <span class="filter-label">類別：</span>
+  <button class="chip all active" onclick="filterTasks('cat','all',this)">全部</button>
+  <button class="chip B" onclick="filterTasks('cat','B',this)">B 論壇規劃</button>
+  <button class="chip H" onclick="filterTasks('cat','H',this)">H 文宣設計</button>
+  <button class="chip J" onclick="filterTasks('cat','J',this)">J 活動推廣</button>
+  <button class="chip L" onclick="filterTasks('cat','L',this)">L 活動當日</button>
+  <button class="chip M" onclick="filterTasks('cat','M',this)">M 成果驗收</button>
+  <span class="filter-label" style="margin-left:8px">優先：</span>
+  <button class="chip high" onclick="filterTasks('pri','高',this)">🔴 高</button>
+  <button class="chip medium" onclick="filterTasks('pri','中',this)">🟡 中</button>
+  <span class="filter-label" style="margin-left:8px">狀態：</span>
+  <button class="chip status-chip" onclick="filterTasks('status','完成',this)">✅ 完成</button>
+  <button class="chip status-chip" onclick="filterTasks('status','待辦',this)">⏳ 待辦</button>
+  <button class="chip status-chip" onclick="filterTasks('status','進行中',this)">🔵 進行中</button>
+</div>
+<div class="task-grid" id="task-grid"></div>
+
+<!-- ── Gantt chart ────────────────────────────────────── -->
+<div class="gantt-card fade-in">
+  <div class="section-h">
+    <span>工作甘特圖（5月 → 7月）</span>
+  </div>
+  <div class="gantt-scroll">
+    <table class="gantt-table" id="gantt-table"></table>
+  </div>
+</div>
+
+<!-- ── Deduction risk panel ───────────────────────────── -->
+<div class="risk-panel fade-in">
+  <div class="section-h" style="margin-bottom:16px">
+    <span>⚠️ 扣款風險清單（公傳室負責）</span>
+    <span class="risk-total">7 項扣款條款</span>
+  </div>
+  <div class="risk-grid" id="risk-grid"></div>
+</div>
+
+<footer>
+  2026 臺中長照台日論壇（案號 115B17）　｜　公傳室工作中控表板　｜　點擊任意工作卡片可更新進度狀態
+</footer>
+</div><!-- /wrap -->
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATA
+═══════════════════════════════════════════════════════ */
+const FORUM_DATE = new Date('2026-07-03T09:00:00');
+const TODAY = new Date();
+
+/* Task data */
+const tasks = [
+  {id:'B-1',cat:'B',title:'主題標誌 & 主視覺設計',
+   dl:'2026-06-15',dlLabel:'2026/6/15',
+   basis:'決標次日起30日曆天內',
+   pri:'高',status:'待辦',
+   summary:'以長照3.0政策發展趨勢及失智症/智慧科技照護應用為核心，策劃論壇視覺主題；主題標誌及主視覺設計，提供至少2種以上風格供機關挑選，須經本局同意後始得施行。',
+   risk:'設計提案須 ≥2 款；須局方書面同意',
+   note:'須含中英日三語版本；與後續文宣素材共用主視覺'},
+
+  {id:'B-2',cat:'B',title:'宣傳海報 / 布條 / 旗幟設計製作',
+   dl:'2026-06-15',dlLabel:'2026/6/15',
+   basis:'決標次日起30日曆天內',
+   pri:'高',status:'待辦',
+   summary:'設計、製作、郵寄及懸掛論壇宣傳海報、布條或旗幟（含旗桿及旗座），至少寄送全國各縣市政府及中部醫療院所至少50處（中彰投、新竹縣市、苗栗縣、嘉義縣市轄內地區級以上醫院）。',
+   risk:'郵寄清單須建檔備查；須局方同意後發送',
+   note:'建議與 H-1 素材同步設計，減少重工'},
+
+  {id:'H-1',cat:'H',title:'論壇素材設計及輸出',
+   dl:'2026-06-15',dlLabel:'2026/6/15',
+   basis:'決標次日起30日曆天內',
+   pri:'高',status:'待辦',
+   summary:'論壇主題標誌、主視覺設計、宣傳海報、邀請卡及彩色布條等之設計及製作，所有文宣廣告需加註「廣告」二字及揭露機關名稱，須經本局同意後始得發送。',
+   risk:'⚠ 未加註「廣告」字樣將違規',
+   note:'可與 B-2 共用同一主視覺設計稿'},
+
+  {id:'H-2',cat:'H',title:'會議手冊設計',
+   dl:'2026-06-15',dlLabel:'2026/6/15',
+   basis:'決標次日起30日曆天內',
+   pri:'中',status:'待辦',
+   summary:'設計會議手冊（含議程、講師資歷及授課資料等），可提供電子講義供下載；視需求印製紙本手冊約50份（數量由本局指定）。',
+   risk:'',
+   note:'紙本數量須待本局確認；電子版須可下載'},
+
+  {id:'H-3',cat:'H',title:'識別證 & 資料袋 & 文宣品',
+   dl:'2026-06-15',dlLabel:'6/15提報 → 7/2送達',
+   basis:'決標起30天提報；論壇前1日送達',
+   pri:'高',status:'待辦',
+   summary:'識別證設計及印製（含吊繩）至少300份，明顯區分貴賓/講師/學員/工作人員身份；資料袋設計及製作共300份（至少提供7款文宣品供本局選擇）；手提袋可容納論壇手冊/識別證/衛教品等。',
+   risk:'★ 禮品獎狀須於 7/2 23:59 前送達會場',
+   note:'兩個截止日：6/15 提報設計稿、7/2 實體送達會場'},
+
+  {id:'H-4',cat:'H',title:'邀請卡（中英日文）',
+   dl:'2026-06-15',dlLabel:'2026/6/15',
+   basis:'決標次日起30日曆天內',
+   pri:'中',status:'待辦',
+   summary:'中英日文邀請卡（含信封）100份，需對應邀請名單寄送。',
+   risk:'',
+   note:'需三語版本；需對應邀請名單'},
+
+  {id:'J-1',cat:'J',title:'報紙廣告（論壇前 ≥2則）',
+   dl:'2026-06-19',dlLabel:'2026/6/19',
+   basis:'論壇前14個日曆天完成刊登',
+   pri:'高',status:'待辦',
+   summary:'於三大報（中國時報、聯合報或自由時報）刊登論壇資訊至少2則推廣資訊，至遲應於活動開始前一週刊登。',
+   risk:'★ 未達2則，每不足1則扣新臺幣2萬元',
+   note:'論壇後另須於三大報刊至少1則新聞稿（見 J-2）'},
+
+  {id:'J-2',cat:'J',title:'報紙新聞稿（論壇後 ≥1則）',
+   dl:'2026-07-03',dlLabel:'2026/7/3 後儘速',
+   basis:'論壇後儘速刊登',
+   pri:'高',status:'待辦',
+   summary:'論壇舉辦後於三大報紙刊至少1則論壇新聞稿。',
+   risk:'★ 未達1篇扣除契約價金1萬元',
+   note:'配合 L-1 活動當日新聞稿同步發送'},
+
+  {id:'J-3',cat:'J',title:'數位廣編稿（≥10則 / ≥200萬人次）',
+   dl:'2026-06-19',dlLabel:'2026/6/19',
+   basis:'論壇前14個日曆天前完成發布',
+   pri:'高',status:'待辦',
+   summary:'於媒體及相關數位平台曝光至少10則；其中至少2篇包含長照3.0政策及失智症相關議題專題報導；總曝光數或觸及人數至少達200萬人次；須於長照或失智症照護相關粉絲頁曝光。',
+   risk:'★ 每不足1則扣1萬元；未達200萬人次以20%契約價金為限扣減',
+   note:'建立追蹤表：媒體名稱、發布日期、曝光數、連結'},
+
+  {id:'J-4',cat:'J',title:'電視牆 / 電子看板（≥4,000檔次）',
+   dl:'2026-06-19',dlLabel:'2026/6/19',
+   basis:'論壇前14個日曆天前完成',
+   pri:'高',status:'待辦',
+   summary:'台中市戶外電視牆/電子看板廣告；至少包含2處場域合計至少4,000檔次。',
+   risk:'★ 每不足1檔次扣1,000元；以20%契約價金為限',
+   note:'需取得每個場域播出紀錄作為驗收憑證'},
+
+  {id:'J-5',cat:'J',title:'網路關鍵字廣告（≥20則）',
+   dl:'2026-06-03',dlLabel:'2026/6/3 ⚡最早截止',
+   basis:'論壇前30個日曆天完成',
+   pri:'高',status:'待辦',
+   summary:'於Yahoo、Google等搜尋引擎入口或Facebook、YouTube、Instagram等社群網站上架設活動連結廣告及關鍵字連結廣告；以電子報或刊登網路廣告至少20則宣傳論壇訊息。',
+   risk:'★ 每不足1則扣1,000元；以20%契約價金為限',
+   note:'⚡ 截止日為6/3，早於其他廣告媒體；須優先啟動！'},
+
+  {id:'L-1',cat:'L',title:'照片15-20張 + 新聞稿（活動當日）',
+   dl:'2026-07-03',dlLabel:'2026/7/3 中午前',
+   basis:'活動當日中午前',
+   pri:'高',status:'待辦',
+   summary:'現場備有立即剪輯影像器材及即時影像處理能力之人員至少1名，活動當日中午前提供15至20張活動照片及新聞稿。',
+   risk:'',
+   note:'需事先備妥新聞稿模板（留空發言人引言）；配合 J-2 報紙新聞稿同步發送'},
+
+  {id:'M-1',cat:'M',title:'長照服務推展系列影片製作',
+   dl:'2026-07-19',dlLabel:'2026/7/19',
+   basis:'活動結束次日起15日曆天內',
+   pri:'高',status:'待辦',
+   summary:'活動結束次日起15日曆天內製作長照服務推展系列影片（剪輯為至少10分鐘之精華片段影音檔），透過多元管道推廣長照服務，再次於社群平台上播送；上刊平台及影片內容皆須經本局同意後執行。',
+   risk:'★ 未完成扣除契約價金1萬元',
+   note:'須先取得本局同意；建議7/10前提交初剪供審閱'},
+];
+
+/* Deduction risks */
+const risks = [
+  {no:'R-1',title:'報紙廣告未達2則（論壇前14天）',amount:'每不足1則扣 NT$20,000',cap:'無上限',basis:'九（十一）2',proof:'報紙刊登截圖或掃描件、版面編號、刊期'},
+  {no:'R-2',title:'活動新聞稿未達1篇（論壇後）',amount:'扣除契約價金 NT$10,000',cap:'1萬元上限',basis:'九（十一）2',proof:'報紙刊登截圖或掃描件、刊期'},
+  {no:'R-3',title:'數位廣編稿未達10則',amount:'每不足1則扣 NT$10,000',cap:'該項目契約價金 20%',basis:'九（十一）3',proof:'各則廣編稿 URL 截圖、媒體名稱、發布日期'},
+  {no:'R-4',title:'數位廣編稿總曝光未達200萬人次',amount:'按比例扣減',cap:'該項目契約價金 20%',basis:'九（十一）3',proof:'後台數據截圖（含日期範圍、觸及人數）'},
+  {no:'R-5',title:'電視牆/電子看板廣告未達4,000檔次',amount:'每不足1檔次扣 NT$1,000',cap:'該項目契約價金 20%',basis:'九（十一）4',proof:'場域播出紀錄（含時段、地點、檔次統計）'},
+  {no:'R-6',title:'網路廣告/電子報未達20則',amount:'每不足1則扣 NT$1,000',cap:'該項目契約價金 20%',basis:'九（十一）5',proof:'各則廣告截圖、上刊平台、刊登日期'},
+  {no:'R-7',title:'長照服務推展系列影片未完成',amount:'扣除契約價金 NT$10,000',cap:'1萬元上限',basis:'九（十一）6',proof:'影片檔案（≥10分鐘）、社群平台上刊連結截圖'},
+];
+
+/* Category metadata */
+const catMeta = {
+  B:{name:'B 論壇規劃',color:'#38bdf8',grd:'linear-gradient(90deg,#38bdf8,#0ea5e9)'},
+  H:{name:'H 文宣設計',color:'#a78bfa',grd:'linear-gradient(90deg,#a78bfa,#8b5cf6)'},
+  J:{name:'J 活動推廣',color:'#fbbf24',grd:'linear-gradient(90deg,#fbbf24,#f59e0b)'},
+  L:{name:'L 活動當日',color:'#f97316',grd:'linear-gradient(90deg,#f97316,#ea580c)'},
+  M:{name:'M 成果驗收',color:'#f43f5e',grd:'linear-gradient(90deg,#f43f5e,#e11d48)'},
+};
+
+/* ── Persist status in localStorage ─────────────────── */
+const STORE_KEY='pt_tasks_115B17';
+function loadStatuses(){
+  try{return JSON.parse(localStorage.getItem(STORE_KEY)||'{}')}catch(e){return{}}
+}
+function saveStatuses(map){
+  localStorage.setItem(STORE_KEY,JSON.stringify(map));
+}
+let statusMap = loadStatuses();
+tasks.forEach(t=>{if(statusMap[t.id])t.status=statusMap[t.id]});
+
+/* ── Date helpers ───────────────────────────────────── */
+function parseDL(s){
+  const m=s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return null;
+  return new Date(+m[1],+m[2]-1,+m[3]);
+}
+function daysLeft(dl){
+  const d=parseDL(dl);
+  if(!d)return null;
+  return Math.ceil((d-TODAY)/(86400000));
+}
+function dlClass(dl,status){
+  if(status==='完成')return'dl-done';
+  const d=daysLeft(dl);
+  if(d===null)return'dl-ok';
+  if(d<0)return'dl-urgent';
+  if(d<=7)return'dl-urgent';
+  if(d<=21)return'dl-warn';
+  return'dl-ok';
+}
+function daysTag(dl,status){
+  if(status==='完成')return'';
+  const d=daysLeft(dl);
+  if(d===null)return'';
+  if(d<0)return`<span class="days-badge days-over">逾期 ${-d} 天</span>`;
+  if(d===0)return`<span class="days-badge days-urgent">今日截止</span>`;
+  if(d<=7)return`<span class="days-badge days-urgent">剩 ${d} 天</span>`;
+  if(d<=21)return`<span class="days-badge days-warn">剩 ${d} 天</span>`;
+  return`<span class="days-badge days-ok">剩 ${d} 天</span>`;
+}
+
+/* ─────────────────────────────────────────────────────
+   COUNTDOWN
+─────────────────────────────────────────────────────── */
+const cdD=document.getElementById('cd-d');
+const cdH=document.getElementById('cd-h');
+const cdM=document.getElementById('cd-m');
+const cdS=document.getElementById('cd-s');
+let prevS=-1;
+function updateCountdown(){
+  const now=new Date();
+  const diff=FORUM_DATE-now;
+  if(diff<=0){cdD.textContent=cdH.textContent=cdM.textContent=cdS.textContent='0';return;}
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor((diff%86400000)/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
+  cdD.textContent=d;cdH.textContent=String(h).padStart(2,'0');
+  cdM.textContent=String(m).padStart(2,'0');
+  if(s!==prevS){
+    cdS.textContent=String(s).padStart(2,'0');
+    cdS.classList.remove('tick');
+    void cdS.offsetWidth;cdS.classList.add('tick');
+    prevS=s;
+  }
+  document.getElementById('live-time').textContent=
+    now.toLocaleDateString('zh-TW',{month:'2-digit',day:'2-digit'})+'  '+
+    now.toLocaleTimeString('zh-TW',{hour12:false});
+  document.getElementById('kpi-days').textContent=d;
+}
+setInterval(updateCountdown,1000);updateCountdown();
+
+/* next deadline */
+function updateNextDL(){
+  const pending=tasks.filter(t=>t.status!=='完成')
+    .map(t=>({...t,d:daysLeft(t.dl)}))
+    .filter(t=>t.d!==null&&t.d>=0)
+    .sort((a,b)=>a.d-b.d);
+  const el=document.getElementById('next-dl');
+  const dEl=document.getElementById('next-days');
+  if(pending.length){
+    el.textContent=`[${pending[0].id}] ${pending[0].title}`;
+    dEl.textContent=`截止 ${pending[0].dlLabel}，剩 ${pending[0].d} 天`;
+  }else{
+    el.textContent='所有任務已完成 🎉';dEl.textContent='';
+  }
+}
+updateNextDL();
+
+/* ─────────────────────────────────────────────────────
+   ALARM BAR
+─────────────────────────────────────────────────────── */
+function updateAlarm(){
+  const urgent=tasks.filter(t=>t.status!=='完成'&&(daysLeft(t.dl)||999)<=14);
+  const bar=document.getElementById('alarm-bar');
+  const txt=document.getElementById('alarm-text');
+  if(urgent.length){
+    bar.style.display='flex';
+    const list=urgent.map(t=>`<strong>[${t.id}]${t.title}</strong>（${t.dlLabel}）`).join('　');
+    txt.innerHTML=`🚨 ${urgent.length} 項任務在 14 天內截止！　${list}`;
+  }else{
+    bar.style.display='none';
+  }
+}
+
+/* ─────────────────────────────────────────────────────
+   KPI
+─────────────────────────────────────────────────────── */
+function updateKPI(){
+  const total=tasks.length;
+  const urgent=tasks.filter(t=>t.status!=='完成'&&(daysLeft(t.dl)||999)<=14).length;
+  const pending=tasks.filter(t=>t.status==='待辦'||t.status==='進行中').length;
+  const done=tasks.filter(t=>t.status==='完成').length;
+  animateNum('kpi-total',total);
+  animateNum('kpi-urgent',urgent);
+  animateNum('kpi-pending',pending);
+  animateNum('kpi-done',done);
+}
+function animateNum(id,target){
+  const el=document.getElementById(id);
+  const start=parseInt(el.textContent)||0;
+  let cur=start;const step=Math.ceil(Math.abs(target-start)/20)||1;
+  const timer=setInterval(()=>{
+    cur+=cur<target?step:-step;
+    if((cur>=target&&step>0)||(cur<=target&&step<0)){cur=target;clearInterval(timer);}
+    el.textContent=cur;
+  },40);
+}
+
+/* ─────────────────────────────────────────────────────
+   PROGRESS RINGS
+─────────────────────────────────────────────────────── */
+function buildRings(){
+  const row=document.getElementById('ring-row');
+  row.innerHTML='';
+  const cats=['B','H','J','L','M'];
+  cats.forEach(cat=>{
+    const meta=catMeta[cat];
+    const tl=tasks.filter(t=>t.cat===cat);
+    const done=tl.filter(t=>t.status==='完成').length;
+    const pct=tl.length?Math.round(done/tl.length*100):0;
+    const r=36;const circ=2*Math.PI*r;
+    const offset=circ-(pct/100*circ);
+    row.innerHTML+=`
+    <div class="ring-card fade-in">
+      <div class="ring-wrap">
+        <svg viewBox="0 0 90 90">
+          <circle class="ring-bg" cx="45" cy="45" r="${r}"/>
+          <circle class="ring-fg" cx="45" cy="45" r="${r}"
+            stroke="${meta.color}"
+            stroke-dasharray="${circ}"
+            stroke-dashoffset="${circ}"
+            data-offset="${offset}"
+            id="ring-${cat}"/>
+        </svg>
+        <div class="ring-center">
+          <span class="ring-pct" style="color:${meta.color}">${pct}%</span>
+          <span class="ring-unit">${done}/${tl.length}</span>
+        </div>
+      </div>
+      <div class="ring-info">
+        <h4>${meta.name}</h4>
+        <p>已完成 ${done} 項<br>待辦 ${tl.length-done} 項</p>
+      </div>
+    </div>`;
+  });
+  /* animate rings after render */
+  setTimeout(()=>{
+    document.querySelectorAll('.ring-fg').forEach(el=>{
+      el.style.strokeDashoffset=el.dataset.offset;
+    });
+  },200);
+}
+
+/* ─────────────────────────────────────────────────────
+   CATEGORY PROGRESS BARS
+─────────────────────────────────────────────────────── */
+function buildCatProgress(){
+  const list=document.getElementById('cat-progress-list');
+  list.innerHTML='';
+  let totalDone=0;
+  ['B','H','J','L','M'].forEach(cat=>{
+    const meta=catMeta[cat];
+    const tl=tasks.filter(t=>t.cat===cat);
+    const done=tl.filter(t=>t.status==='完成').length;
+    totalDone+=done;
+    const pct=tl.length?Math.round(done/tl.length*100):0;
+    list.innerHTML+=`
+    <div class="cat-progress">
+      <div class="cat-prog-header">
+        <span class="cat-prog-name">
+          <span class="cat-prog-dot" style="background:${meta.color}"></span>
+          ${meta.name}
+        </span>
+        <span class="cat-prog-count">${done} / ${tl.length} 項完成</span>
+      </div>
+      <div class="prog-bar-outer">
+        <div class="prog-bar-inner" data-pct="${pct}"
+          style="width:0%;background:${meta.grd}"></div>
+      </div>
+    </div>`;
+  });
+  const overall=Math.round(totalDone/tasks.length*100);
+  document.getElementById('overall-pct').textContent=overall+'%';
+  setTimeout(()=>{
+    document.querySelectorAll('.prog-bar-inner').forEach(el=>{
+      el.style.width=el.dataset.pct+'%';
+    });
+  },300);
+}
+
+/* ─────────────────────────────────────────────────────
+   TIMELINE
+─────────────────────────────────────────────────────── */
+function buildTimeline(){
+  const track=document.getElementById('tl-track');
+  /* remove old nodes */
+  [...track.querySelectorAll('.tl-node,.tl-today-line')].forEach(e=>e.remove());
+
+  const milestones=[
+    {date:'2026-05-14',label:'得標日',status:'done'},
+    {date:'2026-06-03',label:'J-5 網路廣告',status:taskStatus('J-5')},
+    {date:'2026-06-15',label:'D+30 全項提報',status:'normal'},
+    {date:'2026-06-19',label:'廣告媒體截止',status:'normal'},
+    {date:'2026-07-02',label:'文宣送達會場',status:'normal'},
+    {date:'2026-07-03',label:'★ 論壇日',status:'urgent'},
+    {date:'2026-07-19',label:'影片完成',status:'normal'},
+  ];
+
+  const start=new Date('2026-05-10');
+  const end=new Date('2026-07-25');
+  const span=end-start;
+  const W=track.offsetWidth-80||1020;
+
+  milestones.forEach(m=>{
+    const d=new Date(m.date+'T00:00:00');
+    const pct=(d-start)/span;
+    const left=40+pct*W;
+    const t=tasks.find(tk=>tk.id===m.label.split(' ')[0]);
+    const st=t?t.status:m.status==='done'?'完成':m.status;
+    let cls='normal';
+    if(m.status==='done'||st==='完成')cls='done';
+    else if(m.status==='urgent')cls='urgent';
+    else{
+      const dl=daysLeft(m.date);
+      if(dl!==null&&dl<=14&&dl>=0)cls='urgent';
+      else if(dl!==null&&dl<=21&&dl>=0)cls='warn';
+    }
+    const node=document.createElement('div');
+    node.className=`tl-node ${cls}`;
+    node.style.left=left+'px';
+    node.innerHTML=`
+      <div class="tl-label" style="color:${cls==='done'?'#4ade80':cls==='urgent'?'#fb7185':cls==='warn'?'#fbbf24':'#7dd3fc'}">${m.label}</div>
+      <div class="tl-dot"></div>
+      <div class="tl-tick"></div>
+      <div class="tl-date">${m.date.slice(5)}</div>`;
+    track.appendChild(node);
+  });
+
+  /* today line */
+  const todayPct=(TODAY-start)/span;
+  if(todayPct>=0&&todayPct<=1){
+    const tl=document.createElement('div');
+    tl.className='tl-today-line';
+    tl.style.left=(40+todayPct*W)+'px';
+    tl.innerHTML='<div class="tl-today-tag">TODAY</div>';
+    track.appendChild(tl);
+  }
+}
+function taskStatus(id){return tasks.find(t=>t.id===id)?.status||'待辦'}
+
+/* ─────────────────────────────────────────────────────
+   TASK CARDS
+─────────────────────────────────────────────────────── */
+function buildTaskCards(){
+  const grid=document.getElementById('task-grid');
+  grid.innerHTML='';
+  tasks.forEach((t,i)=>{
+    const d=daysLeft(t.dl);
+    const isUrgent=(t.status!=='完成')&&d!==null&&d<=14&&d>=0;
+    grid.innerHTML+=`
+    <div class="task-card cat-${t.cat}${isUrgent?' urgent':''} fade-in"
+         data-id="${t.id}" data-cat="${t.cat}" data-pri="${t.pri}" data-status="${t.status}"
+         style="animation-delay:${i*.04}s"
+         onclick="openModal('${t.id}')">
+      <div class="card-shine"></div>
+      <div class="card-top">
+        <div class="card-badges">
+          <span class="cat-pill cat-${t.cat}">${catMeta[t.cat].name}</span>
+          <span class="status-pill s-${t.status}">${t.status}</span>
+          <span class="pri-pill pri-${t.pri}">${t.pri}</span>
+        </div>
+      </div>
+      <div class="card-title">${t.title}</div>
+      <div class="card-dl">
+        <span class="dl-icon">📅</span>
+        <span class="dl-text ${dlClass(t.dl,t.status)}">${t.dlLabel}</span>
+        ${daysTag(t.dl,t.status)}
+      </div>
+      <div class="card-body">
+        <div class="card-summary">${t.summary}</div>
+        ${t.risk?`<div class="card-risk"><strong>扣款風險：</strong>${t.risk}</div>`:''}
+        ${t.note?`<div class="card-note">💡 ${t.note}</div>`:''}
+      </div>
+      <div class="card-footer">
+        <span class="card-id">${t.id}</span>
+        <button class="card-edit-btn" onclick="event.stopPropagation();openModal('${t.id}')">更新狀態</button>
+      </div>
+    </div>`;
+  });
+  updateVisibleCount();
+}
+
+/* ─────────────────────────────────────────────────────
+   FILTERS
+─────────────────────────────────────────────────────── */
+let activeCat='all',activePri='all',activeStatus='all';
+function filterTasks(type,val,btn){
+  const bar=btn.closest('.filter-bar');
+  if(type==='cat'){
+    bar.querySelectorAll('.chip.all,.chip.B,.chip.H,.chip.J,.chip.L,.chip.M')
+      .forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat=val;
+  }else if(type==='pri'){
+    bar.querySelectorAll('.chip.high,.chip.medium').forEach(c=>c.classList.remove('active'));
+    if(activePri===val){activePri='all';}else{btn.classList.add('active');activePri=val;}
+  }else if(type==='status'){
+    bar.querySelectorAll('.chip.status-chip').forEach(c=>c.classList.remove('active'));
+    if(activeStatus===val){activeStatus='all';}else{btn.classList.add('active');activeStatus=val;}
+  }
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const cc=card.dataset.cat,cp=card.dataset.pri,cs=card.dataset.status;
+    const show=(activeCat==='all'||cc===activeCat)&&
+               (activePri==='all'||cp===activePri)&&
+               (activeStatus==='all'||cs===activeStatus);
+    card.classList.toggle('hidden',!show);
+  });
+  updateVisibleCount();
+}
+function updateVisibleCount(){
+  const n=document.querySelectorAll('.task-card:not(.hidden)').length;
+  document.getElementById('visible-count').textContent=n+' 項';
+}
+
+/* ─────────────────────────────────────────────────────
+   GANTT
+─────────────────────────────────────────────────────── */
+function buildGantt(){
+  const tbl=document.getElementById('gantt-table');
+  const start=new Date('2026-05-14');
+  const end=new Date('2026-07-25');
+  const span=end-start;
+  const todayPct=(TODAY-start)/span*100;
+
+  let html=`<thead><tr>
+    <th style="width:48px">編號</th>
+    <th style="width:170px">工作項目</th>
+    <th style="width:80px">類別</th>
+    <th style="width:100px">截止日</th>
+    <th>5月 → 7月</th>
+    <th style="width:60px">狀態</th>
+  </tr></thead><tbody>`;
+
+  tasks.forEach(t=>{
+    const dl=parseDL(t.dl);
+    const dlPct=dl?Math.min(100,Math.max(0,(dl-start)/span*100)):100;
+    const statusColors={
+      '待辦':'#38bdf8','進行中':'#fbbf24','完成':'#22c55e','延誤':'#f43f5e'
+    };
+    const bc=statusColors[t.status]||'#38bdf8';
+    const bw=dlPct;
+    html+=`<tr>
+      <td class="g-id">${t.id}</td>
+      <td class="g-task">${t.title}</td>
+      <td><span class="cat-pill cat-${t.cat}" style="display:inline-block">${catMeta[t.cat].name.split(' ')[0]}</span></td>
+      <td class="g-dl">${t.dlLabel.split('→')[0].trim()}</td>
+      <td>
+        <div class="g-bar-wrap">
+          <div class="g-bar" data-w="${bw}"
+               style="width:0%;left:0;background:linear-gradient(90deg,${bc}88,${bc})">
+            <span class="g-bar-label">${t.id}</span>
+          </div>
+          ${todayPct>=0&&todayPct<=100?`<div class="g-today" style="left:${todayPct}%"><div class="g-today-tag">今</div></div>`:''}
+        </div>
+      </td>
+      <td><span class="status-pill s-${t.status}">${t.status}</span></td>
+    </tr>`;
+  });
+  html+='</tbody>';
+  tbl.innerHTML=html;
+  setTimeout(()=>{
+    document.querySelectorAll('.g-bar').forEach(el=>{
+      el.style.width=el.dataset.w+'%';
+    });
+  },400);
+}
+
+/* ─────────────────────────────────────────────────────
+   RISK GRID
+─────────────────────────────────────────────────────── */
+function buildRisks(){
+  const grid=document.getElementById('risk-grid');
+  grid.innerHTML='';
+  risks.forEach(r=>{
+    grid.innerHTML+=`
+    <div class="risk-item">
+      <div class="risk-no">${r.no} · ${r.basis}</div>
+      <div class="risk-title">${r.title}</div>
+      <div class="risk-amount">${r.amount}</div>
+      <div class="risk-cap">上限：${r.cap}</div>
+      <div class="risk-proof"><strong>驗收憑證：</strong>${r.proof}</div>
+    </div>`;
+  });
+}
+
+/* ─────────────────────────────────────────────────────
+   MODAL (status update)
+─────────────────────────────────────────────────────── */
+let editingId=null;
+function openModal(id){
+  editingId=id;
+  const t=tasks.find(x=>x.id===id);
+  document.getElementById('modal-title').textContent=`[${t.id}] 更新進度狀態`;
+  document.getElementById('modal-sub').textContent=t.title;
+  document.querySelectorAll('.status-opt').forEach(b=>{
+    b.classList.toggle('selected',b.dataset.v===t.status);
+  });
+  document.querySelector('.modal-overlay').classList.add('open');
+}
+function closeModal(){
+  document.querySelector('.modal-overlay').classList.remove('open');
+  editingId=null;
+}
+document.querySelectorAll('.status-opt').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.status-opt').forEach(x=>x.classList.remove('selected'));
+    b.classList.add('selected');
+  });
+});
+function saveStatus(){
+  if(!editingId)return;
+  const v=document.querySelector('.status-opt.selected')?.dataset.v;
+  if(!v)return;
+  const t=tasks.find(x=>x.id===editingId);
+  t.status=v;
+  statusMap[editingId]=v;
+  saveStatuses(statusMap);
+  closeModal();
+  refreshAll();
+  showToast(`✅ [${editingId}] 狀態已更新為「${v}」`,'green');
+}
+document.querySelector('.modal-overlay').addEventListener('click',function(e){
+  if(e.target===this)closeModal();
+});
+
+/* ─────────────────────────────────────────────────────
+   TOAST
+─────────────────────────────────────────────────────── */
+let toastTimer=null;
+function showToast(msg,type='blue'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=`toast ${type} show`;
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+/* ─────────────────────────────────────────────────────
+   PARTICLES
+─────────────────────────────────────────────────────── */
+(function(){
+  const canvas=document.getElementById('particles');
+  const ctx=canvas.getContext('2d');
+  let W,H,pts=[];
+  function resize(){
+    W=canvas.width=innerWidth;H=canvas.height=innerHeight;
+    pts=Array.from({length:55},()=>({
+      x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,
+      r:Math.random()*1.5+.5,
+      c:`hsla(${[200,220,240,260,280][Math.floor(Math.random()*5)]},80%,70%,.5)`
+    }));
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1;
+      if(p.y<0||p.y>H)p.vy*=-1;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.c;ctx.fill();
+    });
+    /* connections */
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<110){
+        ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+        ctx.strokeStyle=`rgba(56,189,248,${(1-dist/110)*.12})`;
+        ctx.lineWidth=.8;ctx.stroke();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',resize);resize();draw();
+})();
+
+/* ─────────────────────────────────────────────────────
+   INIT & REFRESH
+─────────────────────────────────────────────────────── */
+function refreshAll(){
+  updateAlarm();
+  updateKPI();
+  updateNextDL();
+  buildRings();
+  buildCatProgress();
+  buildTaskCards();
+  buildGantt();
+}
+
+refreshAll();
+buildTimeline();
+buildRisks();
+window.addEventListener('resize',buildTimeline);
+
+/* rebuild timeline on resize */
+let resizeTimer;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(buildTimeline,200);
+});
+</script>
 </body>
 </html>
