@@ -3,41 +3,432 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>新聞稿產生器</title>
+  <title>新聞稿產生器 — 公傳室</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
+      --bg: #0f1117;
+      --surface: #181c27;
+      --card: #1f2435;
+      --border: #2a3050;
+      --accent: #4f8ef7;
+      --accent2: #3ecf8e;
+      --text: #e4e8f5;
+      --muted: #7a85a8;
+      --radius: 14px;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 20px 80px;
+    }
+
+    header { max-width: 760px; margin: 0 auto 28px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.9rem; line-height: 1.6; }
+
+    .card {
+      max-width: 760px;
+      margin: 0 auto 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+    }
+
+    .card h2 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    /* 類型切換 */
+    .type-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .type-tab {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .type-tab .tab-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+    .type-tab .tab-label { font-size: 0.85rem; font-weight: 600; display: block; }
+    .type-tab .tab-sub { font-size: 0.75rem; color: var(--muted); display: block; margin-top: 2px; }
+
+    .type-tab:hover { border-color: var(--accent); }
+    .type-tab.active { background: rgba(79,142,247,0.12); border-color: var(--accent); }
+    .type-tab.active .tab-label { color: var(--accent); }
+
+    /* 表單欄位 */
+    .field { margin-bottom: 18px; }
+
+    .field label {
+      display: block;
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    .field label span { color: var(--accent); }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus { outline: none; border-color: var(--accent); }
+    .field input::placeholder,
+    .field textarea::placeholder { color: var(--muted); }
+
+    .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+    .field-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .field-row .field { flex: 1; min-width: 180px; }
+
+    /* 醫療新聞專屬欄位 */
+    .medical-only { display: none; }
+    .medical-only.show { display: block; }
+
+    /* 生成按鈕 */
+    .btn-gen {
+      width: 100%;
+      max-width: 760px;
+      display: block;
+      margin: 0 auto;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn-gen:hover { opacity: 0.85; }
+
+    /* 結果區 */
+    .result-section {
+      max-width: 760px;
+      margin: 22px auto 0;
+      display: none;
+    }
+
+    .result-section.visible { display: block; }
+
+    .result-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .result-block h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .prompt-box {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 0.88rem;
+      line-height: 1.9;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .step-hint {
+      background: #0d1f3c;
+      border: 1px solid #1a3a6e;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.86rem;
+      line-height: 1.8;
+      color: #a0c4ff;
+      margin-bottom: 14px;
+    }
+
+    .step-hint strong { color: #7fb3ff; }
+
+    .copy-btn {
+      margin-top: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .copy-btn:hover { opacity: 0.85; }
+    .copy-btn.copied { background: var(--accent2); }
+
+    /* 返回按鈕 */
+    .back-btn {
+      position: fixed; bottom: 20px; left: 20px; z-index: 9999;
+      background: rgba(15,17,23,0.88); border: 1px solid #2a3050;
+      border-radius: 20px; padding: 6px 14px; color: #8899bb;
+      text-decoration: none; font-size: 0.82rem;
+      backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: #e4e8f5; border-color: #4f8ef7; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">📰</div>
-    <h1>新聞稿產生器</h1>
-    <p>填入活動資訊一鍵產生新聞稿 Prompt，支援活動新聞與醫療新聞兩種類型</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="index.html">← 返回工作儀表板</a>
+
+<a class="back-btn" href="index.html">← 儀表板</a>
+
+<header>
+  <h1>新聞稿產生器</h1>
+  <p>填入活動資訊 → 一鍵產生新聞稿 Prompt → 貼到 Claude／Gemini／GPT 生成初稿</p>
+</header>
+
+<!-- 新聞稿類型 -->
+<div class="card">
+  <h2>新聞稿類型</h2>
+  <div class="type-tabs">
+    <div class="type-tab active" id="tab-activity" onclick="setType('activity')">
+      <span class="tab-icon">🎪</span>
+      <span class="tab-label">活動新聞</span>
+      <span class="tab-sub">院務活動、表揚、社區服務、衛教、獲獎</span>
+    </div>
+    <div class="type-tab" id="tab-medical" onclick="setType('medical')">
+      <span class="tab-icon">🏥</span>
+      <span class="tab-label">醫療新聞</span>
+      <span class="tab-sub">病例報導、新術式、新療法、衛教提醒</span>
+    </div>
   </div>
+</div>
+
+<!-- 基本資訊 -->
+<div class="card">
+  <h2>基本資訊</h2>
+
+  <div class="field">
+    <label>活動 / 報導名稱 <span>*</span></label>
+    <input type="text" id="title" placeholder="例：2026 年台日長照論壇、護師節感恩表揚典禮" />
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <label>日期</label>
+      <input type="text" id="eventDate" placeholder="例：2026 年 6 月 15 日" />
+    </div>
+    <div class="field">
+      <label>時間</label>
+      <input type="text" id="eventTime" placeholder="例：上午 9 時" />
+    </div>
+    <div class="field">
+      <label>地點</label>
+      <input type="text" id="eventPlace" placeholder="例：台中慈濟醫院一樓大廳" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label>出席重要人物 <span style="color:var(--muted);font-weight:normal">（職稱＋姓名，每行一位）</span></label>
+    <textarea id="persons" placeholder="例：&#10;院長 簡守信&#10;副院長 莊淑婷&#10;臺中市衛生局局長 XXX"></textarea>
+  </div>
+
+  <div class="field">
+    <label>活動重點 / 亮點 <span>*</span> <span style="color:var(--muted);font-weight:normal">（條列，每行一項）</span></label>
+    <textarea id="highlights" placeholder="例：&#10;首次邀請日本長照機構代表來台交流&#10;展示本院長照服務模式與成果&#10;簽署台日合作備忘錄"></textarea>
+  </div>
+
+  <div class="field">
+    <label>補充資訊 <span style="color:var(--muted);font-weight:normal">（數字、獎項、金句、背景脈絡等，可空白）</span></label>
+    <textarea id="extra" placeholder="例：論壇邀集 12 個國家共 300 位專家學者與會、院長金句：「長照不是負擔，是社會的溫度」"></textarea>
+  </div>
+</div>
+
+<!-- 醫療新聞專屬 -->
+<div class="card medical-only" id="medicalCard">
+  <h2>醫療新聞專屬</h2>
+
+  <div class="field">
+    <label>主治醫師 / 團隊</label>
+    <input type="text" id="doctor" placeholder="例：心臟外科 王大明主任" />
+  </div>
+
+  <div class="field">
+    <label>病例概述 / 術式說明</label>
+    <textarea id="caseDesc" placeholder="例：65 歲男性主動脈剝離患者，接受本院自創「雙管齊下」手術法，手術時間縮短 40%"></textarea>
+  </div>
+
+  <div class="field">
+    <label>衛教重點 <span style="color:var(--muted);font-weight:normal">（提醒民眾注意的事項）</span></label>
+    <textarea id="healthTips" placeholder="例：出現胸痛、背痛、呼吸困難應立即就醫，勿自行服藥觀察"></textarea>
+  </div>
+</div>
+
+<!-- 輸出設定 -->
+<div class="card">
+  <h2>輸出設定</h2>
+  <div class="field-row">
+    <div class="field">
+      <label>新聞稿長度</label>
+      <select id="length">
+        <option value="標準（約 600-800 字）">標準（600-800 字）</option>
+        <option value="精簡（約 400 字）">精簡（400 字）</option>
+        <option value="完整（約 1000-1200 字）">完整（1000-1200 字）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>語氣風格</label>
+      <select id="tone">
+        <option value="正式、溫暖、符合慈濟人文精神">正式溫暖（慈濟風）</option>
+        <option value="新聞客觀、簡潔有力">新聞客觀</option>
+        <option value="親切活潑、貼近民眾">親切活潑</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>是否需要引言金句</label>
+      <select id="quote">
+        <option value="請在新聞稿中加入至少一段主管或醫師的引言（需符合其職稱與角色）">需要引言</option>
+        <option value="不需要特別加入引言">不需要</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<button class="btn-gen" onclick="generate()">產生新聞稿 Prompt</button>
+
+<!-- 操作提示 + 結果 -->
+<div class="result-section" id="resultSection">
+  <div class="step-hint">
+    <strong>接下來怎麼用？</strong><br>
+    1. 按「複製 Prompt」<br>
+    2. 打開任意 AI（<strong>Claude</strong>、<strong>Gemini</strong>、<strong>GPT</strong>），貼上送出<br>
+    3. AI 會生成新聞稿初稿，你再潤稿即可
+  </div>
+  <div class="result-block">
+    <h3>新聞稿 Prompt</h3>
+    <div class="prompt-box" id="promptBox"></div>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">複製 Prompt</button>
+  </div>
+</div>
+
+<script>
+  let currentType = 'activity'
+
+  function setType(type) {
+    currentType = type
+    document.getElementById('tab-activity').classList.toggle('active', type === 'activity')
+    document.getElementById('tab-medical').classList.toggle('active', type === 'medical')
+    document.getElementById('medicalCard').classList.toggle('show', type === 'medical')
+  }
+
+  function val(id) { return document.getElementById(id)?.value.trim() || '' }
+
+  function generate() {
+    const title = val('title')
+    if (!title) {
+      document.getElementById('title').focus()
+      return
+    }
+
+    const date      = val('eventDate')
+    const time      = val('eventTime')
+    const place     = val('eventPlace')
+    const persons   = val('persons')
+    const highlights = val('highlights')
+    const extra     = val('extra')
+    const length    = val('length')
+    const tone      = val('tone')
+    const quote     = val('quote')
+
+    let typeBlock = ''
+    if (currentType === 'medical') {
+      const doctor    = val('doctor')
+      const caseDesc  = val('caseDesc')
+      const healthTips = val('healthTips')
+      typeBlock = `
+【醫療報導資訊】
+${doctor ? `主治醫師 / 團隊：${doctor}` : ''}
+${caseDesc ? `病例 / 術式說明：${caseDesc}` : ''}
+${healthTips ? `衛教重點：${healthTips}` : ''}`.trim()
+    }
+
+    const prompt = `你是台中慈濟醫院公傳室的資深文稿編輯，請依照以下資訊撰寫一篇${currentType === 'medical' ? '醫療' : '活動'}新聞稿。
+
+【基本資訊】
+標題主題：${title}
+${date ? `日期：${date}` : ''}
+${time ? `時間：${time}` : ''}
+${place ? `地點：${place}` : ''}
+${persons ? `出席重要人物：\n${persons}` : ''}
+
+【活動重點 / 亮點】
+${highlights || '（請依整體情境自行發揮）'}
+
+${extra ? `【補充資訊】\n${extra}` : ''}
+${typeBlock ? `\n${typeBlock}` : ''}
+
+【撰寫要求】
+- 長度：${length}
+- 語氣風格：${tone}
+- 引言處理：${quote}
+- 請使用繁體中文，符合台灣報章媒體新聞稿格式
+- 結構包含：標題、導言（5W1H 濃縮）、正文（2-3 段）、結尾（機構簡介或呼籲行動）
+- 慈濟相關稱謂請使用正確：證嚴上人、白衣大士（非白衣天使）、志工、慈濟人`
+
+    document.getElementById('promptBox').textContent = prompt
+    document.getElementById('resultSection').classList.add('visible')
+    document.getElementById('copyBtn').textContent = '複製 Prompt'
+    document.getElementById('copyBtn').classList.remove('copied')
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('promptBox').textContent
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copyBtn')
+      btn.textContent = '已複製！去貼到 AI ✓'
+      btn.classList.add('copied')
+      setTimeout(() => {
+        btn.textContent = '複製 Prompt'
+        btn.classList.remove('copied')
+      }, 3000)
+    })
+  }
+</script>
 </body>
 </html>
