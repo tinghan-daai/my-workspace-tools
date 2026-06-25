@@ -3,41 +3,1006 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>內容生產流水線</title>
+  <title>內容生產流水線 — 公傳室</title>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
+      --bg: #0d1117;
+      --surface: #161b25;
+      --card: #1c2232;
+      --border: #253050;
+      --accent: #4f8ef7;
+      --accent2: #3ecf8e;
+      --accent3: #f5a623;
+      --teal: #1a9c8a;
+      --blue: #2b6cb0;
+      --text: #e2e8f5;
+      --muted: #6b7a9e;
+      --radius: 12px;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 20px 100px;
+    }
+
+    .wrap { max-width: 820px; margin: 0 auto; }
+
+    h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    h1 span { color: var(--accent2); }
+    .subtitle { font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; }
+
+    /* Type tabs */
+    .type-tabs { display: flex; gap: 10px; margin-bottom: 22px; }
+    .type-tab {
+      flex: 1; background: var(--card); border: 2px solid var(--border);
+      border-radius: 10px; padding: 14px; text-align: center; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .type-tab .t-icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+    .type-tab .t-label { font-size: 0.9rem; font-weight: 600; display: block; }
+    .type-tab .t-sub { font-size: 0.74rem; color: var(--muted); display: block; margin-top: 2px; }
+    .type-tab:hover { border-color: var(--accent); }
+    .type-tab.active { background: rgba(79,142,247,0.1); border-color: var(--accent); }
+    .type-tab.active .t-label { color: var(--accent); }
+
+    /* Section */
+    .section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px; margin-bottom: 18px;
+    }
+    .section-label {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--muted); margin-bottom: 14px;
+    }
+
+    /* Step header */
+    .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .step-badge {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.95rem; flex-shrink: 0;
+    }
+    .s1 { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.35); }
+    .s2 { background: rgba(26,156,138,0.15); color: var(--teal); border: 1px solid rgba(26,156,138,0.35); }
+    .s3 { background: rgba(62,207,142,0.15); color: var(--accent2); border: 1px solid rgba(62,207,142,0.35); }
+    .step-title { font-size: 1rem; font-weight: 600; }
+    .step-desc { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+    /* Form */
+    .field { margin-bottom: 15px; }
+    .field:last-child { margin-bottom: 0; }
+    label.fl { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+    label.fl .req { color: var(--accent3); }
+    input[type="text"], textarea, select {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 0.9rem;
+      padding: 9px 12px; font-family: inherit; resize: vertical; outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .row2, .row3 { grid-template-columns: 1fr; } }
+
+    /* Drop zone */
+    .drop-zone {
+      display: block; border: 2px dashed var(--border); border-radius: 8px;
+      padding: 14px; text-align: center; cursor: pointer;
+      font-size: 0.8rem; color: var(--muted); transition: border-color 0.15s, background 0.15s;
+      margin-top: 8px;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--accent); background: rgba(79,142,247,0.04); color: var(--text);
+    }
+    .drop-zone input { display: none; }
+    .hint-link { color: var(--accent); text-decoration: none; }
+    .hint-link:hover { text-decoration: underline; }
+
+    /* Prompt output */
+    .prompt-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 14px; font-size: 0.8rem; line-height: 1.85; color: #a8b5d0;
+      white-space: pre-wrap; word-break: break-word; max-height: 280px;
+      overflow-y: auto; margin-bottom: 10px;
+    }
+
+    /* Card config */
+    .card-config {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-bottom: 12px;
+    }
+    .card-config-title {
+      font-size: 0.8rem; color: var(--teal); font-weight: 600; margin-bottom: 12px;
+    }
+
+    /* Canvas preview */
+    .canvas-preview-wrap { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 16px; }
+    .canvas-card { display: flex; flex-direction: column; gap: 8px; }
+    .canvas-card canvas { border-radius: 6px; display: block; border: 1px solid var(--border); }
+    .canvas-card-label { font-size: 0.76rem; color: var(--muted); }
+
+    /* Buttons */
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .btn {
+      padding: 10px 22px; border-radius: 8px; border: none;
+      font-size: 0.88rem; font-weight: 600; cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s; font-family: inherit;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn:not(:disabled):hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-teal { background: var(--teal); color: #fff; }
+    .btn-green { background: var(--accent2); color: #0d1117; }
+    .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* Medical-only */
+    .medical-only { display: none; }
+    .medical-only.show { display: block; }
+
+    /* Filename preview */
+    .filename-preview {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; font-size: 0.9rem; color: var(--accent2);
+      font-family: monospace; margin-top: 10px; word-break: break-all;
+    }
+
+    /* Status */
+    .status { display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-top: 12px; }
+    .status.ok  { display: block; background: rgba(62,207,142,0.1); border: 1px solid rgba(62,207,142,0.3); color: var(--accent2); }
+    .status.err { display: block; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: #f87171; }
+
+    /* Back button */
+    .back-btn {
+      position: fixed; bottom: 20px; left: 20px; z-index: 100;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--muted); text-decoration: none; font-size: 0.82rem;
+      padding: 8px 14px; transition: color 0.15s, border-color 0.15s;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--accent); }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">🗞</div>
-    <h1>內容生產流水線</h1>
-    <p>素材 → 文稿 Prompt → 圖卡算繪 → docx 存檔，三步驟一條龍</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+
+<div class="wrap">
+  <h1>🗞 內容生產<span>流水線</span></h1>
+  <p class="subtitle">素材輸入 → 生成文稿 → 算繪圖卡 → 存成 docx — 三步驟一條龍</p>
+
+  <!-- Type selector -->
+  <div class="type-tabs">
+    <div class="type-tab active" id="tabHealth" onclick="setType('health')">
+      <span class="t-icon">🩺</span>
+      <span class="t-label">衛教文章</span>
+      <span class="t-sub">3 張圖卡 16:9</span>
+    </div>
+    <div class="type-tab" id="tabPress" onclick="setType('press')">
+      <span class="t-icon">📰</span>
+      <span class="t-label">新聞稿</span>
+      <span class="t-sub">1–2 張圖卡 3:2</span>
+    </div>
   </div>
+
+  <!-- ═══ STEP 1 ═══ -->
+  <div class="section">
+    <div class="step-header">
+      <div class="step-badge s1">1</div>
+      <div>
+        <div class="step-title">稿件生成</div>
+        <div class="step-desc">填入素材 → 產生 Prompt → 貼到 AI → 把稿件貼回來</div>
+      </div>
+    </div>
+
+    <!-- 衛教 fields -->
+    <div id="healthFields">
+      <div class="field">
+        <label class="fl">衛教主題 <span class="req">*</span></label>
+        <input type="text" id="hTopic" placeholder="例：心肌梗塞早期辨識、糖尿病飲食控制" />
+      </div>
+      <div class="field">
+        <label class="fl">目標受眾</label>
+        <select id="hAudience">
+          <option value="一般民眾">一般民眾</option>
+          <option value="長者（65歲以上）">長者（65歲以上）</option>
+          <option value="慢性病患者">慢性病患者</option>
+          <option value="術後病患與家屬">術後病患與家屬</option>
+          <option value="兒童與家長">兒童與家長</option>
+          <option value="孕婦與新手父母">孕婦與新手父母</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="fl">素材內容 <span class="req">*</span> <span style="color:var(--muted);font-weight:normal">（腳本、採訪稿、報告等）</span></label>
+        <textarea id="hMaterial" rows="6" placeholder="貼入原始素材文字…"></textarea>
+        <label class="drop-zone" id="hDropZone">
+          <input type="file" id="hFileInput" accept=".txt,.md" />
+          📂 拖曳 .txt / .md 素材檔到此，或點擊選取 &nbsp;·&nbsp;
+          <a class="hint-link" href="../file-to-md/index.html" target="_blank">PDF/Word 請先用「檔案轉 Markdown」工具</a>
+        </label>
+      </div>
+      <div class="field">
+        <label class="fl">額外強調重點 <span style="color:var(--muted);font-weight:normal">（選填，每行一點）</span></label>
+        <textarea id="hExtra" rows="3" placeholder="例：&#10;每天量血壓，記錄數值&#10;避免高鹽高油食物"></textarea>
+      </div>
+    </div>
+
+    <!-- 新聞稿 fields -->
+    <div id="pressFields" style="display:none">
+      <div class="field">
+        <label class="fl">新聞稿類型</label>
+        <div style="display:flex;gap:8px;">
+          <label style="flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.88rem;">
+            <input type="radio" name="pType" value="activity" checked onchange="setPressType(this.value)" style="accent-color:var(--accent);flex-shrink:0;" /> 🎪 活動新聞
+          </label>
+          <label style="flex:1;cursor:pointer;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:0.88rem;">
+            <input type="radio" name="pType" value="medical" onchange="setPressType(this.value)" style="accent-color:var(--accent);flex-shrink:0;" /> 🏥 醫療新聞
+          </label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="fl">活動 / 報導名稱 <span class="req">*</span></label>
+        <input type="text" id="pTitle" placeholder="例：2026 年台日長照論壇、護師節感恩表揚典禮" />
+      </div>
+      <div class="row3 field">
+        <div>
+          <label class="fl">日期</label>
+          <input type="text" id="pDate" placeholder="2026 年 6 月 15 日" />
+        </div>
+        <div>
+          <label class="fl">時間</label>
+          <input type="text" id="pTime" placeholder="上午 9 時" />
+        </div>
+        <div>
+          <label class="fl">地點</label>
+          <input type="text" id="pPlace" placeholder="台中慈濟醫院一樓大廳" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="fl">出席重要人物 <span style="color:var(--muted);font-weight:normal">（每行一位）</span></label>
+        <textarea id="pPersons" rows="3" placeholder="院長 簡守信&#10;副院長 莊淑婷"></textarea>
+      </div>
+      <div class="field">
+        <label class="fl">活動重點 / 亮點 <span class="req">*</span> <span style="color:var(--muted);font-weight:normal">（每行一項）</span></label>
+        <textarea id="pHighlights" rows="4" placeholder="例：&#10;首次邀請日本長照機構代表來台交流&#10;展示本院長照服務模式與成果&#10;簽署台日合作備忘錄"></textarea>
+      </div>
+      <div class="field">
+        <label class="fl">補充資訊 <span style="color:var(--muted);font-weight:normal">（數字、金句、背景脈絡等）</span></label>
+        <textarea id="pExtra" rows="3" placeholder="例：院長金句「長照不是負擔，是社會的溫度」"></textarea>
+      </div>
+
+      <!-- 醫療新聞專屬 -->
+      <div class="medical-only" id="pMedical">
+        <div class="divider"></div>
+        <div class="section-label">醫療新聞專屬</div>
+        <div class="field">
+          <label class="fl">主治醫師 / 團隊</label>
+          <input type="text" id="pDoctor" placeholder="心臟外科 王大明主任" />
+        </div>
+        <div class="field">
+          <label class="fl">病例 / 術式說明</label>
+          <textarea id="pCase" rows="3" placeholder="65 歲男性主動脈剝離患者…"></textarea>
+        </div>
+        <div class="field">
+          <label class="fl">衛教重點</label>
+          <textarea id="pHealthTips" rows="2" placeholder="出現胸痛應立即就醫…"></textarea>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="row3 field">
+        <div>
+          <label class="fl">長度</label>
+          <select id="pLength">
+            <option value="標準（約 600-800 字）">標準（600-800 字）</option>
+            <option value="精簡（約 400 字）">精簡（400 字）</option>
+            <option value="完整（約 1000-1200 字）">完整（1000-1200 字）</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">語氣風格</label>
+          <select id="pTone">
+            <option value="正式、溫暖、符合慈濟人文精神">正式溫暖（慈濟風）</option>
+            <option value="新聞客觀、簡潔有力">新聞客觀</option>
+            <option value="親切活潑、貼近民眾">親切活潑</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">引言金句</label>
+          <select id="pQuote">
+            <option value="請在新聞稿中加入至少一段主管或醫師的引言">需要</option>
+            <option value="不需要特別加入引言">不需要</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="fl">額外素材 <span style="color:var(--muted);font-weight:normal">（採訪逐字稿等，選填）</span></label>
+        <textarea id="pMaterial" rows="4" placeholder="貼入原始素材，AI 會參考但不照單全收…"></textarea>
+        <label class="drop-zone" id="pDropZone">
+          <input type="file" id="pFileInput" accept=".txt,.md" />
+          📂 拖曳 .txt / .md 素材檔到此 &nbsp;·&nbsp;
+          <a class="hint-link" href="../file-to-md/index.html" target="_blank">PDF/Word 先用「檔案轉 Markdown」</a>
+        </label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generatePrompt()">🪄 產生 Prompt</button>
+    </div>
+
+    <!-- Prompt output -->
+    <div id="promptOutput" style="display:none;margin-top:18px;">
+      <div class="section-label">產生的 Prompt</div>
+      <div class="prompt-box" id="promptBox"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost btn-sm" id="copyPromptBtn" onclick="copyPrompt()">複製 Prompt</button>
+      </div>
+    </div>
+
+    <!-- AI response paste area -->
+    <div id="aiResponseArea" style="display:none;margin-top:20px;">
+      <div class="divider"></div>
+      <div class="section-label">貼入 AI 回應</div>
+      <textarea id="aiResponse" rows="10" placeholder="把 AI 生成的文章貼到這裡，按「解析並填入圖卡」進入步驟 2…"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-teal" onclick="parseAndFillCards()">▶ 解析並填入圖卡設定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 2 ═══ -->
+  <div class="section">
+    <div class="step-header">
+      <div class="step-badge s2">2</div>
+      <div>
+        <div class="step-title">圖卡算繪</div>
+        <div class="step-desc">確認圖卡文字後按「算繪」，直接下載 PNG</div>
+      </div>
+    </div>
+
+    <!-- 衛教 card config (3 cards) -->
+    <div id="healthCardConfig">
+      <div class="field">
+        <label class="fl">整體主標題（出現在每張圖卡頂欄）<span class="req">*</span></label>
+        <input type="text" id="hCardTitle" placeholder="例：心肌梗塞預防指南" />
+      </div>
+      <div class="card-config">
+        <div class="card-config-title">圖卡 1</div>
+        <div class="field">
+          <label class="fl">副標題</label>
+          <input type="text" id="hC1Sub" placeholder="例：了解症狀" />
+        </div>
+        <div class="field"><label class="fl">重點 1</label><input type="text" id="hC1P1" placeholder="每點約 15-25 字" /></div>
+        <div class="field"><label class="fl">重點 2</label><input type="text" id="hC1P2" /></div>
+        <div class="field"><label class="fl">重點 3</label><input type="text" id="hC1P3" /></div>
+      </div>
+      <div class="card-config">
+        <div class="card-config-title">圖卡 2</div>
+        <div class="field">
+          <label class="fl">副標題</label>
+          <input type="text" id="hC2Sub" placeholder="例：預防與日常保健" />
+        </div>
+        <div class="field"><label class="fl">重點 1</label><input type="text" id="hC2P1" /></div>
+        <div class="field"><label class="fl">重點 2</label><input type="text" id="hC2P2" /></div>
+        <div class="field"><label class="fl">重點 3</label><input type="text" id="hC2P3" /></div>
+      </div>
+      <div class="card-config">
+        <div class="card-config-title">圖卡 3</div>
+        <div class="field">
+          <label class="fl">副標題</label>
+          <input type="text" id="hC3Sub" placeholder="例：何時就醫・重要提醒" />
+        </div>
+        <div class="field"><label class="fl">重點 1</label><input type="text" id="hC3P1" /></div>
+        <div class="field"><label class="fl">重點 2</label><input type="text" id="hC3P2" /></div>
+        <div class="field"><label class="fl">重點 3</label><input type="text" id="hC3P3" /></div>
+      </div>
+    </div>
+
+    <!-- 新聞稿 card config (1-2 cards) -->
+    <div id="pressCardConfig" style="display:none">
+      <div class="row2 field">
+        <div>
+          <label class="fl">圖卡標題 <span class="req">*</span></label>
+          <input type="text" id="pCardTitle" placeholder="例：2026 台日長照論壇" />
+        </div>
+        <div class="row2" style="gap:8px;">
+          <div>
+            <label class="fl">日期</label>
+            <input type="text" id="pCardDate" placeholder="2026.06.15" />
+          </div>
+          <div>
+            <label class="fl">地點</label>
+            <input type="text" id="pCardPlace" placeholder="台中慈濟醫院" />
+          </div>
+        </div>
+      </div>
+      <div class="card-config">
+        <div class="card-config-title">圖卡 1</div>
+        <div class="field"><label class="fl">重點 1</label><input type="text" id="pC1P1" /></div>
+        <div class="field"><label class="fl">重點 2</label><input type="text" id="pC1P2" /></div>
+        <div class="field"><label class="fl">重點 3</label><input type="text" id="pC1P3" /></div>
+        <div class="field"><label class="fl">重點 4 <span style="color:var(--muted);font-weight:normal">（選填）</span></label><input type="text" id="pC1P4" /></div>
+        <div class="field"><label class="fl">重點 5 <span style="color:var(--muted);font-weight:normal">（選填）</span></label><input type="text" id="pC1P5" /></div>
+      </div>
+      <div class="card-config">
+        <div class="card-config-title">圖卡 2 <span style="font-weight:normal;color:var(--muted);font-size:0.78rem">（選填，不填則只輸出 1 張）</span></div>
+        <div class="field">
+          <label class="fl">副標題</label>
+          <input type="text" id="pC2Sub" placeholder="例：醫師引言、更多亮點…" />
+        </div>
+        <div class="field"><label class="fl">重點 1</label><input type="text" id="pC2P1" /></div>
+        <div class="field"><label class="fl">重點 2</label><input type="text" id="pC2P2" /></div>
+        <div class="field"><label class="fl">重點 3</label><input type="text" id="pC2P3" /></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-teal" onclick="renderCards()">🖼 算繪圖卡</button>
+    </div>
+    <div class="canvas-preview-wrap" id="canvasPreview"></div>
+  </div>
+
+  <!-- ═══ STEP 3 ═══ -->
+  <div class="section">
+    <div class="step-header">
+      <div class="step-badge s3">3</div>
+      <div>
+        <div class="step-title">存檔</div>
+        <div class="step-desc">確認命名 → 下載 .docx（含文稿與圖卡）</div>
+      </div>
+    </div>
+
+    <div class="row3 field">
+      <div>
+        <label class="fl">日期</label>
+        <input type="text" id="docDate" placeholder="2026-05-20" oninput="updateFilename()" />
+      </div>
+      <div>
+        <label class="fl">類型</label>
+        <input type="text" id="docType" value="衛教" oninput="updateFilename()" />
+      </div>
+      <div>
+        <label class="fl">標題</label>
+        <input type="text" id="docTitle" placeholder="肺癌篩檢" oninput="updateFilename()" />
+      </div>
+    </div>
+    <div class="section-label" style="margin-bottom:4px">檔名預覽</div>
+    <div class="filename-preview" id="filenamePreview">—</div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="generateDocx()">⬇ 下載 .docx</button>
+    </div>
+    <div class="status" id="docxStatus"></div>
+  </div>
+
+</div>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  let currentType      = 'health';
+  let currentPressType = 'activity';
+  let renderedCanvases = [];
+
+  const CJK = '"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif';
+
+  // ── Type switching ────────────────────────────────────────────────────────
+  function setType(t) {
+    currentType = t;
+    document.getElementById('tabHealth').classList.toggle('active', t === 'health');
+    document.getElementById('tabPress').classList.toggle('active', t === 'press');
+    document.getElementById('healthFields').style.display     = t === 'health' ? '' : 'none';
+    document.getElementById('pressFields').style.display      = t === 'press'  ? '' : 'none';
+    document.getElementById('healthCardConfig').style.display = t === 'health' ? '' : 'none';
+    document.getElementById('pressCardConfig').style.display  = t === 'press'  ? '' : 'none';
+    document.getElementById('docType').value = t === 'health' ? '衛教' : '新聞稿';
+    updateFilename();
+  }
+
+  function setPressType(val) {
+    currentPressType = val;
+    document.getElementById('pMedical').classList.toggle('show', val === 'medical');
+  }
+
+  // ── File upload ────────────────────────────────────────────────────────────
+  function setupDrop(dropId, inputId, targetId) {
+    const drop = document.getElementById(dropId);
+    const inp  = document.getElementById(inputId);
+    inp.addEventListener('change', e => readTxt(e.target.files[0], targetId, inp));
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault(); drop.classList.remove('over');
+      if (e.dataTransfer.files[0]) readTxt(e.dataTransfer.files[0], targetId, inp);
+    });
+  }
+
+  function readTxt(file, targetId, inputEl) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = e => {
+      document.getElementById(targetId).value = e.target.result;
+      if (inputEl) inputEl.value = '';
+    };
+    r.readAsText(file, 'UTF-8');
+  }
+
+  setupDrop('hDropZone', 'hFileInput', 'hMaterial');
+  setupDrop('pDropZone', 'pFileInput', 'pMaterial');
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function v(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  document.getElementById('docDate').value = todayStr();
+  updateFilename();
+
+  function updateFilename() {
+    const date  = v('docDate')  || todayStr();
+    const type  = v('docType')  || '衛教';
+    const title = v('docTitle') || '文章';
+    document.getElementById('filenamePreview').textContent = `${date}＼${type}＼${title}.docx`;
+  }
+
+  // ── Prompt generation ─────────────────────────────────────────────────────
+  function generatePrompt() {
+    let prompt = '';
+
+    if (currentType === 'health') {
+      const topic    = v('hTopic');
+      const audience = v('hAudience');
+      const material = v('hMaterial');
+      const extra    = v('hExtra');
+      if (!topic) { alert('請填入衛教主題！'); document.getElementById('hTopic').focus(); return; }
+
+      prompt =
+`你是台中慈濟醫院公傳室的衛教文章編輯，請根據以下素材撰寫一篇衛教文章。
+
+【衛教主題】${topic}
+【目標受眾】${audience}
+${material ? `\n【素材內容】\n${material}` : ''}${extra ? `\n\n【額外強調重點】\n${extra}` : ''}
+
+【撰寫要求】
+- 長度：約 600-800 字
+- 語氣：溫暖親切、淺顯易懂，像照顧家人一樣說話
+- 結構：引言（1 段）→ 正文（2-4 個小標分段）→ 結語（1 段）
+- 小標請用 # 開頭（例：# 認識症狀）
+- 段落間請空一行
+- 小標下方重點若有條列，請用「・」開頭
+- 結尾加一句溫暖的提醒或呼籲就醫的話
+- 使用繁體中文`;
+
+    } else {
+      const title      = v('pTitle');
+      const date       = v('pDate');
+      const time       = v('pTime');
+      const place      = v('pPlace');
+      const persons    = v('pPersons');
+      const highlights = v('pHighlights');
+      const extra      = v('pExtra');
+      const length     = v('pLength');
+      const tone       = v('pTone');
+      const quote      = v('pQuote');
+      const material   = v('pMaterial');
+      if (!title) { alert('請填入活動 / 報導名稱！'); document.getElementById('pTitle').focus(); return; }
+
+      let typeBlock = '';
+      if (currentPressType === 'medical') {
+        const doctor     = v('pDoctor');
+        const caseDesc   = v('pCase');
+        const healthTips = v('pHealthTips');
+        typeBlock = `\n【醫療報導資訊】
+${doctor ? `主治醫師 / 團隊：${doctor}\n` : ''}${caseDesc ? `病例 / 術式說明：${caseDesc}\n` : ''}${healthTips ? `衛教重點：${healthTips}` : ''}`.trimEnd();
+      }
+
+      prompt =
+`你是台中慈濟醫院公傳室的資深文稿編輯，請依照以下資訊撰寫一篇${currentPressType === 'medical' ? '醫療' : '活動'}新聞稿。
+
+【基本資訊】
+標題主題：${title}
+${date ? `日期：${date}\n` : ''}${time ? `時間：${time}\n` : ''}${place ? `地點：${place}\n` : ''}${persons ? `出席重要人物：\n${persons}\n` : ''}
+【活動重點 / 亮點】
+${highlights || '（請依整體情境自行發揮）'}
+${extra ? `\n【補充資訊】\n${extra}` : ''}${material ? `\n\n【原始素材】\n${material}` : ''}${typeBlock ? `\n${typeBlock}` : ''}
+
+【撰寫要求】
+- 長度：${length}
+- 語氣風格：${tone}
+- 引言處理：${quote}
+- 請使用繁體中文，符合台灣報章媒體新聞稿格式
+- 結構包含：標題、導言（5W1H 濃縮）、正文（2-3 段）、結尾
+- 慈濟稱謂：證嚴上人、白衣大士（非白衣天使）、志工、慈濟人`;
+    }
+
+    document.getElementById('promptBox').textContent = prompt;
+    document.getElementById('promptOutput').style.display  = '';
+    document.getElementById('aiResponseArea').style.display = '';
+    document.getElementById('copyPromptBtn').textContent = '複製 Prompt';
+    document.getElementById('promptOutput').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function copyPrompt() {
+    navigator.clipboard.writeText(document.getElementById('promptBox').textContent).then(() => {
+      const btn = document.getElementById('copyPromptBtn');
+      btn.textContent = '已複製！';
+      setTimeout(() => { btn.textContent = '複製 Prompt'; }, 2500);
+    });
+  }
+
+  // ── Parse AI response → fill card fields ─────────────────────────────────
+  function parseAndFillCards() {
+    const text = v('aiResponse');
+    if (!text) { alert('請先貼入 AI 回應文字！'); return; }
+
+    const lines    = text.split('\n').map(l => l.trim());
+    const headings = lines.filter(l => l.startsWith('#')).map(l => l.replace(/^#+\s*/, ''));
+    const bullets  = lines
+      .filter(l => l.startsWith('・') || l.startsWith('•') || /^[0-9]+[.、]/.test(l))
+      .map(l => l.replace(/^[・•0-9.、]\s*/, '').trim());
+
+    if (currentType === 'health') {
+      const firstLine = lines.find(l => l && !l.startsWith('#')) || v('hTopic');
+      document.getElementById('hCardTitle').value = firstLine;
+      document.getElementById('docTitle').value   = v('hTopic') || firstLine.substring(0, 15);
+
+      const fill = (sub, p1, p2, p3, hi, bi) => {
+        document.getElementById(sub).value = headings[hi] || '';
+        document.getElementById(p1).value  = bullets[bi]   || '';
+        document.getElementById(p2).value  = bullets[bi+1] || '';
+        document.getElementById(p3).value  = bullets[bi+2] || '';
+      };
+      fill('hC1Sub','hC1P1','hC1P2','hC1P3', 0, 0);
+      fill('hC2Sub','hC2P1','hC2P2','hC2P3', 1, 3);
+      fill('hC3Sub','hC3P1','hC3P2','hC3P3', 2, 6);
+
+    } else {
+      const firstLine = lines.find(l => l && !l.startsWith('#')) || v('pTitle');
+      document.getElementById('pCardTitle').value = firstLine;
+      document.getElementById('pCardDate').value  = v('pDate').replace(/[年月]/g,'.').replace('日','');
+      document.getElementById('pCardPlace').value = v('pPlace');
+      document.getElementById('docTitle').value   = v('pTitle').substring(0, 20);
+
+      const all = [...headings, ...bullets];
+      ['pC1P1','pC1P2','pC1P3','pC1P4','pC1P5'].forEach((id, i) => {
+        document.getElementById(id).value = all[i] || '';
+      });
+    }
+
+    updateFilename();
+    document.getElementById('step2Section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // find step2 section by walking DOM instead of id we didn't set
+    const sections = document.querySelectorAll('.section');
+    if (sections[1]) sections[1].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Canvas rendering ──────────────────────────────────────────────────────
+  function ellipsis(ctx, text, x, y, maxW) {
+    if (ctx.measureText(text).width <= maxW) { ctx.fillText(text, x, y); return; }
+    while (text.length > 1 && ctx.measureText(text + '…').width > maxW) text = text.slice(0, -1);
+    ctx.fillText(text + '…', x, y);
+  }
+
+  function wrapLine(ctx, text, x, y, maxW, lh) {
+    if (!text) return;
+    if (ctx.measureText(text).width <= maxW) { ctx.fillText(text, x, y); return; }
+    let line = '';
+    for (const ch of text) {
+      if (ctx.measureText(line + ch).width > maxW) break;
+      line += ch;
+    }
+    ctx.fillText(line, x, y - lh * 0.5);
+    ctx.fillText(text.slice(line.length), x, y + lh * 0.5);
+  }
+
+  function drawHealthCard(canvas, mainTitle, subtitle, points) {
+    const W = 1920, H = 1080;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, W, H);
+
+    // Top bar
+    const barH = 176;
+    const grd = ctx.createLinearGradient(0, 0, W, 0);
+    grd.addColorStop(0, '#0f766e');
+    grd.addColorStop(1, '#1a9c8a');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, barH);
+    ctx.fillStyle = '#0a5e58';
+    ctx.fillRect(0, 0, 14, barH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold 56px ${CJK}`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ellipsis(ctx, mainTitle, 52, barH / 2, W - 80);
+
+    // Subtitle band
+    let bodyTop = barH + 16;
+    if (subtitle) {
+      ctx.fillStyle = '#f0fdf9';
+      ctx.fillRect(0, barH, W, 68);
+      ctx.fillStyle = '#0f766e';
+      ctx.font = `600 30px ${CJK}`;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(subtitle, 52, barH + 34);
+      bodyTop = barH + 68 + 16;
+    }
+
+    // Key points
+    const botH   = 72;
+    const availH = H - bodyTop - botH - 16;
+    const pts     = points.filter(Boolean);
+    const ptH     = pts.length ? Math.min(130, availH / pts.length) : 130;
+
+    pts.forEach((pt, i) => {
+      const cy = bodyTop + i * ptH + ptH / 2;
+      ctx.fillStyle = '#0f766e';
+      ctx.beginPath(); ctx.arc(58, cy, 24, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold 24px ${CJK}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(i + 1, 58, cy);
+      ctx.fillStyle = '#1a202c';
+      ctx.font = `40px ${CJK}`;
+      ctx.textAlign = 'left';
+      wrapLine(ctx, pt, 104, cy, W - 140, 46);
+    });
+
+    // Bottom bar
+    ctx.fillStyle = '#f0fdf9';
+    ctx.fillRect(0, H - botH, W, botH);
+    ctx.fillStyle = '#0f766e';
+    ctx.font = `500 26px ${CJK}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('台中慈濟醫院 · 衛教資訊', W / 2, H - botH / 2);
+  }
+
+  function drawPressCard(canvas, mainTitle, dateStr, place, subtitle, points) {
+    const W = 3888, H = 2592;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, W, H);
+
+    // Top bar
+    const barH = 380;
+    const grd = ctx.createLinearGradient(0, 0, W, 0);
+    grd.addColorStop(0, '#1e3a8a');
+    grd.addColorStop(1, '#2b6cb0');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, barH);
+    ctx.fillStyle = '#172554';
+    ctx.fillRect(0, 0, 28, barH);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `bold 112px ${CJK}`;
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ellipsis(ctx, mainTitle, 80, barH / 2 - 36, W - 160);
+
+    const info = [dateStr, place].filter(Boolean).join('  ·  ');
+    if (info) {
+      ctx.font = `500 58px ${CJK}`;
+      ctx.fillStyle = '#bfdbfe';
+      ctx.fillText(info, 80, barH / 2 + 60);
+    }
+
+    // Subtitle band
+    let bodyTop = barH + 20;
+    if (subtitle) {
+      ctx.fillStyle = '#eff6ff';
+      ctx.fillRect(0, barH, W, 140);
+      ctx.fillStyle = '#1e3a8a';
+      ctx.font = `600 62px ${CJK}`;
+      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.fillText(subtitle, 80, barH + 70);
+      bodyTop = barH + 140 + 20;
+    }
+
+    // Key points
+    const botH   = 160;
+    const availH = H - bodyTop - botH - 20;
+    const pts     = points.filter(Boolean);
+    const ptH     = pts.length ? Math.min(280, availH / pts.length) : 280;
+
+    pts.forEach((pt, i) => {
+      const cy = bodyTop + i * ptH + ptH / 2;
+      ctx.fillStyle = '#1e3a8a';
+      ctx.beginPath(); ctx.arc(100, cy, 48, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold 48px ${CJK}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(i + 1, 100, cy);
+      ctx.fillStyle = '#1a202c';
+      ctx.font = `76px ${CJK}`;
+      ctx.textAlign = 'left';
+      wrapLine(ctx, pt, 186, cy, W - 240, 86);
+    });
+
+    // Bottom bar
+    ctx.fillStyle = '#eff6ff';
+    ctx.fillRect(0, H - botH, W, botH);
+    ctx.fillStyle = '#1e3a8a';
+    ctx.font = `500 54px ${CJK}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('台中慈濟醫院', W / 2, H - botH / 2);
+  }
+
+  function renderCards() {
+    const preview = document.getElementById('canvasPreview');
+    preview.innerHTML = '';
+    renderedCanvases = [];
+
+    const PREV_W = 380;
+
+    if (currentType === 'health') {
+      const mainTitle = v('hCardTitle');
+      if (!mainTitle) { alert('請填入整體主標題！'); return; }
+
+      [
+        { sub: v('hC1Sub'), pts: [v('hC1P1'), v('hC1P2'), v('hC1P3')] },
+        { sub: v('hC2Sub'), pts: [v('hC2P1'), v('hC2P2'), v('hC2P3')] },
+        { sub: v('hC3Sub'), pts: [v('hC3P1'), v('hC3P2'), v('hC3P3')] },
+      ].forEach((c, i) => {
+        const canvas = document.createElement('canvas');
+        drawHealthCard(canvas, mainTitle, c.sub, c.pts);
+        renderedCanvases.push(canvas);
+        addCardPreview(preview, canvas, PREV_W, 1920, 1080, i + 1);
+      });
+
+    } else {
+      const mainTitle = v('pCardTitle');
+      if (!mainTitle) { alert('請填入圖卡標題！'); return; }
+      const dateStr = v('pCardDate');
+      const place   = v('pCardPlace');
+
+      const cards = [
+        { sub: '',         pts: [v('pC1P1'),v('pC1P2'),v('pC1P3'),v('pC1P4'),v('pC1P5')] },
+        { sub: v('pC2Sub'), pts: [v('pC2P1'),v('pC2P2'),v('pC2P3')] },
+      ].filter((c, i) => i === 0 || c.sub || c.pts.some(Boolean));
+
+      cards.forEach((c, i) => {
+        const canvas = document.createElement('canvas');
+        drawPressCard(canvas, mainTitle, dateStr, place, c.sub, c.pts);
+        renderedCanvases.push(canvas);
+        addCardPreview(preview, canvas, PREV_W, 3888, 2592, i + 1);
+      });
+    }
+
+    // Scroll to step 3
+    const sections = document.querySelectorAll('.section');
+    if (sections[2]) sections[2].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function addCardPreview(container, canvas, prevW, W, H, num) {
+    const wrap  = document.createElement('div');
+    wrap.className = 'canvas-card';
+    canvas.style.width  = prevW + 'px';
+    canvas.style.height = Math.round(prevW * H / W) + 'px';
+
+    const label = document.createElement('div');
+    label.className = 'canvas-card-label';
+    label.textContent = `圖卡 ${num} — ${W}×${H} px`;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-ghost btn-sm';
+    btn.textContent = `⬇ 下載圖卡 ${num}`;
+    btn.onclick = () => dlCanvas(canvas, `card_${num}`);
+
+    wrap.appendChild(canvas);
+    wrap.appendChild(label);
+    wrap.appendChild(btn);
+    container.appendChild(wrap);
+  }
+
+  function dlCanvas(canvas, name) {
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a   = Object.assign(document.createElement('a'), { href: url, download: name + '.png' });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    }, 'image/png');
+  }
+
+  // ── docx generation ───────────────────────────────────────────────────────
+  async function generateDocx() {
+    const date     = v('docDate')  || todayStr();
+    const type     = v('docType')  || '衛教';
+    const title    = v('docTitle') || '文章';
+    const body     = v('aiResponse');
+    const filename = `${date}＼${type}＼${title}.docx`;
+
+    const st = document.getElementById('docxStatus');
+    st.className = 'status ok';
+    st.textContent = '⏳ 正在產生 Word 檔…';
+
+    try {
+      const { Document, Packer, Paragraph, TextRun, ImageRun } = docx;
+      const FONT = '標楷體', PT16 = 32, PT12 = 24;
+      const BLANK = () => new Paragraph({ children: [new TextRun({ text: '', size: PT12, font: FONT })] });
+      const children = [];
+
+      // Title
+      children.push(
+        new Paragraph({ children: [new TextRun({ text: title, bold: true, size: PT16, font: FONT })] }),
+        BLANK()
+      );
+
+      // Body
+      if (body) {
+        body.split('\n').forEach(line => {
+          const t = line.trim();
+          if (!t) {
+            children.push(BLANK());
+          } else if (t.startsWith('#')) {
+            children.push(new Paragraph({
+              children: [new TextRun({ text: t.replace(/^#+\s*/, ''), bold: true, size: PT12, font: FONT })]
+            }));
+          } else {
+            children.push(new Paragraph({
+              children: [new TextRun({ text: t, size: PT12, font: FONT })]
+            }));
+          }
+        });
+      }
+
+      // Images
+      if (renderedCanvases.length > 0) {
+        children.push(BLANK(), new Paragraph({
+          children: [new TextRun({ text: '圖卡：', bold: true, size: PT12, font: FONT })]
+        }));
+
+        for (let i = 0; i < renderedCanvases.length; i++) {
+          const c     = renderedCanvases[i];
+          const ratio = c.height / c.width;
+          const imgW  = 420;
+          const imgH  = Math.round(imgW * ratio);
+          const ab    = await canvasToAB(c);
+          children.push(
+            new Paragraph({ children: [new ImageRun({ data: new Uint8Array(ab), transformation: { width: imgW, height: imgH }, type: 'png' })] }),
+            new Paragraph({ children: [new TextRun({ text: `圖卡 ${i + 1}`, size: PT12, font: FONT })] }),
+            BLANK()
+          );
+        }
+      }
+
+      const doc  = new Document({ creator: '台中慈濟醫院公傳室', title, sections: [{ children }] });
+      const blob = await Packer.toBlob(doc);
+      const url  = URL.createObjectURL(blob);
+      Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      st.textContent = `✅ 已下載「${filename}」`;
+    } catch (err) {
+      console.error(err);
+      st.className = 'status err';
+      st.textContent = `產生失敗：${err.message}`;
+    }
+  }
+
+  function canvasToAB(canvas) {
+    return new Promise(res => {
+      canvas.toBlob(blob => {
+        const r = new FileReader();
+        r.onload = e => res(e.target.result);
+        r.readAsArrayBuffer(blob);
+      }, 'image/png');
+    });
+  }
+</script>
 </body>
 </html>
