@@ -1,43 +1,2467 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>短影音分析</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>短影音週報 · 台中慈濟醫院公傳室</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fafaf7;
+    --paper-2: #f1efe8;
+    --card: #ffffff;
+    --ink: #111111;
+    --ink-2: #2b2b2b;
+    --ink-3: #5a574e;
+    --mute: #8a8478;
+    --line: #d8d4c7;
+    --line-2: #e5e2d6;
+    --good: #1a6b3a;
+    --bad: #9b2c2c;
+    --note: #b86e00;
+    --accent: var(--ink);
+    --hl: #fff6cc;
+    --shadow: 0 1px 0 rgba(0,0,0,.06), 0 12px 32px -8px rgba(0,0,0,.16);
+    --yt: #cc0000;
+    --fb: #1877f2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: "Source Sans 3", "Helvetica Neue", "Noto Sans TC", sans-serif;
+    font-size: 14px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 {
+    font-family: "Noto Serif TC", Georgia, serif;
+    font-weight: 600; margin: 0; letter-spacing: -0.01em;
+  }
+  button { font: inherit; cursor: pointer; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .serif { font-family: "Noto Serif TC", Georgia, serif; }
+  .mute { color: var(--mute); }
+  a { color: var(--ink); }
+
+  .app { max-width: 1280px; margin: 0 auto; padding: 0 60px; }
+  .kicker { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink); }
+  .kicker.mute { color: var(--mute); }
+
+  #db-error-bar {
+    background: var(--bad); color: #fff; padding: 8px 16px;
+    text-align: center; font-size: 13px;
+    font-family: "Noto Serif TC", Georgia, serif;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  /* ── Top utility bar ── */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 60px; border-bottom: 1px solid var(--line);
+    background: var(--paper); position: sticky; top: 0; z-index: 20;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .topbar-l { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .topbar-l .brand { font-family: "Noto Serif TC", Georgia, serif; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .topbar-l .brand-sub { font-size: 11px; letter-spacing: 0.18em; color: var(--mute); text-transform: uppercase; }
+  .topbar-nav { display: flex; gap: 0; align-items: center; }
+  .topbar-nav a { padding: 6px 14px; font-size: 12px; color: var(--ink-2); text-decoration: none; border-right: 1px solid var(--line); cursor: pointer; }
+  .topbar-nav a:last-child { border-right: none; }
+  .topbar-nav a.on { background: var(--ink); color: var(--paper); }
+  .topbar-r { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .search-box { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--line); width: 220px; background: var(--paper); }
+  .search-box input { border: none; background: transparent; outline: none; font: inherit; flex: 1; font-size: 12px; color: var(--ink); }
+  .search-box svg { width: 12px; height: 12px; color: var(--mute); flex: none; }
+  .btn {
+    font-size: 12px; padding: 6px 12px;
+    background: var(--ink); color: var(--paper);
+    border: 1px solid var(--ink);
+    font-family: inherit; cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover:not(:disabled) { opacity: .85; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost:hover:not(:disabled) { background: var(--paper-2); }
+  .btn.icon { padding: 6px 8px; }
+  .btn.danger { background: transparent; color: var(--bad); border-color: rgba(155,44,44,.4); }
+  .btn.danger:hover:not(:disabled) { background: rgba(155,44,44,.08); }
+
+  /* ── Masthead ── */
+  .masthead { padding-top: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--ink); }
+  .masthead-top { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); padding-bottom: 14px; border-bottom: 1px solid var(--line); gap: 12px; flex-wrap: wrap; }
+  .masthead-title { font-size: 88px; line-height: 1; margin-top: 18px; letter-spacing: -0.04em; font-weight: 700; }
+  .masthead-sub { font-size: 13px; letter-spacing: 0.32em; color: var(--mute); text-transform: uppercase; margin-top: 14px; padding-bottom: 18px; }
+  .masthead-byline { display: flex; gap: 24px; font-size: 12px; color: var(--ink-2); align-items: center; flex-wrap: wrap; }
+  .masthead-byline span:not(:last-child)::after { content: "·"; margin-left: 24px; color: var(--mute); }
+
+  /* ── Stats ── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--ink); margin-top: 24px; }
+  .stat { padding: 22px 24px 22px 0; border-right: 1px dashed var(--line); }
+  .stat:last-child { border-right: none; padding-right: 0; }
+  .stat-label { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); display: flex; align-items: center; gap: 8px; }
+  .stat-num { font-family: "Noto Serif TC", Georgia, serif; font-size: 48px; line-height: 1; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  .stat-unit { font-size: 22px; margin-left: 4px; color: var(--ink-2); }
+  .stat-foot { font-size: 12px; color: var(--mute); margin-top: 8px; }
+
+  /* ── Section heads ── */
+  .section-head { display: flex; align-items: baseline; gap: 14px; padding-top: 36px; padding-bottom: 10px; border-bottom: 1px solid var(--ink); flex-wrap: wrap; }
+  .section-head > .kicker { background: var(--ink); color: var(--paper); padding: 3px 8px; font-size: 10px; }
+  .section-head h2 { font-size: 26px; }
+  .section-head .meta { margin-left: auto; font-size: 12px; color: var(--mute); }
+
+  /* ── Dashboard ── */
+  .dashboard { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0; border-bottom: 1px solid var(--ink); }
+  .panel { padding: 18px 24px 24px 0; border-right: 1px dashed var(--line); }
+  .dashboard .panel:last-child { padding: 18px 0 24px 24px; border-right: none; }
+  .panel-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; border-bottom: 1px dotted var(--line); margin-bottom: 14px; flex-wrap: wrap; }
+  .panel-head .panel-kicker { font-size: 10px; letter-spacing: 0.22em; padding: 2px 7px; background: var(--ink); color: var(--paper); }
+  .panel-head h3 { font-size: 18px; }
+  .panel-head .panel-more { margin-left: auto; font-size: 11px; color: var(--mute); }
+
+  .trend-chart { display: flex; align-items: stretch; gap: 10px; height: 140px; padding: 8px 0; border-bottom: 1px dotted var(--line); }
+  .trend-chart .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; min-width: 0; }
+  .trend-chart .bar-col { flex: 1; display: flex; align-items: flex-end; width: 100%; min-height: 0; position: relative; }
+  .trend-chart .bar { width: 100%; background: var(--ink); min-height: 2px; position: relative; }
+  .trend-chart .bar.this { background: var(--accent); }
+  .trend-chart .bar-label { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--mute); }
+  .trend-chart .bar-val { font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--ink); position: absolute; left: 50%; top: -16px; transform: translateX(-50%); white-space: nowrap; }
+  .trend-summary { display: grid; grid-template-columns: repeat(3, 1fr); padding-top: 14px; gap: 14px; }
+  .trend-summary > div { display: flex; flex-direction: column; gap: 4px; }
+  .trend-summary span { font-size: 10px; letter-spacing: 0.18em; color: var(--mute); text-transform: uppercase; }
+  .trend-summary strong { font-family: "Noto Serif TC", Georgia, serif; font-size: 22px; font-weight: 600; }
+
+  .topic-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+  .topic-row { display: flex; flex-direction: column; gap: 6px; }
+  .topic-head { display: flex; align-items: baseline; gap: 10px; }
+  .topic-name { font-family: "Noto Serif TC", Georgia, serif; font-size: 17px; }
+  .topic-meta { color: var(--mute); font-size: 11px; flex: 1; }
+  .topic-er { font-family: "JetBrains Mono", monospace; font-size: 14px; }
+  .topic-row .bar { height: 4px; background: var(--line-2); }
+  .topic-row .bar-fill { height: 100%; background: var(--ink); }
+
+  /* ── Lead story ── */
+  .lead { display: grid; grid-template-columns: 360px 1fr; gap: 32px; margin-top: 36px; padding-bottom: 32px; border-bottom: 4px double var(--ink); }
+  .lead-thumb { aspect-ratio: 4/3; position: relative; overflow: hidden; background: var(--ink-3); }
+  .lead-thumb::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 55%, rgba(0,0,0,.25) 100%); }
+  .lead-thumb::before { content: "▶"; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); color: rgba(255,255,255,0.7); font-size: 36px; }
+  .lead-thumb .corner { position: absolute; top: 12px; left: 12px; font-size: 10px; letter-spacing: 0.22em; padding: 3px 8px; background: var(--paper); color: var(--ink); z-index: 2; font-family: "JetBrains Mono", monospace; }
+  .lead-thumb .corner.r { left: auto; right: 12px; background: var(--ink); color: var(--paper); }
+  .lead-kicker { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink); }
+  .lead-title { font-size: 36px; line-height: 1.12; margin-top: 10px; max-width: 22ch; }
+  .lead-meta { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
+  .lead-metrics { display: flex; gap: 0; margin-top: 20px; padding: 14px 0; border-top: 1px dotted var(--line); border-bottom: 1px dotted var(--line); flex-wrap: wrap; }
+  .lead-metrics > div { flex: 1; display: flex; flex-direction: column; gap: 4px; padding-right: 24px; min-width: 90px; }
+  .lead-metrics .lm-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); }
+  .lead-metrics strong { font-family: "Noto Serif TC", Georgia, serif; font-size: 22px; font-weight: 600; }
+  .pullquote { font-family: "Noto Serif TC", Georgia, serif; font-size: 18px; font-style: italic; line-height: 1.5; margin: 22px 0 0; padding-left: 16px; border-left: 3px solid var(--ink); color: var(--ink-2); max-width: 40ch; }
+  .lead-actions { margin-top: 18px; display: flex; gap: 8px; }
+
+  /* ── Filter bar ── */
+  .filterbar { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--ink); flex-wrap: wrap; }
+  .filter-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .filter-group > .lbl { font-size: 10px; letter-spacing: 0.22em; color: var(--mute); text-transform: uppercase; margin-right: 4px; }
+  .tabs { display: flex; border: 1px solid var(--ink); }
+  .tab { font: inherit; font-size: 12px; padding: 6px 12px; background: transparent; border: none; border-right: 1px solid var(--ink); color: var(--ink); cursor: pointer; }
+  .tab:last-child { border-right: none; }
+  .tab.on { background: var(--ink); color: var(--paper); }
+  .chip { font-size: 11px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 100px; background: transparent; color: var(--ink-2); cursor: pointer; font-family: inherit; }
+  .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .filter-spacer { flex: 1; }
+
+  /* ── Feed rows ── */
+  .feed { display: flex; flex-direction: column; }
+  .row { display: grid; grid-template-columns: 36px 112px 1fr 220px 110px; gap: 18px; padding: 18px 0; border-bottom: 1px dotted var(--line); align-items: start; transition: background .15s; cursor: pointer; }
+  .row:hover { background: var(--paper-2); }
+  .row-rank { font-family: "Noto Serif TC", Georgia, serif; font-size: 28px; color: var(--mute); }
+  .thumb { width: 112px; aspect-ratio: 16/10; position: relative; flex: none; overflow: hidden; background: var(--ink-3); }
+  .thumb::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 60%, rgba(0,0,0,.2) 100%); }
+  .thumb::before { content: "▶"; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); color: rgba(255,255,255,0.8); font-size: 14px; }
+  .thumb-num { position: absolute; right: 6px; bottom: 4px; font-family: "JetBrains Mono", monospace; font-size: 10px; color: rgba(255,255,255,0.85); }
+  .row-meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+  .row-title { font-size: 20px; line-height: 1.25; margin: 6px 0 8px; font-family: "Noto Serif TC", Georgia, serif; font-weight: 600; }
+  .row-review { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip-review { font-size: 12px; padding: 3px 9px; border: 1px solid var(--line); line-height: 1.4; max-width: 100%; }
+  .chip-review.good { color: var(--good); border-color: #c5dac9; background: #f0f6f0; }
+  .chip-review.bad { color: var(--bad); border-color: #e0c5c5; background: #faf0ee; }
+  .chip-review.note { color: var(--note); background: var(--hl); border-color: #e6d28a; }
+  .row-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .m { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+  .m-num { font-family: "JetBrains Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .m-lbl { font-size: 10px; letter-spacing: 0.16em; color: var(--mute); text-transform: uppercase; }
+  .row-er { text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+  .row-er-num { font-family: "Noto Serif TC", Georgia, serif; font-size: 24px; font-weight: 600; }
+  .row-er-num.hot { color: var(--good); }
+  .row-er-num.cold { color: var(--bad); }
+  .row-er-lbl { font-size: 10px; letter-spacing: 0.18em; color: var(--mute); text-transform: uppercase; }
+  .stars { letter-spacing: 1px; color: var(--ink); font-size: 12px; display: inline-flex; gap: 1px; }
+  .stars .off { color: var(--line); }
+  .pill { font-size: 10px; padding: 1px 7px; border: 1px solid var(--ink); border-radius: 100px; font-family: "JetBrains Mono", monospace; display: inline-flex; align-items: center; gap: 4px; }
+  .pill.yt { background: var(--ink); color: var(--paper); }
+
+  /* ── Bottom (bot5 + vendor) ── */
+  .bottom { display: grid; grid-template-columns: 1fr 1.2fr; gap: 0; margin-top: 30px; border-top: 1px solid var(--ink); padding-top: 0; }
+  .bottom .panel { padding-top: 18px; padding-right: 24px; }
+  .bottom .panel:last-child { padding-right: 0; padding-left: 24px; border-right: none; }
+  .bot-list { list-style: none; padding: 0; margin: 0; }
+  .bot-list li { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 14px; align-items: center; padding: 10px 0; border-bottom: 1px dotted var(--line); cursor: pointer; }
+  .bot-list li:hover { background: var(--paper-2); }
+  .bot-rank { font-family: "Noto Serif TC", Georgia, serif; font-size: 18px; color: var(--mute); padding-left: 4px; }
+  .bot-title { font-family: "Noto Serif TC", Georgia, serif; font-size: 15px; line-height: 1.3; }
+  .bot-meta { font-size: 11px; color: var(--mute); margin-top: 2px; }
+  .bot-er { font-family: "JetBrains Mono", monospace; font-size: 15px; color: var(--bad); }
+  .bot-action { font-size: 11px; color: var(--mute); padding: 2px 6px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-family: inherit; }
+
+  .vendor-table { width: 100%; border-collapse: collapse; }
+  .vendor-table th { text-align: left; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); font-weight: 500; padding: 8px 0; border-bottom: 1px dotted var(--line); }
+  .vendor-table th.r { text-align: right; }
+  .vendor-table td { padding: 12px 0; border-bottom: 1px dotted var(--line); font-size: 13px; }
+  .vendor-table td.r { text-align: right; }
+  .vendor-table tr:last-child td { border-bottom: 1px solid var(--ink); }
+  .vendor-rank { display: flex; align-items: center; gap: 8px; }
+  .vendor-name { font-family: "Noto Serif TC", Georgia, serif; font-size: 15px; font-weight: 500; }
+
+  .footer { display: flex; justify-content: space-between; padding: 28px 0 48px; margin-top: 16px; border-top: 4px solid var(--ink); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); flex-wrap: wrap; gap: 12px; }
+
+  .empty { padding: 60px; text-align: center; color: var(--mute); font-style: italic; }
+
+  /* ── Modal ── */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(20,18,12,0.55);
+    backdrop-filter: blur(2px);
+    z-index: 100; padding: 30px; overflow-y: auto;
+  }
+  .modal-bg.show { display: flex; align-items: flex-start; justify-content: center; }
+  .modal {
+    background: var(--paper); width: 100%; max-width: 880px;
+    display: flex; flex-direction: column;
+    box-shadow: var(--shadow); border: 1px solid var(--ink);
+    overflow: hidden;
+  }
+  .modal.wide { max-width: 1080px; }
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 22px 30px 16px; border-bottom: 1px solid var(--ink); gap: 12px;
+  }
+  .modal-head h2 { font-size: 24px; }
+  .modal-head .modal-kicker { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--mute); display: block; margin-bottom: 4px; }
+  .modal-close {
+    background: none; border: none; font-size: 22px;
+    color: var(--mute); cursor: pointer; padding: 0 4px;
+  }
+  .modal-close:hover { color: var(--ink); }
+  .modal-body { padding: 24px 30px; overflow: auto; flex: 1; }
+  .modal-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 30px; border-top: 1px solid var(--ink); background: var(--paper-2);
+    gap: 10px; flex-wrap: wrap;
+  }
+  .modal-foot .progress { font-size: 11px; letter-spacing: 0.18em; color: var(--mute); text-transform: uppercase; }
+  .modal-foot .actions { display: flex; gap: 8px; margin-left: auto; }
+
+  .form-section { margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px dotted var(--line); }
+  .form-section:last-child { border-bottom: none; }
+  .form-section > h3 {
+    font-family: "Noto Serif TC", Georgia, serif;
+    font-size: 16px; margin: 0 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+  .form-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field > label, .field-label {
+    font-size: 11px; letter-spacing: 0.18em; color: var(--ink);
+    text-transform: uppercase; display: flex; gap: 8px; align-items: center;
+  }
+  .field > label .opt, .field-label .opt { color: var(--mute); letter-spacing: 0.06em; text-transform: none; }
+  .field input, .field select, .field textarea {
+    font: inherit; font-size: 14px; padding: 9px 12px;
+    border: 1px solid var(--line); background: var(--card);
+    outline: none; color: var(--ink); border-radius: 0;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+  .field textarea {
+    resize: vertical; min-height: 76px; line-height: 1.5;
+    font-family: "Noto Serif TC", Georgia, serif;
+  }
+  .field .helper { font-size: 11px; color: var(--mute); }
+
+  .review-fields {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 18px; background: var(--paper-2); border: 1px solid var(--line);
+  }
+  .review-fields .tag {
+    font-family: "Noto Serif TC", Georgia, serif;
+    font-size: 14px; letter-spacing: 0; color: var(--ink);
+    text-transform: none;
+  }
+  .review-mark { font-family: "Noto Serif TC", Georgia, serif; font-size: 16px; }
+  .review-mark.good { color: var(--good); }
+  .review-mark.bad { color: var(--bad); }
+  .review-mark.note { color: var(--note); }
+
+  .star-input { display: flex; gap: 4px; font-size: 22px; }
+  .star-input button {
+    background: none; border: none; color: var(--line); padding: 0;
+    cursor: pointer; font-size: inherit; font-family: inherit; line-height: 1;
+  }
+  .star-input button.on { color: var(--ink); }
+
+  /* ── Settings nav ── */
+  .settings-grid { display: grid; grid-template-columns: 180px 1fr; gap: 24px; }
+  .settings-nav { display: flex; flex-direction: column; gap: 0; }
+  .settings-nav button {
+    font: inherit; text-align: left; padding: 8px 12px;
+    background: transparent; border: none; border-left: 2px solid transparent;
+    color: var(--ink-2); font-size: 13px; cursor: pointer;
+  }
+  .settings-nav button.on {
+    border-left-color: var(--ink); color: var(--ink);
+    font-weight: 600; background: var(--paper-2);
+  }
+  .settings-panel { display: none; }
+  .settings-panel.on { display: block; }
+  .settings-panel h4 {
+    font-family: "Noto Serif TC", Georgia, serif;
+    font-size: 16px; margin: 0 0 6px;
+  }
+  .settings-panel .desc { font-size: 12px; color: var(--mute); margin: 0 0 12px; line-height: 1.6; }
+  .settings-block { padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px dotted var(--line); }
+  .settings-block:last-child { border-bottom: none; }
+  .api-row { display: flex; gap: 8px; align-items: center; padding: 8px 0; flex-wrap: wrap; }
+  .api-row .name {
+    font-family: "JetBrains Mono", monospace; font-size: 12px;
+    min-width: 110px; color: var(--ink-2);
+  }
+  .api-row input.key, .api-row .key {
+    flex: 1; font-family: "JetBrains Mono", monospace; font-size: 12px;
+    padding: 6px 10px; background: var(--card); border: 1px solid var(--line);
+    color: var(--ink); outline: none; min-width: 0;
+  }
+  .api-row input.key:focus { border-color: var(--ink); }
+  .status-pill { font-size: 11px; padding: 2px 8px; }
+  .status-pill.ok { color: var(--good); background: #e6efe6; }
+  .status-pill.bad { color: var(--bad); background: #f0e0e0; }
+
+  /* ── FB bulk table ── */
+  .fb-bulk-toolbar {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 12px; padding-bottom: 10px;
+    border-bottom: 1px dotted var(--line); flex-wrap: wrap;
+  }
+  .fb-bulk-toolbar select {
+    padding: 6px 10px; border: 1px solid var(--line);
+    background: var(--card); font: inherit; font-size: 12px; color: var(--ink);
+  }
+  .fb-bulk-progress { font-size: 12px; color: var(--mute); margin-left: auto; font-family: "JetBrains Mono", monospace; }
+  .fb-bulk-progress b { color: var(--ink); font-weight: 700; }
+  .fb-bulk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .fb-bulk-table th {
+    text-align: left; padding: 8px 6px; color: var(--mute);
+    font-weight: 500; font-size: 10px; letter-spacing: 0.18em;
+    text-transform: uppercase; border-bottom: 1px solid var(--ink);
+    position: sticky; top: 0; background: var(--paper);
+  }
+  .fb-bulk-table td {
+    padding: 6px 6px; border-bottom: 1px dotted var(--line);
+    vertical-align: middle;
+  }
+  .fb-bulk-table .col-title {
+    max-width: 280px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    font-family: "Noto Serif TC", Georgia, serif;
+  }
+  .fb-bulk-table input[type=number] {
+    width: 78px; padding: 4px 6px;
+    border: 1px solid var(--line); background: var(--card);
+    font: inherit; font-family: "JetBrains Mono", monospace;
+    font-size: 12px; color: var(--ink); outline: none;
+  }
+  .fb-bulk-table input[type=number]:focus { border-color: var(--ink); }
+  .fb-bulk-table a.reel-link { color: var(--ink); text-decoration: none; font-size: 14px; }
+  .fb-bulk-table .row-status { font-size: 11px; color: var(--mute); white-space: nowrap; }
+  .fb-bulk-table .row-status.saving { color: var(--note); }
+  .fb-bulk-table .row-status.saved { color: var(--good); }
+  .fb-bulk-table .row-status.error { color: var(--bad); }
+  .fb-bulk-table tr.dirty td { background: var(--hl); }
+
+  /* ── View modal detail ── */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .detail-block {
+    padding: 12px 14px; background: var(--paper-2);
+    border: 1px solid var(--line);
+  }
+  .detail-label {
+    font-size: 10px; letter-spacing: 0.18em; color: var(--mute);
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .detail-value { font-size: 14px; font-weight: 500; }
+  .review-block { margin-bottom: 14px; }
+  .review-block h4 {
+    font-size: 14px; margin: 0 0 6px;
+    font-family: "Noto Serif TC", Georgia, serif;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .review-block p {
+    font-size: 13px; line-height: 1.6;
+    padding: 10px 14px; background: var(--paper-2);
+    border-left: 3px solid var(--ink); white-space: pre-wrap;
+    margin: 0;
+  }
+  .review-block.empty p { color: var(--mute); font-style: italic; border-left-color: var(--line); }
+
+  /* ── Print ── */
+  @media print {
+    .topbar, .filterbar, .modal-bg, .btn, .topbar-r { display: none !important; }
+    .row, .lead { break-inside: avoid; }
+    .app { padding: 0 24px; max-width: 100%; }
+    body { font-size: 11pt; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 1000px) {
+    .app { padding: 0 24px; }
+    .topbar { padding: 12px 24px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .dashboard { grid-template-columns: 1fr; }
+    .dashboard .panel { border-right: none; border-bottom: 1px dotted var(--line); padding: 18px 0; }
+    .lead { grid-template-columns: 1fr; }
+    .bottom { grid-template-columns: 1fr; }
+    .bottom .panel { border-right: none; padding-left: 0 !important; padding-right: 0 !important; border-bottom: 1px dotted var(--line); }
+    .row { grid-template-columns: 28px 96px 1fr; gap: 12px; }
+    .row .row-metrics { grid-column: 2 / 4; }
+    .row .row-er { grid-column: 1 / 4; flex-direction: row; gap: 12px; align-items: baseline; justify-content: flex-end; }
+    .masthead-title { font-size: 60px; }
+  }
+  @media (max-width: 640px) {
+    .topbar { flex-direction: column; align-items: stretch; }
+    .topbar-l, .topbar-r { justify-content: flex-start; flex-wrap: wrap; }
+    .search-box { width: 100%; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.cols-4 { grid-template-columns: 1fr 1fr; }
+    .settings-grid { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .masthead-title { font-size: 44px; }
+  }
+  .back-btn {
+    position: fixed; bottom: 20px; left: 20px; z-index: 9999;
+    background: rgba(15,17,23,0.88); border: 1px solid #333;
+    border-radius: 20px; padding: 6px 14px; color: #888;
+    text-decoration: none; font-size: 0.82rem;
+    backdrop-filter: blur(8px); transition: color 0.15s, border-color 0.15s;
+  }
+  .back-btn:hover { color: #eee; border-color: #4f8ef7; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">📊</div>
-    <h1>短影音分析</h1>
-    <p>外包短影音成效追蹤與深度檢討</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
+
+<div id="db-error-bar" style="display:none;"></div>
+
+<!-- ── Top utility bar ── -->
+<div class="topbar">
+  <div class="topbar-l">
+    <div>
+      <div class="brand">短影音週報</div>
+      <div class="brand-sub">SHORT VIDEO BRIEF</div>
+    </div>
+    <nav class="topbar-nav" id="topbar-nav">
+      <a href="#brief" data-view="brief" class="on">週報總覽</a>
+      <a href="#feed" data-view="feed">所有影片</a>
+      <a href="#vendors" data-view="vendors">外包廠商</a>
+    </nav>
   </div>
+  <div class="topbar-r">
+    <div class="search-box">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="m11 11 3 3"/></svg>
+      <input type="text" id="search" placeholder="搜尋標題、廠商、主題…">
+    </div>
+    <button class="btn ghost" id="btn-print">列印</button>
+    <button class="btn ghost" id="btn-export">CSV</button>
+    <button class="btn" id="btn-add">＋ 新增影片</button>
+    <button class="btn ghost icon" id="btn-settings" title="設定">⚙</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- ── Masthead ── -->
+  <header class="masthead">
+    <div class="masthead-top">
+      <span id="mh-vol">VOL. — · ISSUE —</span>
+      <span id="mh-date">—</span>
+      <span>台中慈濟醫院 · 公傳室</span>
+    </div>
+    <h1 class="masthead-title">短影音週報</h1>
+    <div class="masthead-sub">SHORT VIDEO BRIEF — 外包成效追蹤與檢討</div>
+    <div class="masthead-byline">
+      <span>主編 · 公傳室同仁</span>
+      <span id="mh-week">—</span>
+      <span id="mh-update">資料更新於 —</span>
+      <span id="mh-status">YT API：—</span>
+    </div>
+  </header>
+
+  <!-- ── Stats strip ── -->
+  <section class="stats" id="stats"></section>
+
+  <!-- ── Dashboard ── -->
+  <div id="dashboard-block">
+    <div class="section-head">
+      <span class="kicker">儀表板</span>
+      <h2>月度趨勢與主題排名</h2>
+      <span class="meta" id="dashboard-meta">—</span>
+    </div>
+    <section class="dashboard">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-kicker">趨勢</span>
+          <h3>月度觀看分布</h3>
+          <span class="panel-more" id="trend-period">—</span>
+        </div>
+        <div id="trend-chart-wrap"></div>
+        <div class="trend-summary" id="trend-summary"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-kicker">主題</span>
+          <h3>哪一類最值得做</h3>
+          <span class="panel-more">依互動率排序</span>
+        </div>
+        <ul class="topic-list" id="topic-ranking"></ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- ── Lead story ── -->
+  <section class="lead" id="lead-story" style="display:none;"></section>
+
+  <!-- ── Section head for feed/vendors ── -->
+  <div class="section-head" id="feed-section-head">
+    <span class="kicker" id="view-kicker">本期影片</span>
+    <h2 id="view-heading">本期影片 — 依互動率排序</h2>
+    <span class="meta" id="view-meta">—</span>
+  </div>
+
+  <!-- ── Filter bar ── -->
+  <div class="filterbar" id="filterbar">
+    <div class="filter-group">
+      <span class="lbl">平台</span>
+      <div class="tabs" id="tabs-platform">
+        <button class="tab on" data-platform="">全部</button>
+        <button class="tab" data-platform="youtube">YouTube</button>
+        <button class="tab" data-platform="facebook">Facebook</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="lbl">主題</span>
+      <div id="topic-chips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+    <div class="filter-spacer"></div>
+    <div class="filter-group">
+      <span class="lbl">排序</span>
+      <div class="tabs" id="tabs-sort">
+        <button class="tab on" data-sort="er">互動率↓</button>
+        <button class="tab" data-sort="views">觀看↓</button>
+        <button class="tab" data-sort="date">日期↓</button>
+        <button class="tab" data-sort="rating">評分↓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feed -->
+  <section class="feed" id="feed"></section>
+  <div class="empty" id="empty-state" style="display:none;">沒有符合條件的影片。試試清掉搜尋或主題篩選。</div>
+
+  <!-- Vendors view -->
+  <section id="vendors-block" style="display:none;margin-top:18px;">
+    <table class="vendor-table" id="vendors-table-full"></table>
+    <p class="mute" id="vendors-note" style="margin-top:16px;font-size:13px;font-family:'Noto Serif TC',Georgia,serif;font-style:italic;"></p>
+  </section>
+
+  <!-- Bottom panels -->
+  <section class="bottom" id="bottom-block">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-kicker" style="background:var(--bad);">檢討</span>
+        <h3>互動率後 5 名</h3>
+        <span class="panel-more">點擊查看可改進處</span>
+      </div>
+      <ol class="bot-list" id="bot-list"></ol>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-kicker">廠商</span>
+        <h3>外包單位本期表現</h3>
+        <span class="panel-more">依互動率排序</span>
+      </div>
+      <table class="vendor-table" id="vendor-table"></table>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>— 完 —</span>
+    <span>資料來源：YouTube Data API v3 · Meta Business Suite 匯出 · 公傳室人工檢討</span>
+  </footer>
+</div>
+
+<!-- ── Modal: 設定 ── -->
+<div class="modal-bg" id="modal-settings">
+  <div class="modal">
+    <header class="modal-head">
+      <div>
+        <span class="modal-kicker">設定</span>
+        <h2>系統設定</h2>
+      </div>
+      <button class="modal-close" data-close>✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="settings-nav" id="settings-nav">
+          <button class="on" data-tab="api">API 金鑰</button>
+          <button data-tab="import">資料匯入</button>
+          <button data-tab="budget">預算批次</button>
+          <button data-tab="fb">FB 補資料</button>
+        </div>
+        <div>
+          <div class="settings-panel on" data-panel="api">
+            <div class="settings-block">
+              <h4>YouTube Data API v3</h4>
+              <p class="desc">用來自動拉取影片的觀看數、按讚、留言數。每次新增 YT 影片時可一鍵抓取。</p>
+              <div class="api-row">
+                <span class="name">API_KEY</span>
+                <input type="password" id="settings-yt-key" class="key" placeholder="AIzaSy…" autocomplete="off">
+              </div>
+              <p class="desc" style="margin:8px 0 0;">金鑰只存在這台瀏覽器（localStorage），不會進 Firestore 或 GitHub。</p>
+            </div>
+            <div class="settings-block">
+              <h4>批次抓取 YT 數據</h4>
+              <p class="desc">為所有已知 YouTube 影片一次性更新觀看 / 讚 / 留言。<b>只動 metrics 欄位</b>，不會覆蓋檢討。</p>
+              <button class="btn ghost" id="btn-bulk-fetch-yt" style="width:100%;">▶ 批次抓取所有 YouTube 影片</button>
+              <div id="bulk-fetch-status" style="margin-top:10px;font-size:12px;color:var(--mute);min-height:1.2em;"></div>
+            </div>
+          </div>
+
+          <div class="settings-panel" data-panel="import">
+            <div class="settings-block">
+              <h4>排播表批次匯入（一次性）</h4>
+              <p class="desc">從 2026-04-29 排播表匯入 79 筆紀錄（YT × 40、FB × 39）。重複匯入會略過已存在的，<b>不會覆蓋你已寫的檢討</b>。</p>
+              <button class="btn ghost" id="btn-bulk-import" style="width:100%;">📥 從排播表匯入（79 筆）</button>
+              <div id="bulk-import-status" style="margin-top:10px;font-size:12px;color:var(--mute);min-height:1.2em;"></div>
+            </div>
+            <div class="settings-block">
+              <h4>從 Meta 匯出檔匯入 FB 數據</h4>
+              <p class="desc">到 Meta 商務管理平台 → 內容 → 匯出 → 選日期範圍 → 下載 .xlsx，把檔案丟進來，工具會用<b>發布日期</b>對到 Firestore 的 FB 紀錄。</p>
+              <input type="file" id="fb-import-file" accept=".xlsx,.xls" style="width:100%;padding:6px;border:1px solid var(--line);background:var(--card);font-family:inherit;">
+              <div id="fb-import-preview" style="margin-top:10px;font-size:12px;color:var(--ink-2);max-height:220px;overflow-y:auto;"></div>
+              <button class="btn ghost" id="btn-fb-import-confirm" style="width:100%;margin-top:8px;display:none;">確認匯入</button>
+            </div>
+          </div>
+
+          <div class="settings-panel" data-panel="budget">
+            <div class="settings-block">
+              <h4>批次填入預算</h4>
+              <p class="desc">如果所有影片是同一個外包單價，可以一次填到全部。CPM 才算得出來。</p>
+              <div class="form-grid">
+                <div class="field">
+                  <label>每支預算（NT$）</label>
+                  <input type="number" id="bulk-budget-amount" min="0" step="100" placeholder="例：6000">
+                </div>
+                <div class="field">
+                  <label>套用範圍</label>
+                  <select id="bulk-budget-scope">
+                    <option value="all">所有影片</option>
+                    <option value="youtube">只 YouTube</option>
+                    <option value="facebook">只 Facebook</option>
+                  </select>
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--ink-2);cursor:pointer;letter-spacing:0;text-transform:none;">
+                <input type="checkbox" id="bulk-budget-overwrite">
+                也覆蓋已經有預算的影片（不勾就只填空白的）
+              </label>
+              <button class="btn ghost" id="btn-bulk-budget" style="width:100%;margin-top:10px;">💰 套用預算到全部</button>
+              <div id="bulk-budget-status" style="margin-top:10px;font-size:12px;color:var(--mute);min-height:1.2em;"></div>
+            </div>
+          </div>
+
+          <div class="settings-panel" data-panel="fb">
+            <div class="settings-block">
+              <h4>FB 數據手動填寫</h4>
+              <p class="desc">如果不能取得 Meta 匯出檔，用這個一筆一筆手動貼。失焦會自動儲存。</p>
+              <button class="btn ghost" id="btn-fb-bulk-open" style="width:100%;">📋 開啟 FB 批次填寫表格</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="modal-foot">
+      <span class="progress">所有變更會自動儲存</span>
+      <div class="actions">
+        <button class="btn ghost" data-close>取消</button>
+        <button class="btn" id="btn-settings-save">完成</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ── Modal: 新增 / 編輯影片 ── -->
+<div class="modal-bg" id="modal-edit">
+  <div class="modal">
+    <header class="modal-head">
+      <div>
+        <span class="modal-kicker" id="modal-edit-kicker">新增</span>
+        <h2 id="modal-title">新增一支影片</h2>
+      </div>
+      <button class="modal-close" data-close>✕</button>
+    </header>
+    <div class="modal-body">
+      <form id="form-video">
+        <div class="form-section">
+          <h3>基本資訊</h3>
+          <div class="form-grid">
+            <div class="field full">
+              <label>影片標題 <span class="opt">*</span></label>
+              <input type="text" name="title" required placeholder="例：林醫師：高血壓的三個迷思">
+            </div>
+            <div class="field">
+              <label>平台</label>
+              <select name="platform" required>
+                <option value="youtube">YouTube</option>
+                <option value="facebook">Facebook</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>發布日期</label>
+              <input type="date" name="publishedAt" required>
+            </div>
+            <div class="field full">
+              <label>影片連結</label>
+              <input type="url" name="url" placeholder="https://…">
+            </div>
+            <div class="field">
+              <label>外包廠商</label>
+              <input type="text" name="vendor" placeholder="例：日初影像">
+            </div>
+            <div class="field">
+              <label>主題分類</label>
+              <select name="topic">
+                <option value="衛教">衛教</option>
+                <option value="病例">病例</option>
+                <option value="活動">活動</option>
+                <option value="形象">形象</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>製作預算 <span class="opt">NT$</span></label>
+              <input type="number" name="budget" min="0" step="1" placeholder="0">
+            </div>
+            <div class="field">
+              <label>整體評分</label>
+              <div class="star-input" id="rating-stars">
+                <button type="button" data-v="1">★</button>
+                <button type="button" data-v="2">★</button>
+                <button type="button" data-v="3">★</button>
+                <button type="button" data-v="4">★</button>
+                <button type="button" data-v="5">★</button>
+              </div>
+              <input type="hidden" name="rating" value="0">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>成效數據</h3>
+          <div id="auto-fetch-row" style="display:none;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:var(--paper-2);border:1px solid var(--line);">
+            <button type="button" class="btn ghost" id="btn-auto-fetch" style="font-size:12px;">▶ 自動抓取 YouTube 數據</button>
+            <span id="auto-fetch-status" style="font-size:12px;color:var(--mute);"></span>
+          </div>
+          <div class="field-label" style="margin-bottom:8px;">曝光與互動</div>
+          <div class="form-grid cols-4">
+            <div class="field"><label>觀看</label><input type="number" name="views" min="0" placeholder="0"></div>
+            <div class="field"><label>讚</label><input type="number" name="likes" min="0" placeholder="0"></div>
+            <div class="field"><label>留言</label><input type="number" name="comments" min="0" placeholder="0"></div>
+            <div class="field"><label>分享</label><input type="number" name="shares" min="0" placeholder="0"></div>
+            <div class="field"><label>收藏</label><input type="number" name="saves" min="0" placeholder="0"></div>
+          </div>
+          <div class="field-label" style="margin:14px 0 8px;">內容吸引力</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>完播率 (%)</label>
+              <input type="number" name="completionRate" min="0" max="100" step="0.1" placeholder="例：45.2">
+            </div>
+            <div class="field">
+              <label>平均觀看時長（秒）</label>
+              <input type="number" name="avgViewDuration" min="0" placeholder="例：28">
+            </div>
+          </div>
+          <div class="field-label" style="margin:14px 0 8px;">轉換指標 <span class="opt">(選填)</span></div>
+          <div class="form-grid">
+            <div class="field">
+              <label>點擊率 CTR (%)</label>
+              <input type="number" name="ctr" min="0" max="100" step="0.01" placeholder="例：2.5">
+            </div>
+            <div class="field">
+              <label>轉換率 (%)</label>
+              <input type="number" name="conversionRate" min="0" max="100" step="0.01" placeholder="例：1.2">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>檢討卡</h3>
+          <div class="review-fields">
+            <div class="field">
+              <label><span class="review-mark good">＋</span><span class="tag">做得好</span></label>
+              <textarea name="strengths" placeholder="例：開場 3 秒鉤子強烈、字幕節奏剛好、醫師講解親和有溫度"></textarea>
+            </div>
+            <div class="field">
+              <label><span class="review-mark bad">－</span><span class="tag">可改進</span></label>
+              <textarea name="improvements" placeholder="例：醫師受訪講太快、片尾 CTA 不明確"></textarea>
+            </div>
+            <div class="field">
+              <label><span class="review-mark note">→</span><span class="tag">給長官的話</span></label>
+              <textarea name="recommendations" placeholder="例：本集為近一個月互動率第一，建議續訂同醫師系列"></textarea>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <footer class="modal-foot">
+      <button class="btn danger" id="btn-delete" style="display:none;">刪除</button>
+      <div class="actions">
+        <button class="btn ghost" data-close>取消</button>
+        <button class="btn" id="btn-save">儲存</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ── Modal: 詳細檢視 ── -->
+<div class="modal-bg" id="modal-view">
+  <div class="modal">
+    <header class="modal-head">
+      <div>
+        <span class="modal-kicker">本期報導</span>
+        <h2 id="view-title">影片詳細</h2>
+      </div>
+      <button class="modal-close" data-close>✕</button>
+    </header>
+    <div class="modal-body" id="view-body"></div>
+    <footer class="modal-foot">
+      <span class="progress" id="view-foot-meta"></span>
+      <div class="actions">
+        <button class="btn ghost" data-close>關閉</button>
+        <button class="btn" id="btn-edit-from-view">編輯</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ── Modal: FB 批次填寫 ── -->
+<div class="modal-bg" id="modal-fb-bulk">
+  <div class="modal wide">
+    <header class="modal-head">
+      <div>
+        <span class="modal-kicker">FB · 補資料</span>
+        <h2>FB 數據批次填寫</h2>
+      </div>
+      <button class="modal-close" data-close>✕</button>
+    </header>
+    <div class="modal-body">
+      <div class="fb-bulk-toolbar">
+        <select id="fb-bulk-filter">
+          <option value="empty">只顯示未填寫的</option>
+          <option value="all">顯示全部</option>
+        </select>
+        <span class="fb-bulk-progress" id="fb-bulk-progress">— / —</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="fb-bulk-table">
+          <thead>
+            <tr>
+              <th>標題</th>
+              <th>開啟</th>
+              <th>觀看</th>
+              <th>讚</th>
+              <th>留言</th>
+              <th>分享</th>
+              <th>收藏</th>
+              <th>狀態</th>
+            </tr>
+          </thead>
+          <tbody id="fb-bulk-rows"></tbody>
+        </table>
+      </div>
+    </div>
+    <footer class="modal-foot">
+      <span class="progress">點 🔗 開 Reel → 看數字 → 回來填 → 失焦自動儲存（800ms）</span>
+      <div class="actions">
+        <button class="btn" data-close>完成</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ── Link Picker Modal ── -->
+<div class="modal-bg" id="modal-link-picker">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <span class="modal-kicker">連結影片</span>
+      <h2 id="link-picker-title">選擇要連結的影片</h2>
+      <button class="modal-close" data-close>✕</button>
+    </div>
+    <div style="padding:16px 24px 0;">
+      <input id="link-picker-search" type="text" placeholder="搜尋標題…"
+        style="width:100%;padding:7px 10px;border:1px solid var(--line);background:var(--paper);
+               font:inherit;font-size:13px;outline:none;margin-bottom:10px;">
+    </div>
+    <div id="link-picker-list" style="max-height:380px;overflow-y:auto;padding:0 0 8px;"></div>
+    <footer class="modal-foot"><button class="btn ghost" data-close>取消</button></footer>
+  </div>
+</div>
+
+<script type="module">
+'use strict';
+
+// ════════════════════════════════════════════════════════════════
+// STORAGE_LAYER  ←  Phase 1b: Firebase Firestore (onSnapshot 即時同步)
+// ════════════════════════════════════════════════════════════════
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            'AIzaSyAfjo_CNEKYkKcX8suSZoXE9Vee7KK30j0',
+  authDomain:        'my-public-tools.firebaseapp.com',
+  projectId:         'my-public-tools',
+  storageBucket:     'my-public-tools.firebasestorage.app',
+  messagingSenderId: '134966589937',
+  appId:             '1:134966589937:web:aa74f821bb11c009352c50',
+};
+
+const _app = initializeApp(firebaseConfig);
+const _db  = getFirestore(_app);
+const COLL = 'short_videos';
+
+let videosCache = [];
+
+const Storage = {
+  subscribe(onUpdate) {
+    return onSnapshot(
+      collection(_db, COLL),
+      snap => {
+        videosCache = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+        onUpdate();
+      },
+      err => {
+        console.error('Firestore error:', err);
+        showDbError('無法連線到資料庫，請重新整理頁面。');
+      }
+    );
+  },
+  load() { return videosCache; },
+  async upsert(video) {
+    const now = new Date().toISOString();
+    const id  = video.id || ('v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6));
+    await setDoc(
+      doc(_db, COLL, id),
+      { ...video, id, updatedAt: now, ...(!video.id ? { createdAt: now } : {}) },
+      { merge: true }
+    );
+    return id;
+  },
+  async remove(id) {
+    await deleteDoc(doc(_db, COLL, id));
+  },
+};
+
+function showDbError(msg) {
+  const bar = document.getElementById('db-error-bar');
+  if (bar) { bar.textContent = '⚠ ' + msg; bar.style.display = 'block'; }
+}
+
+// ════════════════════════════════════════════════════════════════
+// API_FETCH_HOOK  ←  Phase 2: YouTube Data API v3
+// ════════════════════════════════════════════════════════════════
+const YT_KEY_STORE = 'svr_yt_api_key';
+function getYTApiKey() { try { return localStorage.getItem(YT_KEY_STORE) || ''; } catch { return ''; } }
+function setYTApiKey(key) { try { localStorage.setItem(YT_KEY_STORE, key.trim()); } catch {} }
+
+function parseYouTubeId(url) {
+  if (!url) return null;
+  for (const p of [/[?&]v=([a-zA-Z0-9_-]{11})/, /youtu\.be\/([a-zA-Z0-9_-]{11})/, /shorts\/([a-zA-Z0-9_-]{11})/]) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+async function fetchVideoMetricsFromAPI(video) {
+  const key = getYTApiKey();
+  if (!key || video.platform !== 'youtube') return null;
+  const ytId = parseYouTubeId(video.url);
+  if (!ytId) return null;
+  const r = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ytId}&key=${key}`);
+  if (!r.ok) throw new Error(`YouTube API 錯誤 ${r.status}`);
+  const data = await r.json();
+  if (data.error) throw new Error(data.error.message);
+  const stats = data.items?.[0]?.statistics;
+  if (!stats) return null;
+  return {
+    views: parseInt(stats.viewCount || '0', 10),
+    likes: parseInt(stats.likeCount || '0', 10),
+    comments: parseInt(stats.commentCount || '0', 10),
+    shares: null,
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
+async function autoFetchYT() {
+  const form   = document.getElementById('form-video');
+  const status = document.getElementById('auto-fetch-status');
+  const platform = form.elements['platform'].value;
+  const url      = form.elements['url'].value.trim();
+  if (platform !== 'youtube') return;
+  if (!getYTApiKey()) { status.textContent = '⚠ 尚未設定 API 金鑰，請開啟 ⚙ 設定填入'; return; }
+  if (!parseYouTubeId(url)) { status.textContent = '⚠ 無法解析 YouTube 影片 ID，請確認網址格式'; return; }
+  status.textContent = '抓取中…';
+  try {
+    const m = await fetchVideoMetricsFromAPI({ platform, url });
+    if (!m) { status.textContent = '⚠ 找不到此影片的數據'; return; }
+    const set = (name, val) => { if (val != null) form.elements[name].value = val; };
+    set('views', m.views); set('likes', m.likes); set('comments', m.comments);
+    status.textContent = `✓ 已更新（${new Date().toLocaleTimeString('zh-TW')}）`;
+  } catch (err) {
+    status.textContent = '⚠ ' + (err.message || '抓取失敗');
+  }
+}
+
+function updateAutoFetchVisibility() {
+  const form = document.getElementById('form-video');
+  const isYT = form.elements['platform'].value === 'youtube';
+  document.getElementById('auto-fetch-row').style.display = isYT ? 'flex' : 'none';
+  document.getElementById('auto-fetch-status').textContent = '';
+}
+
+// ════════════════════════════════════════════════════════════════
+// 純計算
+// ════════════════════════════════════════════════════════════════
+function calcCPM(budget, views) {
+  if (!budget || !views) return null;
+  return (budget / views) * 1000;
+}
+function calcEngagement(m) {
+  if (!m || !m.views) return null;
+  return ((m.likes || 0) + (m.comments || 0) + (m.shares || 0) + (m.saves || 0)) / m.views * 100;
+}
+function fmtNum(n) {
+  if (n == null) return '—';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '萬';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
+}
+function fmtFull(n) { return n == null ? '—' : Number(n).toLocaleString(); }
+function fmtPct(n) { return n == null ? '—' : n.toFixed(2) + '%'; }
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ── group YT+FB by groupId (manual link) or title ──
+function normalizeTitle(t) {
+  return String(t || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function groupVideos(records) {
+  const groups = new Map();
+
+  const applyToGroup = (g, v) => {
+    if (v.platform === 'youtube') { g.yt = v; g.title = v.title; }
+    else if (v.platform === 'facebook') { g.fb = v; if (!g.yt) g.title = v.title; }
+    if (v.publishedAt && (!g.publishedAt || v.publishedAt < g.publishedAt))
+      g.publishedAt = v.publishedAt;
+  };
+
+  // First pass: explicit groupId links
+  const linkedIds = new Set();
+  for (const v of records) {
+    if (!v.groupId) continue;
+    linkedIds.add(v.id);
+    const key = '__gid__' + v.groupId;
+    if (!groups.has(key))
+      groups.set(key, { key, title: v.title, topic: v.topic, publishedAt: v.publishedAt, yt: null, fb: null, groupId: v.groupId });
+    applyToGroup(groups.get(key), v);
+  }
+
+  // Second pass: fallback to title matching (skip already linked)
+  for (const v of records) {
+    if (linkedIds.has(v.id)) continue;
+    const key = normalizeTitle(v.title);
+    if (!key) continue;
+    if (!groups.has(key))
+      groups.set(key, { key, title: v.title, topic: v.topic, publishedAt: v.publishedAt, yt: null, fb: null });
+    applyToGroup(groups.get(key), v);
+  }
+
+  return groups;
+}
+function getCombinedMetrics(group) {
+  const ytm = group.yt?.metrics || {};
+  const fbm = group.fb?.metrics || {};
+  const sum = (k) => (ytm[k] ?? 0) + (fbm[k] ?? 0);
+  const views = sum('views'), likes = sum('likes'), comments = sum('comments'), shares = sum('shares'), saves = sum('saves');
+  const crVals = [ytm.completionRate, fbm.completionRate].filter(x => x != null);
+  const completionRate = crVals.length ? crVals.reduce((a, b) => a + b, 0) / crVals.length : null;
+  const budget = (group.yt?.budget || 0) + (group.fb?.budget || 0);
+  return {
+    views, likes, comments, shares, saves, completionRate,
+    budget: budget || null,
+    engagement: views > 0 ? (likes + comments + shares + saves) / views * 100 : null,
+    cpm: (budget > 0 && views > 0) ? budget / views * 1000 : null,
+    hasYT: !!group.yt, hasFB: !!group.fb,
+    ytm, fbm,
+  };
+}
+
+// ── Adapter: group → row used by newsroom feed ──
+function adaptGroup(g) {
+  const cm = getCombinedMetrics(g);
+  const vendor = g.yt?.vendor || g.fb?.vendor || '';
+  const ytR = g.yt?.review || {};
+  const fbR = g.fb?.review || {};
+  const good = (ytR.strengths || fbR.strengths || '').trim();
+  const bad  = (ytR.improvements || fbR.improvements || '').trim();
+  const note = (ytR.recommendations || fbR.recommendations || '').trim();
+  const rating = Math.max(ytR.rating || 0, fbR.rating || 0);
+  const hash = [...(g.title || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
+  const thumb = `hsl(0, 0%, ${(Math.abs(hash) % 50) + 28}%)`;
+  const platforms = [];
+  if (cm.hasYT) platforms.push('YT');
+  if (cm.hasFB) platforms.push('FB');
+  return {
+    key: g.key, title: g.title, date: g.publishedAt || '',
+    topic: g.topic || '其他', vendor, budget: cm.budget,
+    rating, thumb, platforms,
+    views: cm.views, likes: cm.likes, comments: cm.comments, shares: cm.shares,
+    er: cm.engagement != null ? cm.engagement / 100 : 0,
+    cpm: cm.cpm, hasYT: cm.hasYT, hasFB: cm.hasFB,
+    good, bad, note,
+  };
+}
+
+function allRows() {
+  return Array.from(groupVideos(Storage.load()).values()).map(adaptGroup);
+}
+
+// ── UI state ──
+const state = {
+  view: 'brief',
+  platform: '',
+  topic: '',
+  sort: 'er',
+  search: '',
+};
+
+let editingId = null;
+let currentRating = 0;
+
+function applyFilter(rows) {
+  let r = rows;
+  if (state.platform === 'youtube') r = r.filter(x => x.hasYT);
+  else if (state.platform === 'facebook') r = r.filter(x => x.hasFB);
+  if (state.topic) r = r.filter(x => x.topic === state.topic);
+  const q = state.search.trim().toLowerCase();
+  if (q) r = r.filter(x =>
+    (x.title || '').toLowerCase().includes(q) ||
+    (x.vendor || '').toLowerCase().includes(q) ||
+    (x.topic || '').toLowerCase().includes(q)
+  );
+  return r;
+}
+
+function applySort(rows) {
+  const arr = [...rows];
+  const sort = state.sort;
+  if (sort === 'views') arr.sort((a, b) => (b.views || 0) - (a.views || 0));
+  else if (sort === 'date') arr.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  else if (sort === 'rating') arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  else arr.sort((a, b) => (b.er || 0) - (a.er || 0));
+  return arr;
+}
+
+function trendByMonth(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    if (!r.date) continue;
+    const m = r.date.slice(0, 7);
+    if (!map.has(m)) map.set(m, { month: m, count: 0, views: 0, likes: 0, comments: 0, shares: 0 });
+    const o = map.get(m);
+    o.count += 1; o.views += r.views || 0; o.likes += r.likes || 0;
+    o.comments += r.comments || 0; o.shares += r.shares || 0;
+  }
+  return [...map.values()]
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map(o => ({ ...o, er: o.views ? (o.likes + o.comments + o.shares) / o.views : 0 }));
+}
+
+function topicBreakdown(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    const t = r.topic || '其他';
+    if (!map.has(t)) map.set(t, { topic: t, count: 0, views: 0, likes: 0, comments: 0, shares: 0 });
+    const o = map.get(t);
+    o.count += 1; o.views += r.views || 0; o.likes += r.likes || 0;
+    o.comments += r.comments || 0; o.shares += r.shares || 0;
+  }
+  return [...map.values()].map(o => ({ ...o, er: o.views ? (o.likes + o.comments + o.shares) / o.views : 0 }));
+}
+
+function vendorBreakdown(rows) {
+  const map = new Map();
+  for (const r of rows) {
+    const v = r.vendor || '— 未填 —';
+    if (!map.has(v)) map.set(v, { vendor: v, count: 0, views: 0, budget: 0, likes: 0, comments: 0, shares: 0, ratings: [] });
+    const o = map.get(v);
+    o.count += 1; o.views += r.views || 0; o.budget += r.budget || 0;
+    o.likes += r.likes || 0; o.comments += r.comments || 0; o.shares += r.shares || 0;
+    if (r.rating) o.ratings.push(r.rating);
+  }
+  return [...map.values()].map(o => ({
+    ...o,
+    er: o.views ? (o.likes + o.comments + o.shares) / o.views : 0,
+    cpm: o.views && o.budget ? (o.budget / o.views) * 1000 : null,
+    avgRating: o.ratings.length ? o.ratings.reduce((a, b) => a + b, 0) / o.ratings.length : 0,
+  }));
+}
+
+// ════════════════════════════════════════════════════════════════
+// 渲染
+// ════════════════════════════════════════════════════════════════
+function renderMasthead() {
+  const now = new Date();
+  const onejan = new Date(now.getFullYear(), 0, 1);
+  const weekNum = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const yy = String(now.getFullYear()).slice(-2);
+  document.getElementById('mh-vol').textContent = `VOL. ${yy} · ISSUE ${String(weekNum).padStart(2, '0')}`;
+  const fmtD = d => `${d.getMonth() + 1}/${d.getDate()}`;
+  document.getElementById('mh-date').textContent = `${now.getFullYear()} 年 ${fmtD(monday)} — ${fmtD(sunday)}`;
+  document.getElementById('mh-week').textContent = `第 ${weekNum} 週`;
+  document.getElementById('mh-update').textContent = '資料更新於 ' + now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('mh-status').textContent = getYTApiKey() ? 'YT API 已連線' : 'YT API 未設定';
+}
+
+function renderStats(rows, allCount) {
+  const totalViews = rows.reduce((a, b) => a + (b.views || 0), 0);
+  const totalEng   = rows.reduce((a, b) => a + (b.likes || 0) + (b.comments || 0) + (b.shares || 0), 0);
+  const avgER      = totalViews ? totalEng / totalViews * 100 : 0;
+  const totalBudget = rows.reduce((a, b) => a + (b.budget || 0), 0);
+  const cpm        = totalViews ? totalBudget / totalViews * 1000 : 0;
+  const ytCount    = rows.filter(r => r.hasYT).length;
+  const fbCount    = rows.filter(r => r.hasFB).length;
+  const stats = [
+    { label: '本期影片', num: rows.length, foot: `共 ${allCount} 支可篩 · YT × ${ytCount} · FB × ${fbCount}` },
+    { label: '總觀看', num: fmtNum(totalViews), foot: totalViews ? totalViews.toLocaleString() + ' 次' : '尚無資料' },
+    { label: '平均互動率', num: totalViews ? avgER.toFixed(2) : '—', unit: totalViews ? '%' : '', foot: '業界基準約 3–5%' },
+    { label: '每千次成本', num: totalBudget && totalViews ? '$' + Math.round(cpm) : '—', foot: 'CPM · 預算 NT$ ' + (totalBudget ? totalBudget.toLocaleString() : '—') },
+  ];
+  document.getElementById('stats').innerHTML = stats.map(s => `
+    <div class="stat">
+      <div class="stat-label">${s.label}</div>
+      <div class="stat-num">${s.num}${s.unit ? `<span class="stat-unit">${s.unit}</span>` : ''}</div>
+      <div class="stat-foot">${s.foot}</div>
+    </div>
+  `).join('');
+}
+
+function renderDashboard(rows) {
+  const trend = trendByMonth(rows);
+  const topics = topicBreakdown(rows).sort((a, b) => (b.er || 0) - (a.er || 0));
+  const trendEl = document.getElementById('trend-chart-wrap');
+  if (!trend.length) {
+    trendEl.innerHTML = '<div class="empty" style="padding:20px;">尚無月度資料</div>';
+    document.getElementById('trend-summary').innerHTML = '';
+    document.getElementById('trend-period').textContent = '—';
+  } else {
+    const max = Math.max(...trend.map(r => r.views), 1);
+    trendEl.innerHTML = `<div class="trend-chart">${trend.map((r, i) => {
+      const h = (r.views / max) * 100;
+      const isLast = i === trend.length - 1;
+      return `<div class="bar-wrap">
+        <div class="bar-col">
+          <div class="bar${isLast ? ' this' : ''}" style="height:${h}%;">
+            ${isLast ? `<span class="bar-val">${fmtNum(r.views)}</span>` : ''}
+          </div>
+        </div>
+        <div class="bar-label">${r.month.slice(5)}</div>
+      </div>`;
+    }).join('')}</div>`;
+    const last = trend[trend.length - 1];
+    const prev = trend[trend.length - 2];
+    const delta = prev && prev.views ? ((last.views - prev.views) / prev.views * 100).toFixed(0) + '%' : '—';
+    document.getElementById('trend-summary').innerHTML = `
+      <div><span>本月觀看</span><strong>${fmtNum(last.views)}</strong></div>
+      <div><span>較上月</span><strong>${delta}</strong></div>
+      <div><span>本月平均 ER</span><strong>${(last.er * 100).toFixed(2)}%</strong></div>
+    `;
+    document.getElementById('trend-period').textContent = `${trend[0].month.slice(5)} ~ ${last.month.slice(5)}（${trend.length} 個月）`;
+  }
+
+  const topicEl = document.getElementById('topic-ranking');
+  if (!topics.length) {
+    topicEl.innerHTML = '<li class="empty" style="padding:10px;">無資料</li>';
+  } else {
+    const max = Math.max(...topics.map(t => t.er), 0.001);
+    topicEl.innerHTML = topics.map(t => `
+      <li class="topic-row">
+        <div class="topic-head">
+          <span class="topic-name">${escapeHtml(t.topic)}</span>
+          <span class="topic-meta">${t.count} 支 · ${fmtNum(t.views)} views</span>
+          <span class="topic-er">${(t.er * 100).toFixed(2)}%</span>
+        </div>
+        <div class="bar"><div class="bar-fill" style="width:${(t.er / max * 100)}%;"></div></div>
+      </li>
+    `).join('');
+  }
+  const dRange = trend.length ? `${trend[0].month} ~ ${trend[trend.length - 1].month} · ${trend.length} 個月` : '無資料';
+  document.getElementById('dashboard-meta').textContent = `資料區間 ${dRange}`;
+}
+
+function platformPill(p) {
+  const label = p === 'YT' ? 'YouTube' : 'Facebook';
+  return `<span class="pill ${p === 'YT' ? 'yt' : 'fb'}">${label}</span>`;
+}
+
+function starsHtml(rating) {
+  const r = Math.max(0, Math.min(5, rating || 0));
+  let html = '<span class="stars">';
+  for (let i = 1; i <= 5; i++) html += i <= r ? '★' : '<span class="off">★</span>';
+  html += '</span>';
+  return html;
+}
+
+function renderLead(rows) {
+  const sorted = [...rows].sort((a, b) => (b.er || 0) - (a.er || 0));
+  const lead = sorted[0];
+  const leadEl = document.getElementById('lead-story');
+  if (!lead || !lead.views) {
+    leadEl.style.display = 'none';
+    return;
+  }
+  leadEl.style.display = 'grid';
+  leadEl.innerHTML = `
+    <div class="lead-thumb" style="background:${lead.thumb};">
+      <span class="corner">LEAD STORY</span>
+      <span class="corner r">ER ${(lead.er * 100).toFixed(2)}%</span>
+    </div>
+    <div>
+      <div class="lead-kicker">本期之最 · 互動率第一</div>
+      <h2 class="lead-title">${escapeHtml(lead.title)}</h2>
+      <div class="lead-meta">
+        ${lead.platforms.map(platformPill).join('')}
+        <span class="mute">·</span>
+        <span>${lead.date || '—'}</span>
+        ${lead.vendor ? `<span class="mute">·</span><span>${escapeHtml(lead.vendor)}</span>` : ''}
+        <span class="mute">·</span>
+        <span>${escapeHtml(lead.topic)}</span>
+        <span class="mute">·</span>
+        ${starsHtml(lead.rating)}
+      </div>
+      <div class="lead-metrics">
+        <div><span class="lm-label">觀看</span><strong>${fmtFull(lead.views)}</strong></div>
+        <div><span class="lm-label">讚</span><strong>${fmtFull(lead.likes)}</strong></div>
+        <div><span class="lm-label">留言</span><strong>${fmtFull(lead.comments)}</strong></div>
+        <div><span class="lm-label">分享</span><strong>${fmtFull(lead.shares)}</strong></div>
+      </div>
+      ${lead.note ? `<blockquote class="pullquote">「${escapeHtml(lead.note)}」</blockquote>` : ''}
+      <div class="lead-actions">
+        <button class="btn" data-open-key="${escapeHtml(lead.key)}">查看完整檢討</button>
+      </div>
+    </div>
+  `;
+  leadEl.querySelectorAll('[data-open-key]').forEach(btn =>
+    btn.addEventListener('click', () => openCombinedView(btn.dataset.openKey))
+  );
+}
+
+function thumbHtml(row) {
+  const idx = Math.abs([...(row.title || '')].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0)) % 999 + 1;
+  return `<div class="thumb" style="background:${row.thumb};">
+    <span class="thumb-num">${String(idx).padStart(3, '0')}</span>
+  </div>`;
+}
+
+function renderFeed(rows) {
+  const feedEl = document.getElementById('feed');
+  const empty = document.getElementById('empty-state');
+  if (!rows.length) {
+    feedEl.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  const hot = 0.05, cold = 0.02;
+  feedEl.innerHTML = rows.map((g, i) => {
+    const er = g.er || 0;
+    const erCls = g.views > 0 ? (er >= hot ? 'hot' : (er < cold ? 'cold' : '')) : '';
+    const erShown = g.views > 0 ? (er * 100).toFixed(2) + '%' : '—';
+    return `
+      <article class="row" data-open-key="${escapeHtml(g.key)}">
+        <div class="row-rank">${String(i + 1).padStart(2, '0')}</div>
+        ${thumbHtml(g)}
+        <div>
+          <div class="row-meta">
+            <span>${g.date || '—'}</span>
+            <span class="mute">·</span>
+            ${g.platforms.map(platformPill).join('')}
+            <span class="mute">·</span>
+            <span>${escapeHtml(g.topic)}</span>
+            ${g.vendor ? `<span class="mute">·</span><span>${escapeHtml(g.vendor)}</span>` : ''}
+            <span class="mute">·</span>
+            ${starsHtml(g.rating)}
+          </div>
+          <h3 class="row-title">${escapeHtml(g.title)}</h3>
+          <div class="row-review">
+            ${g.good ? `<span class="chip-review good">＋ ${escapeHtml(g.good)}</span>` : ''}
+            ${g.bad ? `<span class="chip-review bad">－ ${escapeHtml(g.bad)}</span>` : ''}
+            ${g.note ? `<span class="chip-review note">→ ${escapeHtml(g.note)}</span>` : ''}
+            ${!g.good && !g.bad && !g.note ? `<span class="chip-review" style="color:var(--mute);">尚未檢討 · 點此填寫</span>` : ''}
+          </div>
+        </div>
+        <div class="row-metrics">
+          <div class="m"><span class="m-num">${fmtNum(g.views)}</span><span class="m-lbl">觀看</span></div>
+          <div class="m"><span class="m-num">${fmtNum(g.likes)}</span><span class="m-lbl">讚</span></div>
+          <div class="m"><span class="m-num">${fmtNum(g.comments)}</span><span class="m-lbl">留言</span></div>
+          <div class="m"><span class="m-num">${fmtNum(g.shares)}</span><span class="m-lbl">分享</span></div>
+        </div>
+        <div class="row-er">
+          <div class="row-er-num ${erCls}">${erShown}</div>
+          <div class="row-er-lbl">互動率</div>
+        </div>
+      </article>
+    `;
+  }).join('');
+  feedEl.querySelectorAll('[data-open-key]').forEach(el =>
+    el.addEventListener('click', () => openCombinedView(el.dataset.openKey))
+  );
+}
+
+function renderBottom(rows) {
+  const ranked = rows.filter(r => r.views > 0 && r.er != null).sort((a, b) => (a.er || 0) - (b.er || 0));
+  const bot5 = ranked.slice(0, 5);
+  const botEl = document.getElementById('bot-list');
+  if (!bot5.length) {
+    botEl.innerHTML = `<li style="padding:20px;color:var(--mute);font-style:italic;text-align:center;display:block;">尚無觀看資料，先到 ⚙ 批次抓取數據</li>`;
+  } else {
+    botEl.innerHTML = bot5.map((g, i) => `
+      <li data-open-key="${escapeHtml(g.key)}">
+        <span class="bot-rank">${String(i + 1).padStart(2, '0')}</span>
+        <div>
+          <div class="bot-title">${escapeHtml(g.title)}</div>
+          <div class="bot-meta">${escapeHtml(g.vendor || '—')} · ${escapeHtml(g.topic)} · ${fmtNum(g.views)} views</div>
+        </div>
+        <div class="bot-er">${(g.er * 100).toFixed(2)}%</div>
+        <span class="bot-action">查看</span>
+      </li>
+    `).join('');
+    botEl.querySelectorAll('[data-open-key]').forEach(el =>
+      el.addEventListener('click', () => openCombinedView(el.dataset.openKey))
+    );
+  }
+  const vendors = vendorBreakdown(rows).sort((a, b) => (b.er || 0) - (a.er || 0));
+  const vt = document.getElementById('vendor-table');
+  if (!vendors.length) {
+    vt.innerHTML = `<tbody><tr><td style="padding:20px;color:var(--mute);font-style:italic;text-align:center;">無廠商資料</td></tr></tbody>`;
+  } else {
+    vt.innerHTML = `
+      <thead><tr>
+        <th>廠商</th><th class="r">支數</th><th class="r">觀看</th>
+        <th class="r">ER</th><th class="r">CPM</th><th class="r">評分</th>
+      </tr></thead>
+      <tbody>
+        ${vendors.map((v, i) => `
+          <tr>
+            <td><div class="vendor-rank">
+              <span class="mute mono" style="font-size:11px;">${String(i + 1).padStart(2, '0')}</span>
+              <span class="vendor-name">${escapeHtml(v.vendor)}</span>
+            </div></td>
+            <td class="r mono">${v.count}</td>
+            <td class="r mono">${fmtNum(v.views)}</td>
+            <td class="r mono">${v.views ? (v.er * 100).toFixed(2) + '%' : '—'}</td>
+            <td class="r mono">${v.cpm != null ? '$' + Math.round(v.cpm) : '—'}</td>
+            <td class="r">${starsHtml(Math.round(v.avgRating))}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    `;
+  }
+}
+
+function renderVendorsFull(rows) {
+  const vendors = vendorBreakdown(rows).sort((a, b) => (b.er || 0) - (a.er || 0));
+  const t = document.getElementById('vendors-table-full');
+  if (!vendors.length) {
+    t.innerHTML = `<tbody><tr><td style="padding:30px;color:var(--mute);font-style:italic;text-align:center;">無廠商資料</td></tr></tbody>`;
+    document.getElementById('vendors-note').textContent = '';
+    return;
+  }
+  t.innerHTML = `
+    <thead><tr>
+      <th>廠商</th><th class="r">支數</th><th class="r">觀看</th>
+      <th class="r">讚 + 留言 + 分享</th><th class="r">ER</th>
+      <th class="r">CPM</th><th class="r">平均評分</th>
+    </tr></thead>
+    <tbody>
+      ${vendors.map((v, i) => `
+        <tr>
+          <td><div class="vendor-rank">
+            <span class="mute mono" style="font-size:11px;">${String(i + 1).padStart(2, '0')}</span>
+            <span class="vendor-name">${escapeHtml(v.vendor)}</span>
+          </div></td>
+          <td class="r mono">${v.count}</td>
+          <td class="r mono">${fmtNum(v.views)}</td>
+          <td class="r mono">${fmtNum((v.likes || 0) + (v.comments || 0) + (v.shares || 0))}</td>
+          <td class="r mono">${v.views ? (v.er * 100).toFixed(2) + '%' : '—'}</td>
+          <td class="r mono">${v.cpm != null ? '$' + Math.round(v.cpm) : '—'}</td>
+          <td class="r">${starsHtml(Math.round(v.avgRating))}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
+  const top = vendors[0];
+  const bot = vendors[vendors.length - 1];
+  if (top && top.views) {
+    let note = `本期「${top.vendor}」以平均互動率 ${(top.er * 100).toFixed(2)}% 領先。`;
+    if (bot && bot.vendor !== top.vendor && bot.views) {
+      note += `「${bot.vendor}」互動率 ${(bot.er * 100).toFixed(2)}% 墊底，下季排程前可安排檢討會議。`;
+    }
+    document.getElementById('vendors-note').textContent = note;
+  } else {
+    document.getElementById('vendors-note').textContent = '';
+  }
+}
+
+function renderTopicChips() {
+  const rows = allRows();
+  const topics = [...new Set(rows.map(r => r.topic || '其他'))].sort();
+  const el = document.getElementById('topic-chips');
+  el.innerHTML = `<button class="chip${state.topic === '' ? ' on' : ''}" data-topic="">全部</button>` +
+    topics.map(t => `<button class="chip${state.topic === t ? ' on' : ''}" data-topic="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+  el.querySelectorAll('[data-topic]').forEach(b =>
+    b.addEventListener('click', () => { state.topic = b.dataset.topic; renderAll(); })
+  );
+}
+
+function renderAll() {
+  renderMasthead();
+  const rows = allRows();
+  const filtered = applyFilter(rows);
+  const sorted = applySort(filtered);
+
+  renderTopicChips();
+  renderStats(filtered, rows.length);
+
+  const isBrief = state.view === 'brief';
+  const isVendors = state.view === 'vendors';
+  document.getElementById('dashboard-block').style.display = isBrief ? '' : 'none';
+  document.getElementById('lead-story').style.display = isBrief ? '' : 'none';
+  document.getElementById('bottom-block').style.display = isBrief ? 'grid' : 'none';
+  document.getElementById('vendors-block').style.display = isVendors ? '' : 'none';
+  document.getElementById('feed').style.display = isVendors ? 'none' : '';
+  document.getElementById('filterbar').style.display = isVendors ? 'none' : '';
+  document.getElementById('empty-state').style.display = isVendors ? 'none' : document.getElementById('empty-state').style.display;
+
+  const kicker = document.getElementById('view-kicker');
+  const heading = document.getElementById('view-heading');
+  const meta = document.getElementById('view-meta');
+  if (isBrief) {
+    kicker.textContent = '本期影片';
+    heading.textContent = '本期影片 — 依互動率排序';
+  } else if (isVendors) {
+    kicker.textContent = '廠商';
+    heading.textContent = '外包單位本期表現';
+  } else {
+    kicker.textContent = '全部影片';
+    heading.textContent = '所有影片列表';
+  }
+  meta.textContent = isVendors ? `${vendorBreakdown(rows).length} 家` : `${sorted.length} 支 · 點任一列可編輯檢討卡`;
+
+  if (isBrief) {
+    renderDashboard(rows);
+    renderLead(sorted);
+    renderFeed(sorted);
+    renderBottom(rows);
+  } else if (isVendors) {
+    renderVendorsFull(rows);
+  } else {
+    renderFeed(sorted);
+  }
+
+  document.querySelectorAll('#topbar-nav a').forEach(a =>
+    a.classList.toggle('on', a.dataset.view === state.view)
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// Modals
+// ════════════════════════════════════════════════════════════════
+function closeModals() {
+  document.querySelectorAll('.modal-bg').forEach(el => el.classList.remove('show'));
+  editingId = null;
+}
+
+function setRating(v) {
+  currentRating = v;
+  document.querySelector('input[name="rating"]').value = v;
+  document.querySelectorAll('#rating-stars button').forEach(s =>
+    s.classList.toggle('on', Number(s.dataset.v) <= v)
+  );
+}
+
+function openEdit(id) {
+  editingId = id;
+  const form = document.getElementById('form-video');
+  const setVal = (name, val) => { form.elements[name].value = val; };
+  form.reset();
+  setRating(0);
+  document.getElementById('btn-delete').style.display = id ? 'inline-block' : 'none';
+  document.getElementById('modal-edit-kicker').textContent = id ? '編輯' : '新增';
+  document.getElementById('modal-title').textContent = id ? '編輯影片資料 / 檢討' : '新增一支影片';
+
+  if (id) {
+    const v = Storage.load().find(x => x.id === id);
+    if (v) {
+      setVal('title', v.title || '');
+      setVal('platform', v.platform || 'youtube');
+      setVal('url', v.url || '');
+      setVal('publishedAt', v.publishedAt || '');
+      setVal('vendor', v.vendor || '');
+      setVal('topic', v.topic || '衛教');
+      setVal('budget', v.budget ?? '');
+      const m = v.metrics || {};
+      setVal('views', m.views ?? '');
+      setVal('likes', m.likes ?? '');
+      setVal('comments', m.comments ?? '');
+      setVal('shares', m.shares ?? '');
+      setVal('saves', m.saves ?? '');
+      setVal('completionRate', m.completionRate ?? '');
+      setVal('avgViewDuration', m.avgViewDuration ?? '');
+      setVal('ctr', m.ctr ?? '');
+      setVal('conversionRate', m.conversionRate ?? '');
+      const r = v.review || {};
+      setVal('strengths', r.strengths || '');
+      setVal('improvements', r.improvements || '');
+      setVal('recommendations', r.recommendations || '');
+      setRating(r.rating || 0);
+    }
+  } else {
+    setVal('publishedAt', new Date().toISOString().slice(0, 10));
+  }
+
+  updateAutoFetchVisibility();
+  document.getElementById('modal-edit').classList.add('show');
+}
+
+async function saveVideo() {
+  const form = document.getElementById('form-video');
+  const data = new FormData(form);
+  const get = (k) => (data.get(k) ?? '').toString();
+  const trim = (k) => get(k).trim();
+  const num = (k) => { const v = get(k); return v === '' ? null : Number(v); };
+
+  const title = trim('title');
+  if (!title) { alert('請填寫影片標題'); return; }
+
+  // preserve groupId if already linked
+  const existingGroupId = editingId
+    ? (Storage.load().find(x => x.id === editingId)?.groupId || null)
+    : null;
+
+  const video = {
+    id: editingId, title,
+    platform: get('platform'),
+    url: trim('url'),
+    publishedAt: get('publishedAt'),
+    vendor: trim('vendor'),
+    topic: get('topic'),
+    budget: num('budget'),
+    ...(existingGroupId ? { groupId: existingGroupId } : {}),
+    metrics: {
+      views: num('views'), likes: num('likes'), comments: num('comments'),
+      shares: num('shares'), saves: num('saves'),
+      completionRate: num('completionRate'),
+      avgViewDuration: num('avgViewDuration'),
+      ctr: num('ctr'), conversionRate: num('conversionRate'),
+      fetchedAt: null,
+    },
+    review: {
+      strengths: trim('strengths'),
+      improvements: trim('improvements'),
+      recommendations: trim('recommendations'),
+      rating: currentRating,
+    },
+  };
+
+  await Storage.upsert(video);
+  closeModals();
+}
+
+async function deleteVideo() {
+  if (!editingId) return;
+  if (!confirm('確定要刪除這支影片紀錄嗎？')) return;
+  await Storage.remove(editingId);
+  closeModals();
+}
+
+// ── 手動連結：把兩支影片設相同 groupId ──
+let linkPickerSourceId = null;
+
+function openLinkPicker(sourceId, oppPlatform) {
+  linkPickerSourceId = sourceId;
+  const label = oppPlatform === 'youtube' ? 'YouTube' : 'Facebook';
+  document.getElementById('link-picker-title').textContent = `選擇要連結的 ${label} 影片`;
+  renderLinkPickerList(oppPlatform, '');
+  document.getElementById('link-picker-search').value = '';
+  document.getElementById('modal-link-picker').classList.add('show');
+}
+
+function renderLinkPickerList(platform, query) {
+  const q = query.toLowerCase();
+  const list = Storage.load()
+    .filter(v => v.platform === platform && v.id !== linkPickerSourceId)
+    .filter(v => !q || (v.title || '').toLowerCase().includes(q))
+    .sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+  const el = document.getElementById('link-picker-list');
+  if (!list.length) {
+    el.innerHTML = `<div style="padding:20px;color:var(--mute);text-align:center;font-style:italic;">找不到影片</div>`;
+    return;
+  }
+  el.innerHTML = list.map(v => `
+    <div class="link-picker-item" data-link-id="${escapeHtml(v.id)}" style="
+      padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;
+      display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:2px;">${escapeHtml(v.title)}</div>
+        <div style="font-size:11px;color:var(--mute);font-family:'JetBrains Mono',monospace;">${v.publishedAt || '—'}${v.groupId ? ' · 已連結' : ''}</div>
+      </div>
+      <button class="btn ghost" style="font-size:11px;white-space:nowrap;">選擇</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.link-picker-item').forEach(row => {
+    row.addEventListener('click', () => confirmLink(row.dataset.linkId));
+  });
+}
+
+async function confirmLink(targetId) {
+  if (!linkPickerSourceId || !targetId) return;
+  const groupId = [linkPickerSourceId, targetId].sort().join('_');
+  const list = Storage.load();
+  const vA = list.find(x => x.id === linkPickerSourceId);
+  const vB = list.find(x => x.id === targetId);
+  if (!vA || !vB) return;
+  await Storage.upsert({ ...vA, groupId });
+  await Storage.upsert({ ...vB, groupId });
+  closeModals();
+}
+
+async function unlinkVideos(idA, idB) {
+  if (!confirm('確定解除連結？解除後兩支影片將各自獨立顯示。')) return;
+  const list = Storage.load();
+  const vA = list.find(x => x.id === idA);
+  const vB = list.find(x => x.id === idB);
+  if (vA) { const upd = { ...vA }; delete upd.groupId; await Storage.upsert(upd); }
+  if (vB) { const upd = { ...vB }; delete upd.groupId; await Storage.upsert(upd); }
+  closeModals();
+}
+
+function openCombinedView(groupKey) {
+  const groups = groupVideos(Storage.load());
+  const g = groups.get(groupKey);
+  if (!g) return;
+  const m = getCombinedMetrics(g);
+  const rating = Math.max(g.yt?.review?.rating || 0, g.fb?.review?.rating || 0);
+
+  const platformBlock = (rec, label, pillCls, oppPlatform, existingId) => {
+    if (!rec) {
+      return `<div class="detail-block" style="opacity:0.8;">
+        <div class="detail-label">${label}</div>
+        <div class="detail-value mute" style="font-style:italic;margin-bottom:10px;">— 沒有此平台資料</div>
+        <button class="btn ghost" id="btn-link-${oppPlatform}" data-source-id="${escapeHtml(existingId)}" data-opp="${escapeHtml(oppPlatform)}"
+          style="font-size:11px;width:100%;">🔗 連結 ${label} 影片</button>
+      </div>`;
+    }
+    const rm = rec.metrics || {};
+    const reng = calcEngagement(rm);
+    return `
+      <div class="detail-block">
+        <div class="detail-label" style="display:flex;align-items:center;gap:6px;">
+          <span class="pill ${pillCls}">${label}</span>
+          ${rec.url ? `<a href="${escapeHtml(rec.url)}" target="_blank" rel="noopener" style="color:var(--ink);font-size:11px;">看影片 ↗</a>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--mute);margin:6px 0;font-family:'JetBrains Mono',monospace;">${rec.publishedAt || '—'}</div>
+        <div class="mono" style="font-size:13px;line-height:1.7;">
+          觀看 <b>${fmtNum(rm.views)}</b>
+          <br>讚 ${fmtNum(rm.likes)} · 留言 ${fmtNum(rm.comments)} · 分享 ${fmtNum(rm.shares)} · 收藏 ${fmtNum(rm.saves)}
+          <br>互動率 <b>${fmtPct(reng)}</b>
+          ${rm.completionRate != null ? ` · 完播率 <b>${rm.completionRate.toFixed(1)}%</b>` : ''}
+        </div>
+        <button class="btn ghost" data-edit-id="${escapeHtml(rec.id)}" style="margin-top:10px;width:100%;font-size:11px;">編輯這筆</button>
+      </div>
+    `;
+  };
+
+  const ytR = g.yt?.review || {};
+  const fbR = g.fb?.review || {};
+  const merge = (k) => {
+    const a = (ytR[k] || '').trim();
+    const b = (fbR[k] || '').trim();
+    if (a && b && a !== b) return `[YT] ${a}\n\n[FB] ${b}`;
+    return a || b;
+  };
+
+  document.getElementById('view-title').textContent = g.title || '(未命名)';
+  document.getElementById('view-foot-meta').textContent = `${g.publishedAt || '—'} · ${g.topic || '—'} · ${g.yt?.vendor || g.fb?.vendor || '— 未填廠商 —'}`;
+
+  const reviewBlock = (mark, label, val) => {
+    const isEmpty = !val;
+    const cls = mark === '＋' ? 'good' : mark === '－' ? 'bad' : 'note';
+    return `<div class="review-block${isEmpty ? ' empty' : ''}">
+      <h4><span class="review-mark ${cls}">${mark}</span>${label}</h4>
+      <p>${isEmpty ? '未填寫' : escapeHtml(val)}</p>
+    </div>`;
+  };
+
+  document.getElementById('view-body').innerHTML = `
+    <div class="lead-meta" style="margin:0 0 18px;">
+      ${m.hasYT ? platformPill('YT') : ''}
+      ${m.hasFB ? platformPill('FB') : ''}
+      <span class="mute">·</span>
+      <span>${g.publishedAt || '—'}</span>
+      <span class="mute">·</span>
+      <span>${escapeHtml(g.topic || '—')}</span>
+      ${(g.yt?.vendor || g.fb?.vendor) ? `<span class="mute">·</span><span>${escapeHtml(g.yt?.vendor || g.fb?.vendor)}</span>` : ''}
+      <span class="mute">·</span>
+      ${starsHtml(rating)}
+    </div>
+
+    <div style="display:flex;align-items:baseline;gap:10px;padding-bottom:6px;border-bottom:1px dotted var(--line);margin-bottom:14px;">
+      <span style="font-size:10px;letter-spacing:0.22em;background:var(--ink);color:var(--paper);padding:2px 7px;">合計</span>
+      <h3 style="font-size:16px;">兩平台加總</h3>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-block"><div class="detail-label">合計觀看</div><div class="detail-value mono" style="font-size:18px;">${fmtFull(m.views)}</div></div>
+      <div class="detail-block"><div class="detail-label">合計互動率</div><div class="detail-value mono" style="font-size:18px;">${fmtPct(m.engagement)}</div></div>
+      <div class="detail-block"><div class="detail-label">完播率（平均）</div><div class="detail-value mono">${m.completionRate != null ? m.completionRate.toFixed(1) + '%' : '—'}</div></div>
+      <div class="detail-block"><div class="detail-label">CPM</div><div class="detail-value mono">${m.cpm != null ? 'NT$ ' + m.cpm.toFixed(0) : '—'}</div></div>
+      <div class="detail-block" style="grid-column:1 / -1;">
+        <div class="detail-label">合計互動數</div>
+        <div class="detail-value mono">讚 ${fmtFull(m.likes)} · 留言 ${fmtFull(m.comments)} · 分享 ${fmtFull(m.shares)} · 收藏 ${fmtFull(m.saves)}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:baseline;gap:10px;padding-bottom:6px;border-bottom:1px dotted var(--line);margin:18px 0 14px;">
+      <span style="font-size:10px;letter-spacing:0.22em;background:var(--ink);color:var(--paper);padding:2px 7px;">分平台</span>
+      <h3 style="font-size:16px;">兩平台分開看</h3>
+    </div>
+    ${g.groupId ? `
+    <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--mute);">🔗 手動連結中</span>
+      <button class="btn ghost" id="btn-unlink" style="font-size:11px;"
+        data-id-a="${escapeHtml(g.yt?.id || '')}" data-id-b="${escapeHtml(g.fb?.id || '')}">解除連結</button>
+    </div>` : ''}
+    <div class="detail-grid">
+      ${platformBlock(g.yt, 'YouTube', 'yt', 'youtube', g.fb?.id || '')}
+      ${platformBlock(g.fb, 'Facebook', 'fb', 'facebook', g.yt?.id || '')}
+    </div>
+
+    <div style="display:flex;align-items:baseline;gap:10px;padding-bottom:6px;border-bottom:1px dotted var(--line);margin:18px 0 14px;">
+      <span style="font-size:10px;letter-spacing:0.22em;background:var(--ink);color:var(--paper);padding:2px 7px;">檢討</span>
+      <h3 style="font-size:16px;">Editor's Notes</h3>
+    </div>
+    ${reviewBlock('＋', '做得好', merge('strengths'))}
+    ${reviewBlock('－', '可改進', merge('improvements'))}
+    ${reviewBlock('→', '給長官的話', merge('recommendations'))}
+  `;
+
+  document.querySelectorAll('#view-body button[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      closeModals();
+      openEdit(btn.dataset.editId);
+    });
+  });
+
+  // 連結按鈕
+  document.querySelectorAll('#view-body button[data-opp]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openLinkPicker(btn.dataset.sourceId, btn.dataset.opp);
+    });
+  });
+
+  // 解除連結按鈕
+  const unlinkBtn = document.getElementById('btn-unlink');
+  if (unlinkBtn) {
+    unlinkBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      unlinkVideos(unlinkBtn.dataset.idA, unlinkBtn.dataset.idB);
+    });
+  }
+
+  const primaryEdit = g.yt?.id || g.fb?.id || '';
+  document.getElementById('btn-edit-from-view').dataset.id = primaryEdit;
+  document.getElementById('modal-view').classList.add('show');
+}
+
+// ════════════════════════════════════════════════════════════════
+// CSV 匯出
+// ════════════════════════════════════════════════════════════════
+function exportCSV() {
+  const list = Storage.load();
+  if (!list.length) { alert('沒有可匯出的資料'); return; }
+  const headers = ['標題','平台','發布日期','廠商','主題','預算','觀看數','讚','留言','分享','收藏','互動率(%)','完播率(%)','平均觀看時長(秒)','CTR(%)','轉換率(%)','CPM(NT$)','評分','做得好','可改進','給長官建議'];
+  const rows = list.map(v => {
+    const m = v.metrics || {};
+    const r = v.review || {};
+    const cpm = calcCPM(v.budget, m.views);
+    const eng = calcEngagement(m);
+    return [
+      v.title || '', v.platform || '', v.publishedAt || '',
+      v.vendor || '', v.topic || '', v.budget ?? '',
+      m.views ?? '', m.likes ?? '', m.comments ?? '', m.shares ?? '', m.saves ?? '',
+      eng != null ? eng.toFixed(2) : '',
+      m.completionRate != null ? m.completionRate.toFixed(1) : '',
+      m.avgViewDuration ?? '',
+      m.ctr != null ? m.ctr.toFixed(2) : '',
+      m.conversionRate != null ? m.conversionRate.toFixed(2) : '',
+      cpm != null ? cpm.toFixed(1) : '',
+      r.rating || 0,
+      r.strengths || '', r.improvements || '', r.recommendations || '',
+    ];
+  });
+  const csv = [headers, ...rows].map(row =>
+    row.map(cell => {
+      const s = String(cell ?? '');
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }).join(',')
+  ).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `短影音週報_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ════════════════════════════════════════════════════════════════
+// 批次匯入：fetch bulk-data.json
+// ════════════════════════════════════════════════════════════════
+async function bulkImportFromSpreadsheet() {
+  const status = document.getElementById('bulk-import-status');
+  const btn    = document.getElementById('btn-bulk-import');
+
+  let records;
+  try {
+    status.textContent = '讀取 bulk-data.json…';
+    const res = await fetch('./bulk-data.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    records = await res.json();
+  } catch (e) {
+    status.innerHTML = `<span style="color:var(--bad);">⚠ 讀取失敗：${escapeHtml(e.message)}</span>`;
+    return;
+  }
+
+  const ok = confirm(
+    `即將匯入 ${records.length} 筆紀錄到 Firestore。\n\n` +
+    `已存在的（同 ID）會自動略過，不會覆蓋你寫過的檢討。\n\n` +
+    `確定要繼續嗎？`
+  );
+  if (!ok) { status.textContent = ''; return; }
+
+  btn.disabled = true;
+  let added = 0, skipped = 0, failed = 0;
+  const errors = [];
+
+  for (let i = 0; i < records.length; i++) {
+    const rec = records[i];
+    status.textContent = `匯入中 (${i + 1}/${records.length})… 新增 ${added}、略過 ${skipped}、失敗 ${failed}`;
+    try {
+      const ref = doc(_db, COLL, rec.id);
+      const existing = await getDoc(ref);
+      if (existing.exists()) { skipped++; continue; }
+      const now = new Date().toISOString();
+      await setDoc(ref, { ...rec, createdAt: now, updatedAt: now });
+      added++;
+    } catch (e) {
+      console.error('Import failed for', rec.id, e);
+      errors.push(`${rec.id}: ${e.message}`);
+      failed++;
+    }
+  }
+
+  status.innerHTML = `✅ 完成！新增 <b>${added}</b> 筆、略過 ${skipped} 筆已存在`
+    + (failed ? `、<span style="color:var(--bad);">失敗 ${failed} 筆</span>（看 console）` : '');
+  btn.disabled = false;
+  if (errors.length) console.warn('Import errors:', errors);
+}
+
+async function bulkFetchYTMetrics() {
+  const status = document.getElementById('bulk-fetch-status');
+  const btn    = document.getElementById('btn-bulk-fetch-yt');
+  if (!getYTApiKey()) { alert('尚未設定 YouTube API 金鑰，請先填入上方欄位並儲存。'); return; }
+  const all = Storage.load();
+  const targets = all.filter(v => v.platform === 'youtube' && parseYouTubeId(v.url || ''));
+  if (!targets.length) { alert('沒有可抓取的 YouTube 影片（需要有可解析的 URL）。'); return; }
+  const ok = confirm(
+    `即將為 ${targets.length} 支 YouTube 影片抓取最新數據。\n\n` +
+    `會覆蓋既有的觀看/讚/留言（手動填寫過的會被蓋）。\n` +
+    `不會動到檢討、評分、預算等其他欄位。\n\n` +
+    `預計耗時約 ${Math.ceil(targets.length * 0.5)} 秒，確定？`
+  );
+  if (!ok) return;
+  btn.disabled = true;
+  let okCount = 0, failCount = 0, stopped = false;
+  const errors = [];
+  for (let i = 0; i < targets.length; i++) {
+    const v = targets[i];
+    const shortTitle = (v.title || '').slice(0, 18);
+    status.textContent = `抓取中 (${i + 1}/${targets.length})… 成功 ${okCount}、失敗 ${failCount} ｜ ${shortTitle}…`;
+    try {
+      const m = await fetchVideoMetricsFromAPI(v);
+      if (!m) { failCount++; errors.push(`${v.title}: API 回空`); continue; }
+      await Storage.upsert({ id: v.id, metrics: m });
+      okCount++;
+    } catch (e) {
+      console.error('Bulk fetch error for', v.id, e);
+      failCount++;
+      errors.push(`${v.title}: ${e.message}`);
+      if (/quota|exceeded|403|401|forbidden/i.test(e.message)) {
+        status.innerHTML = `⛔ <span style="color:var(--bad);">偵測到 API 限額/權限錯誤，已停止</span>。成功 ${okCount}、失敗 ${failCount}`;
+        stopped = true;
+        break;
+      }
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+  if (!stopped) {
+    status.innerHTML = `✅ 完成！成功 <b>${okCount}</b> 支`
+      + (failCount ? `、<span style="color:var(--bad);">失敗 ${failCount}</span>（看 console）` : '');
+  }
+  btn.disabled = false;
+  if (errors.length) console.warn('Bulk fetch errors:', errors);
+}
+
+// ════════════════════════════════════════════════════════════════
+// FB Meta xlsx 匯入
+// ════════════════════════════════════════════════════════════════
+let pendingFBImport = null;
+
+function parseMetaDateValue(v) {
+  if (!v) return null;
+  if (v instanceof Date) {
+    const y = v.getFullYear(), m = v.getMonth() + 1, d = v.getDate();
+    return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  const s = String(v);
+  let m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  return null;
+}
+
+async function handleFBFileSelected(e) {
+  const file = e.target.files[0];
+  const preview = document.getElementById('fb-import-preview');
+  const confirmBtn = document.getElementById('btn-fb-import-confirm');
+  pendingFBImport = null;
+  confirmBtn.style.display = 'none';
+  preview.innerHTML = '';
+  if (!file) return;
+  if (typeof XLSX === 'undefined') {
+    preview.innerHTML = '<span style="color:var(--bad);">⚠ SheetJS 函式庫沒載入，請重整頁面再試</span>';
+    return;
+  }
+  preview.textContent = '解析中…';
+  let rows;
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, { type: 'array', cellDates: true });
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+  } catch (err) {
+    preview.innerHTML = `<span style="color:var(--bad);">⚠ 解析失敗：${escapeHtml(err.message)}</span>`;
+    return;
+  }
+  if (!rows || rows.length < 2) {
+    preview.innerHTML = '<span style="color:var(--bad);">⚠ 檔案是空的或格式不對</span>';
+    return;
+  }
+  const headers = rows[0].map(h => String(h || ''));
+  const findCol = (...keywords) => {
+    for (const kw of keywords) {
+      const idx = headers.findIndex(h => h.includes(kw));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+  const cols = {
+    date:      findCol('發佈時間'),
+    type:      findCol('貼文類型'),
+    title:     findCol('標題'),
+    url:       findCol('永久連結'),
+    views:     findCol('觀看次數'),
+    reactions: findCol('心情數'),
+    comments:  findCol('留言'),
+    shares:    findCol('分享'),
+  };
+  const missing = Object.entries(cols).filter(([, v]) => v < 0).map(([k]) => k);
+  if (missing.length) {
+    preview.innerHTML = `<span style="color:var(--bad);">⚠ 找不到欄位：${missing.join(', ')}<br>欄位名稱可能是：${escapeHtml(headers.join(' | '))}</span>`;
+    return;
+  }
+  const dateMap = {};
+  let reelsCount = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !r.length) continue;
+    const type = String(r[cols.type] || '');
+    if (!type.includes('連續短片')) continue;
+    const date = parseMetaDateValue(r[cols.date]);
+    if (!date) continue;
+    reelsCount++;
+    dateMap[date] = {
+      views:    Number(r[cols.views]    || 0),
+      likes:    Number(r[cols.reactions]|| 0),
+      comments: Number(r[cols.comments] || 0),
+      shares:   Number(r[cols.shares]   || 0),
+      title:    String(r[cols.title]    || '').replace(/\n/g, ' ').slice(0, 40),
+    };
+  }
+  const all = Storage.load();
+  const fbRecs = all.filter(v => v.platform === 'facebook');
+  const matched = [], unmatched = [];
+  for (const v of fbRecs) {
+    if (dateMap[v.publishedAt]) matched.push({ id: v.id, title: v.title, date: v.publishedAt, ...dateMap[v.publishedAt] });
+    else unmatched.push(v);
+  }
+  let html = `<div style="margin-bottom:8px;">讀到 <b>${rows.length - 1}</b> 列、其中 <b>${reelsCount}</b> 為連續短片。匹配到 <b>${matched.length}</b> / ${fbRecs.length} 支 FB 紀錄。</div>`;
+  if (matched.length) {
+    html += `<details style="margin-bottom:6px;"><summary style="cursor:pointer;">✓ 匹配 ${matched.length} 筆（點開看）</summary>
+      <table style="width:100%;font-size:11px;margin-top:6px;border-collapse:collapse;">
+        <tr style="color:var(--mute);"><th align="left">日期</th><th align="right">觀看</th><th align="right">心情</th><th align="right">留言</th><th align="right">分享</th><th align="left">標題</th></tr>
+        ${matched.map(m => `<tr><td>${m.date}</td><td align="right">${fmtNum(m.views)}</td><td align="right">${m.likes}</td><td align="right">${m.comments}</td><td align="right">${m.shares}</td><td style="overflow:hidden;text-overflow:ellipsis;max-width:200px;white-space:nowrap;">${escapeHtml((m.title || '').slice(0, 18))}…</td></tr>`).join('')}
+      </table></details>`;
+  }
+  if (unmatched.length) {
+    html += `<details><summary style="cursor:pointer;color:var(--mute);">未匹配 ${unmatched.length} 筆 FB 紀錄</summary>
+      <ul style="margin:6px 0 0 16px;padding:0;font-size:11px;">
+        ${unmatched.slice(0, 10).map(v => `<li>${v.publishedAt} ｜ ${escapeHtml((v.title || '').slice(0, 24))}</li>`).join('')}
+        ${unmatched.length > 10 ? `<li>…還有 ${unmatched.length - 10} 筆</li>` : ''}
+      </ul></details>`;
+  }
+  preview.innerHTML = html;
+  if (matched.length) {
+    pendingFBImport = matched;
+    confirmBtn.style.display = 'block';
+    confirmBtn.textContent = `確認匯入 ${matched.length} 筆`;
+  }
+}
+
+async function confirmFBImport() {
+  if (!pendingFBImport || !pendingFBImport.length) return;
+  const preview = document.getElementById('fb-import-preview');
+  const btn = document.getElementById('btn-fb-import-confirm');
+  btn.disabled = true;
+  let ok = 0, fail = 0;
+  for (let i = 0; i < pendingFBImport.length; i++) {
+    const m = pendingFBImport[i];
+    btn.textContent = `匯入中 (${i + 1}/${pendingFBImport.length})…`;
+    try {
+      await Storage.upsert({
+        id: m.id,
+        metrics: {
+          views: m.views, likes: m.likes, comments: m.comments, shares: m.shares,
+          fetchedAt: new Date().toISOString(),
+        },
+      });
+      ok++;
+    } catch (e) {
+      console.error('FB import failed for', m.id, e);
+      fail++;
+    }
+  }
+  preview.innerHTML += `<div style="margin-top:10px;color:var(--good);">✅ 完成！更新 ${ok} 筆${fail ? `、失敗 ${fail} 筆（看 console）` : ''}</div>`;
+  btn.style.display = 'none';
+  pendingFBImport = null;
+  document.getElementById('fb-import-file').value = '';
+}
+
+// ════════════════════════════════════════════════════════════════
+// FB 批次填寫
+// ════════════════════════════════════════════════════════════════
+const fbSaveTimers = new Map();
+
+function openFBBulkModal() {
+  document.getElementById('modal-settings').classList.remove('show');
+  document.getElementById('modal-fb-bulk').classList.add('show');
+  renderFBBulkRows();
+}
+
+function renderFBBulkRows() {
+  const filter = document.getElementById('fb-bulk-filter').value;
+  const all = Storage.load();
+  const fbAll = all.filter(v => v.platform === 'facebook');
+  const filled = fbAll.filter(v => v.metrics && v.metrics.views != null).length;
+
+  document.getElementById('fb-bulk-progress').innerHTML = `已填 <b>${filled}</b> / ${fbAll.length}`;
+
+  let rows = fbAll.slice();
+  if (filter === 'empty') rows = rows.filter(v => !v.metrics || v.metrics.views == null);
+  rows.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || ''));
+
+  const tbody = document.getElementById('fb-bulk-rows');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--mute);font-style:italic;">沒有符合條件的影片</td></tr>`;
+    return;
+  }
+  const fmt = v => (v == null ? '' : v);
+  tbody.innerHTML = rows.map(v => {
+    const m = v.metrics || {};
+    const filledRow = m.views != null;
+    return `
+      <tr data-id="${escapeHtml(v.id)}">
+        <td class="col-title" title="${escapeHtml(v.title)}">${escapeHtml(v.title)}<br>
+          <span style="font-size:11px;color:var(--mute);font-family:'JetBrains Mono',monospace;">${v.publishedAt || '—'}</span>
+        </td>
+        <td>${v.url ? `<a class="reel-link" href="${escapeHtml(v.url)}" target="_blank" rel="noopener" title="開啟 Reel">🔗</a>` : '—'}</td>
+        <td><input type="number" min="0" data-field="views" value="${fmt(m.views)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="likes" value="${fmt(m.likes)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="comments" value="${fmt(m.comments)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="shares" value="${fmt(m.shares)}" placeholder="—"></td>
+        <td><input type="number" min="0" data-field="saves" value="${fmt(m.saves)}" placeholder="—"></td>
+        <td class="row-status ${filledRow ? 'saved' : ''}">${filledRow ? '✓ 已填' : '空白'}</td>
+      </tr>
+    `;
+  }).join('');
+  tbody.querySelectorAll('tr').forEach(tr => {
+    tr.querySelectorAll('input[type=number]').forEach(inp => {
+      inp.addEventListener('input', () => onFBRowDirty(tr));
+      inp.addEventListener('blur',  () => scheduleFBRowSave(tr));
+    });
+  });
+}
+
+function onFBRowDirty(tr) {
+  tr.classList.add('dirty');
+  const status = tr.querySelector('.row-status');
+  status.className = 'row-status';
+  status.textContent = '編輯中…';
+}
+function scheduleFBRowSave(tr) {
+  const id = tr.dataset.id;
+  if (fbSaveTimers.has(id)) clearTimeout(fbSaveTimers.get(id));
+  fbSaveTimers.set(id, setTimeout(() => saveFBRow(tr), 800));
+}
+async function saveFBRow(tr) {
+  const id = tr.dataset.id;
+  const status = tr.querySelector('.row-status');
+  status.className = 'row-status saving';
+  status.textContent = '儲存中…';
+  const num = s => { const v = String(s ?? '').trim(); return v === '' ? null : Number(v); };
+  const get = field => num(tr.querySelector(`input[data-field="${field}"]`).value);
+  const metrics = {
+    views: get('views'), likes: get('likes'), comments: get('comments'),
+    shares: get('shares'), saves: get('saves'), fetchedAt: null,
+  };
+  try {
+    await Storage.upsert({ id, metrics });
+    status.className = 'row-status saved';
+    status.textContent = metrics.views != null ? '✓ 已儲存' : '空白';
+    tr.classList.remove('dirty');
+    const all = Storage.load();
+    const fbAll = all.filter(v => v.platform === 'facebook');
+    const filled = fbAll.filter(v => v.metrics && v.metrics.views != null).length;
+    document.getElementById('fb-bulk-progress').innerHTML = `已填 <b>${filled}</b> / ${fbAll.length}`;
+  } catch (e) {
+    console.error('FB row save failed:', e);
+    status.className = 'row-status error';
+    status.textContent = '✗ 失敗（看 console）';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 批次填預算
+// ════════════════════════════════════════════════════════════════
+async function bulkFillBudget() {
+  const status = document.getElementById('bulk-budget-status');
+  const btn    = document.getElementById('btn-bulk-budget');
+  const amountStr = document.getElementById('bulk-budget-amount').value.trim();
+  const scope     = document.getElementById('bulk-budget-scope').value;
+  const overwrite = document.getElementById('bulk-budget-overwrite').checked;
+  const amount    = Number(amountStr);
+  if (!amountStr || !Number.isFinite(amount) || amount < 0) {
+    alert('請填入有效的預算金額（≥ 0）');
+    return;
+  }
+  const all = Storage.load();
+  let candidates = all;
+  if (scope !== 'all') candidates = candidates.filter(v => v.platform === scope);
+  const willTouch = candidates.filter(v => overwrite || v.budget == null);
+  const willSkip  = candidates.length - willTouch.length;
+  if (!willTouch.length) {
+    alert(`範圍內沒有要更新的影片（${candidates.length} 支都已有預算，且未勾「覆蓋」）`);
+    return;
+  }
+  const ok = confirm(
+    `即將為 ${willTouch.length} 支影片設定預算 NT$ ${amount.toLocaleString()}\n` +
+    (willSkip ? `（略過已有預算的 ${willSkip} 支）\n` : '') +
+    `\n確定？`
+  );
+  if (!ok) return;
+  btn.disabled = true;
+  let okCount = 0, failCount = 0;
+  for (let i = 0; i < willTouch.length; i++) {
+    const v = willTouch[i];
+    status.textContent = `處理中 (${i + 1}/${willTouch.length})… 成功 ${okCount}、失敗 ${failCount}`;
+    try {
+      await Storage.upsert({ id: v.id, budget: amount });
+      okCount++;
+    } catch (e) {
+      console.error('Budget update failed for', v.id, e);
+      failCount++;
+    }
+  }
+  status.innerHTML = `✅ 完成！成功 <b>${okCount}</b> 支`
+    + (failCount ? `、<span style="color:var(--bad);">失敗 ${failCount}</span>（看 console）` : '');
+  btn.disabled = false;
+}
+
+// ════════════════════════════════════════════════════════════════
+// 事件綁定
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const safeBind = (id, fn) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', async (e) => {
+      try { await fn(e); } catch (err) {
+        console.error(err);
+        alert('發生錯誤：' + (err && err.message ? err.message : err));
+      }
+    });
+  };
+
+  // Top bar
+  safeBind('btn-add', () => openEdit(null));
+  safeBind('btn-print', () => window.print());
+  safeBind('btn-export', exportCSV);
+  safeBind('btn-settings', () => {
+    document.getElementById('settings-yt-key').value = getYTApiKey();
+    document.getElementById('modal-settings').classList.add('show');
+  });
+
+  // Top bar nav
+  document.querySelectorAll('#topbar-nav a').forEach(a =>
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      state.view = a.dataset.view;
+      renderAll();
+    })
+  );
+
+  // Settings tabs
+  document.querySelectorAll('#settings-nav button').forEach(btn =>
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#settings-nav button').forEach(b => b.classList.toggle('on', b === btn));
+      document.querySelectorAll('.settings-panel').forEach(p =>
+        p.classList.toggle('on', p.dataset.panel === btn.dataset.tab)
+      );
+    })
+  );
+  safeBind('btn-settings-save', () => {
+    setYTApiKey(document.getElementById('settings-yt-key').value);
+    document.getElementById('modal-settings').classList.remove('show');
+    renderMasthead();
+  });
+  safeBind('btn-bulk-import', bulkImportFromSpreadsheet);
+  safeBind('btn-bulk-fetch-yt', bulkFetchYTMetrics);
+  safeBind('btn-bulk-budget', bulkFillBudget);
+  safeBind('btn-fb-bulk-open', openFBBulkModal);
+  safeBind('btn-fb-import-confirm', confirmFBImport);
+  document.getElementById('fb-bulk-filter').addEventListener('change', renderFBBulkRows);
+  document.getElementById('fb-import-file').addEventListener('change', handleFBFileSelected);
+
+  // Edit modal
+  safeBind('btn-save', saveVideo);
+  safeBind('btn-delete', deleteVideo);
+  safeBind('btn-auto-fetch', autoFetchYT);
+  document.getElementById('form-video').elements['platform']
+    .addEventListener('change', updateAutoFetchVisibility);
+  document.querySelectorAll('#rating-stars button').forEach(b =>
+    b.addEventListener('click', () => setRating(Number(b.dataset.v)))
+  );
+  document.getElementById('btn-edit-from-view').addEventListener('click', () => {
+    const id = document.getElementById('btn-edit-from-view').dataset.id;
+    if (!id) return;
+    closeModals();
+    openEdit(id);
+  });
+
+  // Modal close handlers
+  document.querySelectorAll('[data-close]').forEach(el =>
+    el.addEventListener('click', closeModals)
+  );
+  document.querySelectorAll('.modal-bg').forEach(el =>
+    el.addEventListener('click', e => { if (e.target === el) closeModals(); })
+  );
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModals();
+  });
+
+  // Filters
+  document.querySelectorAll('#tabs-platform button').forEach(b =>
+    b.addEventListener('click', () => {
+      state.platform = b.dataset.platform;
+      document.querySelectorAll('#tabs-platform button').forEach(x => x.classList.toggle('on', x === b));
+      renderAll();
+    })
+  );
+  document.querySelectorAll('#tabs-sort button').forEach(b =>
+    b.addEventListener('click', () => {
+      state.sort = b.dataset.sort;
+      document.querySelectorAll('#tabs-sort button').forEach(x => x.classList.toggle('on', x === b));
+      renderAll();
+    })
+  );
+  document.getElementById('search').addEventListener('input', e => {
+    state.search = e.target.value;
+    renderAll();
+  });
+
+  // Initial render before Firestore data arrives
+  renderMasthead();
+  renderAll();
+
+  Storage.subscribe(renderAll);
+
+  // Link picker search
+  document.getElementById('link-picker-search').addEventListener('input', e => {
+    const opp = linkPickerSourceId
+      ? (Storage.load().find(x => x.id === linkPickerSourceId)?.platform === 'youtube' ? 'facebook' : 'youtube')
+      : 'youtube';
+    renderLinkPickerList(opp, e.target.value);
+  });
+});
+</script>
 </body>
 </html>
