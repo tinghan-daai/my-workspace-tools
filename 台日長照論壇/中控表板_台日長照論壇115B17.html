@@ -3,853 +3,708 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 臺中長照台日論壇｜中控儀表板</title>
+<title>2026 臺中長照台日論壇｜中控表板</title>
 <style>
-  :root {
-    --navy:   #0F2342;
-    --blue:   #1A5CA8;
-    --sky:    #2E8BC0;
-    --teal:   #0D8A8A;
-    --amber:  #F0A500;
-    --red:    #C0392B;
-    --green:  #1E8449;
-    --purple: #6C3483;
-    --bg:     #0A1628;
-    --card:   #112240;
-    --card2:  #162B4A;
-    --border: rgba(255,255,255,0.08);
-    --text:   #E8F0FE;
-    --muted:  #8899AA;
-  }
+/* ── Reset & Base ─────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0f1e;
+  --surface:#111827;
+  --card:#1a2235;
+  --border:#2a3a55;
+  --accent:#3b82f6;
+  --accent2:#8b5cf6;
+  --green:#10b981;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --orange:#f97316;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --r:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Animated BG ─────────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 20%, rgba(59,130,246,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,.1) 0%, transparent 60%);
+  pointer-events:none;z-index:0;
+  animation:bgPulse 8s ease-in-out infinite alternate;
+}
+@keyframes bgPulse{to{opacity:.6}}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* ── Layout ──────────────────────────────────────────── */
+.wrap{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:24px}
 
-  /* ── Animated BG ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0;
-    background:
-      radial-gradient(ellipse 80% 50% at 10% 20%, rgba(26,92,168,0.18) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 90% 80%, rgba(13,138,138,0.12) 0%, transparent 60%);
-    pointer-events: none;
-  }
+/* ── Header ──────────────────────────────────────────── */
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.logo-area h1{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.logo-area p{font-size:.8rem;color:var(--muted);margin-top:3px}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#34d399;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:600}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#34d399;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+#live-time{font-size:.78rem;color:var(--muted);margin-left:8px}
 
-  .container { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 24px 20px; }
+/* ── Countdown strip ─────────────────────────────────── */
+.countdown-strip{
+  background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(139,92,246,.18));
+  border:1px solid rgba(99,102,241,.35);
+  border-radius:var(--r);padding:16px 24px;margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.cd-label{font-size:.8rem;color:var(--muted);font-weight:500}
+.cd-blocks{display:flex;gap:12px;align-items:center}
+.cd-block{text-align:center;min-width:60px}
+.cd-num{font-size:2rem;font-weight:800;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;display:block}
+.cd-unit{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.cd-sep{font-size:1.5rem;color:var(--border);font-weight:300;padding-bottom:8px}
+.milestone-next{display:flex;flex-direction:column;gap:4px;text-align:right}
+.milestone-next .label{font-size:.7rem;color:var(--muted)}
+.milestone-next .val{font-size:.9rem;font-weight:600;color:#fbbf24}
 
-  /* ── Header ── */
-  header {
-    text-align: center;
-    padding: 36px 0 24px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 28px;
-  }
-  .header-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, var(--blue), var(--teal));
-    color: #fff;
-    font-size: 11px;
-    letter-spacing: 2px;
-    padding: 4px 14px;
-    border-radius: 20px;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-  }
-  header h1 {
-    font-size: clamp(20px, 4vw, 32px);
-    font-weight: 700;
-    letter-spacing: 1px;
-    background: linear-gradient(90deg, #fff 0%, #90CAF9 60%, #80DEEA 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1.3;
-  }
-  .header-sub {
-    margin-top: 8px;
-    color: var(--muted);
-    font-size: 13px;
-    letter-spacing: 0.5px;
-  }
-  #live-time {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #64B5F6;
-    letter-spacing: 1px;
-  }
+/* ── KPI Cards ───────────────────────────────────────── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.kpi{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;position:relative;overflow:hidden;cursor:default;
+  transition:transform .2s,border-color .2s;
+}
+.kpi:hover{transform:translateY(-3px);border-color:var(--accent)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.blue::before{background:linear-gradient(90deg,#3b82f6,#6366f1)}
+.kpi.green::before{background:linear-gradient(90deg,#10b981,#34d399)}
+.kpi.yellow::before{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.kpi.red::before{background:linear-gradient(90deg,#ef4444,#f97316)}
+.kpi.purple::before{background:linear-gradient(90deg,#8b5cf6,#a78bfa)}
+.kpi-icon{font-size:1.5rem;margin-bottom:8px}
+.kpi-val{font-size:2rem;font-weight:800;line-height:1}
+.kpi-label{font-size:.72rem;color:var(--muted);margin-top:4px}
+.kpi-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
 
-  /* ── Grid ── */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 18px; }
-  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
-  @media (max-width: 900px) {
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
-  }
-  @media (max-width: 560px) {
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  }
+/* ── Progress bar ────────────────────────────────────── */
+.progress-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:24px}
+.progress-wrap h3{font-size:.85rem;color:var(--muted);margin-bottom:14px;font-weight:500}
+.prog-bar-outer{background:rgba(255,255,255,.06);border-radius:99px;height:10px;overflow:hidden;margin-bottom:6px}
+.prog-bar-inner{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.prog-legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px}
+.prog-dot{display:flex;align-items:center;gap:6px;font-size:.72rem;color:var(--muted)}
+.prog-dot span{display:inline-block;width:8px;height:8px;border-radius:50%}
 
-  /* ── Card ── */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
-  .card-label {
-    font-size: 10px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-  .card-glow { position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; border-radius: 50%; opacity: 0.12; }
+/* ── Timeline ────────────────────────────────────────── */
+.timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:24px;overflow:hidden}
+.timeline h3{font-size:.95rem;font-weight:600;margin-bottom:16px}
+.tl-scroll{overflow-x:auto;padding-bottom:28px}
+.tl-track{position:relative;display:flex;align-items:flex-end;gap:0;min-width:900px;height:170px}
+.tl-axis{position:absolute;bottom:28px;left:0;right:0;height:2px;background:linear-gradient(90deg,#3b82f6,#8b5cf6);border-radius:2px}
+.tl-node{position:absolute;bottom:28px;transform:translateX(-50%);cursor:pointer;z-index:2}
+.tl-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bg);margin:0 auto;transition:transform .2s}
+.tl-node:hover .tl-dot{transform:scale(1.5)}
+.tl-node.urgent .tl-dot{animation:urgentPulse 1.5s ease-in-out infinite}
+@keyframes urgentPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+.tl-date{font-size:.58rem;color:var(--muted);text-align:center;position:absolute;bottom:0;left:50%;transform:translateX(-50%);white-space:nowrap}
+.tl-label{font-size:.6rem;position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--card);padding:2px 6px;border-radius:4px;text-align:center;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-today{position:absolute;bottom:20px;width:2px;background:#fbbf24;border-radius:2px;height:24px;z-index:3}
+.tl-today-label{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:.55rem;color:#fbbf24;white-space:nowrap}
 
-  /* ── Countdown ── */
-  .countdown-wrap {
-    background: linear-gradient(135deg, #0F2342, #1A3A6B);
-    border: 1px solid rgba(26,92,168,0.4);
-    border-radius: 14px;
-    padding: 24px 20px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .countdown-wrap::after {
-    content: '';
-    position: absolute;
-    bottom: -20px; left: 50%;
-    transform: translateX(-50%);
-    width: 200px; height: 40px;
-    background: var(--blue);
-    border-radius: 50%;
-    filter: blur(30px);
-    opacity: 0.3;
-  }
-  .countdown-label {
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #90CAF9;
-    margin-bottom: 12px;
-  }
-  .countdown-digits {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    align-items: flex-end;
-  }
-  .digit-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .digit-num {
-    font-size: clamp(32px, 6vw, 52px);
-    font-weight: 800;
-    line-height: 1;
-    background: linear-gradient(180deg, #fff 0%, #90CAF9 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    min-width: 60px;
-    text-align: center;
-  }
-  .digit-unit {
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
-  .digit-sep {
-    font-size: 36px;
-    color: var(--blue);
-    font-weight: 300;
-    padding-bottom: 10px;
-  }
-  .countdown-date {
-    margin-top: 14px;
-    font-size: 13px;
-    color: var(--amber);
-    font-weight: 600;
-  }
-  .countdown-close .digit-num {
-    background: linear-gradient(180deg, #fff 0%, #80CBC4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+/* ── Filter bar ──────────────────────────────────────── */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.filter-bar .filter-label{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:99px;font-size:.72rem;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .18s;white-space:nowrap}
+.chip:hover,.chip.active{color:var(--text);border-color:currentColor}
+.chip.c-all.active{background:rgba(99,102,241,.2);border-color:#6366f1;color:#a5b4fc}
+.chip.c-A.active{background:rgba(239,68,68,.15);border-color:#ef4444;color:#fca5a5}
+.chip.c-B.active{background:rgba(59,130,246,.15);border-color:#3b82f6;color:#93c5fd}
+.chip.c-C.active{background:rgba(59,130,246,.15);border-color:#3b82f6;color:#93c5fd}
+.chip.c-D.active{background:rgba(16,185,129,.15);border-color:#10b981;color:#6ee7b7}
+.chip.c-E.active{background:rgba(16,185,129,.15);border-color:#10b981;color:#6ee7b7}
+.chip.c-F.active{background:rgba(16,185,129,.15);border-color:#10b981;color:#6ee7b7}
+.chip.c-G.active{background:rgba(245,158,11,.15);border-color:#f59e0b;color:#fcd34d}
+.chip.c-H.active{background:rgba(139,92,246,.15);border-color:#8b5cf6;color:#c4b5fd}
+.chip.c-I.active{background:rgba(139,92,246,.15);border-color:#8b5cf6;color:#c4b5fd}
+.chip.c-J.active{background:rgba(245,245,11,.1);border-color:#eab308;color:#fde047}
+.chip.c-K.active{background:rgba(148,163,184,.15);border-color:#94a3b8;color:#cbd5e1}
+.chip.c-L.active{background:rgba(249,115,22,.15);border-color:#f97316;color:#fdba74}
+.chip.c-M.active{background:rgba(239,68,68,.15);border-color:#ef4444;color:#fca5a5}
 
-  /* ── Progress Ring ── */
-  .ring-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 16px 0 8px;
-  }
-  .ring-svg { transform: rotate(-90deg); }
-  .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); }
-  .ring-fg {
-    fill: none;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1);
-  }
-  .ring-text {
-    position: absolute;
-    font-size: 22px;
-    font-weight: 800;
-    color: #fff;
-  }
-  .ring-container { position: relative; display: flex; align-items: center; justify-content: center; }
-  .ring-label { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center; }
+/* ── Task grid ───────────────────────────────────────── */
+.task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-bottom:24px}
+.task-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;position:relative;overflow:hidden;
+  transition:transform .2s,border-color .2s,box-shadow .2s;cursor:pointer;
+}
+.task-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.task-card.hidden{display:none}
+.task-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.task-card.cat-A::after{background:#ef4444}
+.task-card.cat-B::after{background:#3b82f6}
+.task-card.cat-C::after{background:#60a5fa}
+.task-card.cat-D::after{background:#10b981}
+.task-card.cat-E::after{background:#34d399}
+.task-card.cat-F::after{background:#6ee7b7}
+.task-card.cat-G::after{background:#f59e0b}
+.task-card.cat-H::after{background:#8b5cf6}
+.task-card.cat-I::after{background:#a78bfa}
+.task-card.cat-J::after{background:#eab308}
+.task-card.cat-K::after{background:#94a3b8}
+.task-card.cat-L::after{background:#f97316}
+.task-card.cat-M::after{background:#dc2626}
+.task-card.urgent{border-color:rgba(239,68,68,.5);animation:urgentCard 2.5s ease-in-out infinite}
+@keyframes urgentCard{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.15)}50%{box-shadow:0 0 12px 2px rgba(239,68,68,.2)}}
 
-  /* ── Timeline ── */
-  .timeline-section { margin-bottom: 18px; }
-  .section-title {
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;padding-left:10px}
+.card-cat{font-size:.64rem;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.07)}
+.card-status{font-size:.64rem;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.status-待辦{background:rgba(148,163,184,.15);color:#94a3b8}
+.status-進行中{background:rgba(59,130,246,.2);color:#60a5fa}
+.status-已完成{background:rgba(16,185,129,.2);color:#34d399}
+.status-延誤{background:rgba(239,68,68,.2);color:#f87171}
 
-  .timeline {
-    position: relative;
-    padding-left: 24px;
-  }
-  .timeline::before {
-    content: '';
-    position: absolute;
-    left: 7px; top: 8px; bottom: 8px;
-    width: 2px;
-    background: linear-gradient(180deg, var(--blue) 0%, var(--teal) 100%);
-    border-radius: 2px;
-  }
-  .tl-item {
-    position: relative;
-    margin-bottom: 10px;
-    padding: 12px 14px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    transition: background 0.2s;
-  }
-  .tl-item:hover { background: var(--card2); }
-  .tl-dot {
-    position: absolute;
-    left: -21px;
-    top: 14px;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    border: 2px solid;
-  }
-  .tl-item.phase-invest .tl-dot   { background: #3B6EA5; border-color: #6B9FD5; }
-  .tl-item.phase-post .tl-dot     { background: #2980B9; border-color: #6AB7E0; }
-  .tl-item.phase-june .tl-dot     { background: #1A6B8A; border-color: #50A0BF; }
-  .tl-item.phase-event .tl-dot    { background: #B7410E; border-color: #E07050; }
-  .tl-item.phase-followup .tl-dot { background: #6C3483; border-color: #A06CBD; }
-  .tl-item.phase-close .tl-dot    { background: #1E8449; border-color: #50B478; }
-  .tl-item.is-today .tl-dot       { background: var(--amber); border-color: #FFD54F; animation: pulse 1.5s infinite; }
-  .tl-item.is-forum .tl-dot       { background: #C0392B; border-color: #E07070; animation: pulse 1.5s infinite; }
-  .tl-item.is-past { opacity: 0.45; }
-  .tl-item.is-urgent { border-color: rgba(240,165,0,0.5); }
+.card-title{font-size:.88rem;font-weight:600;line-height:1.4;padding-left:10px;margin-bottom:8px}
+.card-deadline{display:flex;align-items:center;gap:6px;padding-left:10px;margin-bottom:8px}
+.deadline-icon{font-size:.8rem}
+.deadline-text{font-size:.75rem;font-weight:500}
+.deadline-urgent{color:#ef4444}
+.deadline-warn{color:#f59e0b}
+.deadline-ok{color:var(--muted)}
+.deadline-done{color:#10b981}
 
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(240,165,0,0.4); }
-    50%       { box-shadow: 0 0 0 6px rgba(240,165,0,0); }
-  }
+.card-summary{font-size:.72rem;color:var(--muted);line-height:1.5;padding-left:10px;max-height:0;overflow:hidden;transition:max-height .3s ease}
+.task-card:hover .card-summary,.task-card.expanded .card-summary{max-height:120px}
 
-  .tl-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .tl-date {
-    font-size: 11px;
-    color: var(--sky);
-    white-space: nowrap;
-    font-weight: 600;
-    min-width: 80px;
-  }
-  .tl-task { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.4; }
-  .tl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-  .tag {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-  }
-  .tag-todo    { background: rgba(136,153,170,0.2); color: #8899AA; }
-  .tag-doing   { background: rgba(240,165,0,0.2);   color: #F0A500; }
-  .tag-done    { background: rgba(30,132,73,0.2);   color: #52BE80; }
-  .tag-urgent  { background: rgba(192,57,43,0.2);   color: #EC7063; }
-  .tag-penalty { background: rgba(180,100,0,0.2);   color: #F0A500; }
+.card-risk{margin-top:8px;padding:6px 10px 6px 18px;background:rgba(239,68,68,.08);border-radius:6px;font-size:.68rem;color:#fca5a5;line-height:1.4}
+.days-badge{display:inline-block;padding:1px 7px;border-radius:99px;font-size:.64rem;font-weight:700;margin-left:6px}
+.days-overdue{background:rgba(239,68,68,.25);color:#f87171}
+.days-urgent{background:rgba(245,158,11,.25);color:#fbbf24}
+.days-normal{background:rgba(16,185,129,.2);color:#34d399}
 
-  .tl-days-left {
-    font-size: 10px;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  .tl-days-left.urgent { color: #EC7063; font-weight: 700; }
-  .tl-days-left.soon   { color: #F0A500; font-weight: 600; }
+/* ── Risk panel ──────────────────────────────────────── */
+.risk-panel{background:var(--card);border:1px solid rgba(239,68,68,.35);border-radius:var(--r);padding:20px 24px;margin-bottom:24px}
+.risk-panel h3{font-size:.95rem;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.risk-panel h3 span{font-size:.8rem;background:rgba(239,68,68,.2);color:#f87171;padding:2px 10px;border-radius:99px}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.risk-item{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:12px 14px}
+.risk-item-title{font-size:.78rem;font-weight:600;color:#fca5a5;margin-bottom:4px}
+.risk-item-amount{font-size:.72rem;color:#f87171;font-weight:700}
+.risk-item-basis{font-size:.65rem;color:var(--muted);margin-top:3px}
 
-  /* ── Stat Cards ── */
-  .stat-num {
-    font-size: clamp(28px, 5vw, 40px);
-    font-weight: 800;
-    line-height: 1;
-    margin: 8px 0 4px;
-  }
-  .stat-sub { font-size: 12px; color: var(--muted); }
+/* ── Payment panel ───────────────────────────────────── */
+.pay-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.pay-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;position:relative;overflow:hidden}
+.pay-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.pay-card.p1::before{background:linear-gradient(90deg,#3b82f6,#6366f1)}
+.pay-card.p2::before{background:linear-gradient(90deg,#8b5cf6,#ec4899)}
+.pay-pct{font-size:2.8rem;font-weight:800;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.pay-amount{font-size:1rem;font-weight:600;color:var(--muted);margin-bottom:10px}
+.pay-title{font-size:.8rem;font-weight:600;margin-bottom:8px}
+.pay-cond{font-size:.72rem;color:var(--muted);line-height:1.6}
+.pay-deadline{margin-top:10px;font-size:.75rem;font-weight:600;color:#fbbf24}
 
-  /* ── Progress Bar ── */
-  .prog-wrap { margin-bottom: 14px; }
-  .prog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-    font-size: 12px;
-  }
-  .prog-name { color: var(--text); }
-  .prog-pct  { color: var(--muted); font-weight: 600; }
-  .prog-bar {
-    height: 6px;
-    background: rgba(255,255,255,0.07);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .prog-fill {
-    height: 100%;
-    border-radius: 10px;
-    transition: width 1.2s cubic-bezier(.4,0,.2,1);
-  }
+/* ── Status legend ───────────────────────────────────── */
+.status-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.status-btn{padding:4px 12px;border-radius:99px;font-size:.72rem;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .18s}
 
-  /* ── Alert Banner ── */
-  .alert-bar {
-    background: linear-gradient(90deg, rgba(192,57,43,0.15), rgba(192,57,43,0.05));
-    border: 1px solid rgba(192,57,43,0.3);
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 18px;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    animation: fadeIn 0.6s ease;
-  }
-  .alert-icon { font-size: 18px; flex-shrink: 0; }
-  .alert-text { color: #EC7063; line-height: 1.5; }
-  .alert-text strong { color: #fff; }
+/* ── Section heading ─────────────────────────────────── */
+.section-h{font-size:.95rem;font-weight:600;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+.section-h::before{content:'';display:block;width:4px;height:18px;border-radius:2px;background:linear-gradient(135deg,#3b82f6,#8b5cf6)}
 
-  /* ── Milestone bar ── */
-  .milestone-track {
-    position: relative;
-    height: 48px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 8px;
-    margin-bottom: 18px;
-    overflow: visible;
-  }
-  .milestone-progress {
-    position: absolute;
-    left: 0; top: 0;
-    height: 100%;
-    background: linear-gradient(90deg, var(--blue), var(--teal));
-    border-radius: 8px;
-    opacity: 0.35;
-    transition: width 1.2s cubic-bezier(.4,0,.2,1);
-  }
-  .milestone-dot {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: default;
-  }
-  .milestone-dot-circle {
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    border: 2px solid;
-    background: var(--bg);
-    z-index: 2;
-    position: relative;
-  }
-  .milestone-dot-label {
-    position: absolute;
-    top: 18px;
-    font-size: 9px;
-    color: var(--muted);
-    white-space: nowrap;
-    text-align: center;
-    transform: translateX(-50%);
-    left: 50%;
-  }
-  .milestone-dot-date {
-    position: absolute;
-    bottom: 18px;
-    font-size: 8px;
-    color: var(--muted);
-    white-space: nowrap;
-    text-align: center;
-    transform: translateX(-50%);
-    left: 50%;
-    opacity: 0.7;
-  }
-  .md-past   { border-color: #4A90A4; background: #4A90A4 !important; }
-  .md-today  { border-color: var(--amber); background: var(--amber) !important; box-shadow: 0 0 10px rgba(240,165,0,0.6); animation: pulse 1.5s infinite; }
-  .md-future { border-color: var(--muted); }
-  .md-forum  { border-color: var(--red); background: var(--red) !important; box-shadow: 0 0 10px rgba(192,57,43,0.5); }
-  .md-close  { border-color: var(--green); background: var(--green) !important; }
+/* ── Tooltip ─────────────────────────────────────────── */
+.tooltip-box{
+  position:fixed;background:#1e293b;border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:.72rem;color:var(--text);line-height:1.6;
+  max-width:260px;z-index:999;pointer-events:none;opacity:0;transition:opacity .15s;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.tooltip-box.show{opacity:1}
 
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+/* ── Responsive ──────────────────────────────────────── */
+@media(max-width:700px){
+  .pay-row{grid-template-columns:1fr}
+  .task-grid{grid-template-columns:1fr}
+  .cd-num{font-size:1.5rem}
+}
 
-  /* ── Footer ── */
-  footer {
-    text-align: center;
-    padding: 24px 0 12px;
-    font-size: 11px;
-    color: var(--muted);
-    border-top: 1px solid var(--border);
-    margin-top: 16px;
-  }
+/* ── Animations ──────────────────────────────────────── */
+.fade-in{animation:fadeIn .5s ease forwards;opacity:0}
+@keyframes fadeIn{to{opacity:1}}
+.slide-up{animation:slideUp .5s ease forwards;opacity:0;transform:translateY(20px)}
+@keyframes slideUp{to{opacity:1;transform:none}}
+.back-btn{position:fixed;bottom:20px;left:20px;z-index:9999;background:rgba(15,17,23,0.88);border:1px solid #333;border-radius:20px;padding:6px 14px;color:#888;text-decoration:none;font-size:0.82rem;backdrop-filter:blur(8px);transition:color .15s,border-color .15s;}
+.back-btn:hover{color:#eee;border-color:#4f8ef7;}
 </style>
 </head>
 <body>
-<div class="container">
+<a class="back-btn" href="../tools/pr-dashboard/index.html">← 儀表板</a>
+<div class="wrap">
 
-  <!-- Header -->
-  <header>
-    <div class="header-badge">Project Dashboard</div>
-    <h1>2026 臺中長照台日論壇</h1>
-    <div class="header-sub">主辦：臺中市政府衛生局　｜　執行單位：公共傳播室</div>
-    <div id="live-time">載入中...</div>
-  </header>
-
-  <!-- Alert -->
-  <div class="alert-bar">
-    <div class="alert-icon">⚡</div>
-    <div class="alert-text" id="alert-text">載入中...</div>
+<!-- Header -->
+<header class="fade-in">
+  <div class="logo-area">
+    <h1>2026 臺中長照台日論壇　中控表板</h1>
+    <p>案號：115B17　｜　主辦：臺中市政府衛生局　｜　論壇日：2026/7/3（五）　｜　合約：200萬元（含稅）</p>
   </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+    <span id="live-time"></span>
+  </div>
+</header>
 
-  <!-- Countdown row -->
-  <div class="grid-2" style="margin-bottom:18px;">
-    <div class="countdown-wrap">
-      <div class="countdown-label">🎯 距論壇活動日（7/3）</div>
-      <div class="countdown-digits" id="forum-countdown">
-        <div class="digit-block"><div class="digit-num" id="cd-days">--</div><div class="digit-unit">DAYS</div></div>
-        <div class="digit-sep">:</div>
-        <div class="digit-block"><div class="digit-num" id="cd-hrs">--</div><div class="digit-unit">HRS</div></div>
-        <div class="digit-sep">:</div>
-        <div class="digit-block"><div class="digit-num" id="cd-min">--</div><div class="digit-unit">MIN</div></div>
-        <div class="digit-sep">:</div>
-        <div class="digit-block"><div class="digit-num" id="cd-sec">--</div><div class="digit-unit">SEC</div></div>
-      </div>
-      <div class="countdown-date">2026 年 7 月 3 日（五）</div>
-    </div>
-
-    <div class="countdown-wrap countdown-close" style="background:linear-gradient(135deg,#0D2B2B,#1A4040); border-color:rgba(13,138,138,0.4);">
-      <div class="countdown-label" style="color:#80CBC4;">📋 距結案截止（12/15）</div>
-      <div class="countdown-digits" id="close-countdown">
-        <div class="digit-block"><div class="digit-num" id="cc-days" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">DAYS</div></div>
-        <div class="digit-sep" style="color:var(--teal)">:</div>
-        <div class="digit-block"><div class="digit-num" id="cc-hrs" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">HRS</div></div>
-        <div class="digit-sep" style="color:var(--teal)">:</div>
-        <div class="digit-block"><div class="digit-num" id="cc-min" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">MIN</div></div>
-        <div class="digit-sep" style="color:var(--teal)">:</div>
-        <div class="digit-block"><div class="digit-num" id="cc-sec" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">SEC</div></div>
-      </div>
-      <div class="countdown-date" style="color:#4DB6AC;">2026 年 12 月 15 日（二）</div>
+<!-- Countdown -->
+<div class="countdown-strip slide-up">
+  <div>
+    <div class="cd-label">距論壇開幕倒數</div>
+    <div class="cd-blocks" id="countdown">
+      <div class="cd-block"><span class="cd-num" id="cd-d">--</span><span class="cd-unit">天</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-h">--</span><span class="cd-unit">時</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-m">--</span><span class="cd-unit">分</span></div>
+      <span class="cd-sep">:</span>
+      <div class="cd-block"><span class="cd-num" id="cd-s">--</span><span class="cd-unit">秒</span></div>
     </div>
   </div>
-
-  <!-- Milestone Track -->
-  <div class="section-title">📍 專案時程軸</div>
-  <div class="milestone-track" id="milestone-track">
-    <div class="milestone-progress" id="milestone-progress"></div>
+  <div class="milestone-next">
+    <span class="label">下一個關鍵截止日</span>
+    <span class="val" id="next-milestone">計算中…</span>
   </div>
-
-  <!-- Stats row -->
-  <div class="grid-4" style="margin-bottom:18px;">
-    <div class="card">
-      <div class="card-glow" style="background:var(--blue);"></div>
-      <div class="card-label">總任務數</div>
-      <div class="stat-num" style="color:#90CAF9;">29</div>
-      <div class="stat-sub">涵蓋 6 大執行階段</div>
-    </div>
-    <div class="card">
-      <div class="card-glow" style="background:var(--amber);"></div>
-      <div class="card-label">⚡ 緊急任務（30 天內）</div>
-      <div class="stat-num" style="color:#F0A500;" id="stat-urgent">--</div>
-      <div class="stat-sub" id="stat-urgent-label">即將到期項目</div>
-    </div>
-    <div class="card">
-      <div class="card-glow" style="background:var(--red);"></div>
-      <div class="card-label">⚠️ 罰款風險項目</div>
-      <div class="stat-num" style="color:#EC7063;">6</div>
-      <div class="stat-sub">違約最高扣款 70,000 元</div>
-    </div>
-    <div class="card">
-      <div class="card-glow" style="background:var(--green);"></div>
-      <div class="card-label">整體完成度</div>
-      <div class="stat-num" style="color:#52BE80;" id="stat-pct">0%</div>
-      <div class="stat-sub">（請在管制表更新狀態）</div>
-    </div>
-  </div>
-
-  <!-- Progress by phase + Ring -->
-  <div class="grid-2" style="margin-bottom:18px;">
-    <div class="card">
-      <div class="card-label">各階段進度概覽</div>
-      <div id="phase-bars" style="margin-top:12px;"></div>
-    </div>
-    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-      <div class="card-label" style="text-align:center;">專案整體時間進度</div>
-      <div class="ring-container" style="margin-top:8px;">
-        <svg class="ring-svg" width="140" height="140">
-          <circle class="ring-bg" cx="70" cy="70" r="56" stroke-width="10"/>
-          <circle class="ring-fg" cx="70" cy="70" r="56" stroke-width="10"
-            stroke="url(#ringGrad)"
-            stroke-dasharray="351.9"
-            id="ring-circle"
-            stroke-dashoffset="351.9"/>
-          <defs>
-            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#1A5CA8"/>
-              <stop offset="100%" stop-color="#0D8A8A"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <div class="ring-text" id="ring-pct" style="font-size:20px;">0%</div>
-      </div>
-      <div class="ring-label">從決標日（5/1）到論壇日（7/3）<br>時間消耗比例</div>
-      <div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center;">
-        <span style="color:var(--sky);">今天：</span><span id="today-label">--</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Timeline -->
-  <div class="section-title" style="margin-top:8px;">📅 完整任務時間軸</div>
-  <div class="timeline" id="timeline"></div>
-
-  <footer>
-    製表：廷翰　｜　論壇日：2026/7/3　｜　結案截止：2026/12/15　｜　聯絡：衛生局長照科 張小姐 04-22289111 轉 71103
-  </footer>
 </div>
 
-<script>
-// ── Data ──
-const TODAY = new Date();
-const FORUM_DATE  = new Date('2026-07-03T08:00:00');
-const CLOSE_DATE  = new Date('2026-12-15T18:00:00');
-const START_DATE  = new Date('2026-05-01T00:00:00'); // 決標次日
+<!-- KPI Cards -->
+<div class="kpi-row" id="kpi-row">
+  <div class="kpi blue fade-in"><div class="kpi-icon">📋</div><div class="kpi-val" id="kpi-total">45</div><div class="kpi-label">工作項目總數</div></div>
+  <div class="kpi red fade-in"><div class="kpi-icon">⚠️</div><div class="kpi-val" id="kpi-urgent">0</div><div class="kpi-label">緊急（7天內）</div></div>
+  <div class="kpi yellow fade-in"><div class="kpi-icon">🕐</div><div class="kpi-val" id="kpi-pending">0</div><div class="kpi-label">待辦中</div></div>
+  <div class="kpi green fade-in"><div class="kpi-icon">✅</div><div class="kpi-val" id="kpi-done">0</div><div class="kpi-label">已完成</div></div>
+  <div class="kpi purple fade-in"><div class="kpi-icon">💰</div><div class="kpi-val">200萬</div><div class="kpi-label">合約金額（含稅）</div><div class="kpi-sub">第1期30% | 第2期70%</div></div>
+</div>
 
-const milestones = [
-  { date:'2026-04-30', label:'決標', type:'past' },
-  { date:'2026-05-01', label:'起算', type:'past' },
-  { date:'2026-05-04', label:'第1次籌備', type:'past' },
-  { date:'2026-06-01', label:'密集提報截止', type:'upcoming' },
-  { date:'2026-06-03', label:'廣告上架', type:'upcoming' },
-  { date:'2026-06-15', label:'餐飲訂位', type:'upcoming' },
-  { date:'2026-06-19', label:'報紙廣告', type:'upcoming' },
-  { date:'2026-06-26', label:'保險完成', type:'upcoming' },
-  { date:'2026-07-02', label:'場佈彩排', type:'upcoming' },
-  { date:'2026-07-03', label:'🎯 論壇日', type:'forum' },
-  { date:'2026-07-20', label:'精華影片', type:'upcoming' },
-  { date:'2026-12-15', label:'結案', type:'close' },
-];
+<!-- Progress -->
+<div class="progress-wrap slide-up">
+  <h3>整體任務進度</h3>
+  <div class="prog-bar-outer">
+    <div class="prog-bar-inner" id="prog-bar" style="width:0%;background:linear-gradient(90deg,#3b82f6,#8b5cf6)"></div>
+  </div>
+  <div class="prog-legend">
+    <div class="prog-dot"><span style="background:#10b981"></span>已完成 <strong id="p-done">0</strong></div>
+    <div class="prog-dot"><span style="background:#3b82f6"></span>進行中 <strong id="p-wip">0</strong></div>
+    <div class="prog-dot"><span style="background:#f59e0b"></span>待辦 <strong id="p-todo">45</strong></div>
+    <div class="prog-dot"><span style="background:#ef4444"></span>延誤 <strong id="p-late">0</strong></div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="timeline slide-up">
+  <div class="section-h">關鍵時程軸</div>
+  <div class="tl-scroll">
+    <div class="tl-track" id="tl-track">
+      <div class="tl-axis"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="filter-bar">
+  <span class="filter-label">篩選類別：</span>
+  <button class="chip c-all active" onclick="filterCat('all',this)">全部</button>
+  <button class="chip c-A" onclick="filterCat('A',this)">A 第一期交付</button>
+  <button class="chip c-B" onclick="filterCat('B',this)">B 論壇規劃</button>
+  <button class="chip c-C" onclick="filterCat('C',this)">C 網頁及報名</button>
+  <button class="chip c-D" onclick="filterCat('D',this)">D 論壇活動</button>
+  <button class="chip c-E" onclick="filterCat('E',this)">E 翻譯安排</button>
+  <button class="chip c-F" onclick="filterCat('F',this)">F 外賓接待</button>
+  <button class="chip c-G" onclick="filterCat('G',this)">G 餐飲規劃</button>
+  <button class="chip c-H" onclick="filterCat('H',this)">H 文宣設計</button>
+  <button class="chip c-I" onclick="filterCat('I',this)">I 禮品規劃</button>
+  <button class="chip c-J" onclick="filterCat('J',this)">J 活動推廣</button>
+  <button class="chip c-K" onclick="filterCat('K',this)">K 活動前準備</button>
+  <button class="chip c-L" onclick="filterCat('L',this)">L 活動當日</button>
+  <button class="chip c-M" onclick="filterCat('M',this)">M 成果驗收</button>
+</div>
+<div class="status-bar">
+  <span class="filter-label">篩選狀態：</span>
+  <button class="chip active" id="sf-all" onclick="filterStatus('all',this)" style="border-color:#6366f1;color:#a5b4fc">全部</button>
+  <button class="chip" id="sf-todo" onclick="filterStatus('待辦',this)" style="">待辦</button>
+  <button class="chip" id="sf-wip" onclick="filterStatus('進行中',this)">進行中</button>
+  <button class="chip" id="sf-done" onclick="filterStatus('已完成',this)">已完成</button>
+  <button class="chip" id="sf-late" onclick="filterStatus('延誤',this)">延誤</button>
+</div>
+
+<!-- Task Grid -->
+<div class="section-h">工作任務管控</div>
+<div class="task-grid" id="task-grid"></div>
+
+<!-- Payment -->
+<div class="section-h">付款里程碑</div>
+<div class="pay-row">
+  <div class="pay-card p1 fade-in">
+    <div class="pay-pct">30%</div>
+    <div class="pay-amount">新台幣 600,000 元</div>
+    <div class="pay-title">第 1 期款</div>
+    <div class="pay-cond">
+      ① 決標次日起 30 日曆天內，提交工作細部計畫書（紙本 1 式 2 份 + 電子檔 1 份）<br>
+      ② 召開至少 1 場計畫執行討論會<br>
+      ③ 經本局審查通過後撥付
+    </div>
+    <div class="pay-deadline">📅 截止：2026/6/15（週一）</div>
+  </div>
+  <div class="pay-card p2 fade-in">
+    <div class="pay-pct">70%</div>
+    <div class="pay-amount">新台幣 1,400,000 元</div>
+    <div class="pay-title">第 2 期款</div>
+    <div class="pay-cond">
+      ① 活動前籌備會至少 2 次（論壇前 60 日 + 30 日各 1 次）<br>
+      ② 繳交期末總成果報告（紙本 1 式 2 份 + 電子檔 1 份）<br>
+      ③ 2026/12/15 前完成全案，經本局驗收通過確認無待辦事項
+    </div>
+    <div class="pay-deadline">📅 截止：2026/12/15（週二）</div>
+  </div>
+</div>
+
+<!-- Risk Panel -->
+<div class="risk-panel slide-up">
+  <h3>⚠ 扣款風險清單 <span>10 項</span></h3>
+  <div class="risk-grid" id="risk-grid"></div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- Tooltip -->
+<div class="tooltip-box" id="tooltip"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const FORUM_DATE = new Date('2026-07-03T09:00:00');
+const TODAY = new Date();
 
 const tasks = [
-  { phase:'invest', phaseLabel:'投標/決標',         date:'2026-04-30', deadline:'4/30（四）', task:'招標截止 / 預計決標',            tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-05-04', deadline:'5/4（一）',  task:'第一次活動前籌備會',             tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'① 活動整體形象規劃設計　提報',   tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'② 論壇網頁製作／建置　提報',     tags:['todo'], penalty:true  },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'③ 論壇活動規劃　提報',           tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'④ 翻譯安排　提報',               tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑤ 外賓接待與住宿規劃　提報',     tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑥ 文宣設計　提報',               tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑦ 禮品規劃　提報',               tags:['todo'], penalty:false },
-  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑧ 第 1 期款（30%）交付計畫書',  tags:['todo'], penalty:false },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-03', deadline:'6/3（三）',  task:'網路關鍵字廣告上架',             tags:['todo'], penalty:true  },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-03', deadline:'6/3（三）',  task:'第二次活動前籌備會',             tags:['todo'], penalty:false },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-15', deadline:'6/15（一）', task:'餐飲規劃提報並完成訂位',         tags:['todo'], penalty:false },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-18', deadline:'6/18（四）', task:'工作人員教育訓練（國際禮儀）',   tags:['todo'], penalty:false },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-19', deadline:'6/19（五）', task:'報紙廣告 2 則刊登完成',          tags:['todo'], penalty:true  },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-19', deadline:'6/19（五）', task:'數位廣編稿 ≥10 則、電子看板廣告',tags:['todo'], penalty:true  },
-  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-26', deadline:'6/26（五）', task:'活動保險辦理完成',               tags:['todo'], penalty:false },
-  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-02', deadline:'7/2（四）',  task:'禮品、獎狀送達會場',            tags:['todo'], penalty:false },
-  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-02', deadline:'7/2（四）',  task:'場地佈置完成',                   tags:['todo'], penalty:false },
-  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-02', deadline:'7/2（四）',  task:'彩排完成（含設備測試）',         tags:['todo'], penalty:false },
-  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-03', deadline:'7/3（五）',  task:'🎯 論壇活動執行',               tags:['todo'], penalty:false },
-  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-03', deadline:'7/3（五）',  task:'場復（會場善後清潔）',           tags:['todo'], penalty:false },
-  { phase:'followup','phaseLabel':'論壇後追蹤',     date:'2026-07-06', deadline:'7/6（一）',  task:'照片及影音電子檔提供',           tags:['todo'], penalty:false },
-  { phase:'followup','phaseLabel':'論壇後追蹤',     date:'2026-07-10', deadline:'7/10（五）', task:'未發送文宣／禮品送回主辦方',     tags:['todo'], penalty:false },
-  { phase:'followup','phaseLabel':'論壇後追蹤',     date:'2026-07-20', deadline:'7/20（一）', task:'精華影片製作完成（≥10 分鐘）',  tags:['todo'], penalty:true  },
-  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'論壇事後新聞稿三大報刊登',      tags:['todo'], penalty:false },
-  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'活動滿意度調查分析資料繳交',    tags:['todo'], penalty:false },
-  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'期末總成果報告繳交',            tags:['todo'], penalty:false },
-  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'第 2 期款（70%）申請驗收',      tags:['todo'], penalty:false },
+  {id:1,cat:'A',catName:'A 第一期交付',title:'計畫執行討論會',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'召集至本局開至少1場計畫執行討論會',note:'末日為例假日順延'},
+  {id:2,cat:'A',catName:'A 第一期交付',title:'工作細部計畫書提交',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'★ 為第1期款30%請款依據',summary:'提交紙本1式2份、電子檔1份（word及pdf）；含執行團隊人力配置、各項工作內容、進度規劃及辦理方式',note:'含相關人員簡歷'},
+  {id:3,cat:'B',catName:'B 論壇規劃',title:'活動整體形象—主題設計',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'以長照3.0政策為核心，策劃論壇主題、議程及運作模式（至少8小時）；提供至少2種以上風格',note:'須經本局同意'},
+  {id:4,cat:'B',catName:'B 論壇規劃',title:'活動整體形象—與會人員邀請規劃',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'積極邀請至少3位日本產官學專家學者、衛福部長官、全國各縣市政府；預估250人',note:''},
+  {id:5,cat:'B',catName:'B 論壇規劃',title:'宣傳海報/布條/旗幟設計製作',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'設計、製作、郵寄及懸掛論壇宣傳物，至少寄送至全國各縣市政府及中部醫療院所至少50處',note:'須經本局同意後始得發送'},
+  {id:6,cat:'B',catName:'B 論壇規劃',title:'活動期程規劃',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'規劃論壇活動期程',note:''},
+  {id:7,cat:'B',catName:'B 論壇規劃',title:'網頁建置規劃',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'規劃網頁建置方向',note:''},
+  {id:8,cat:'B',catName:'B 論壇規劃',title:'活動禮品設計選品',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'活動禮品設計及選品（須本局同意）',note:''},
+  {id:9,cat:'B',catName:'B 論壇規劃',title:'滿意度調查表設計',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'設計論壇活動滿意度調查表，內容須包含性別、年齡、活動滿意度等項目',note:''},
+  {id:10,cat:'C',catName:'C 網頁及報名',title:'論壇網頁製作、建置及維護',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'★ 未建置扣契約價金5萬元',summary:'主題活動宣傳網頁，至少2種以上風格；全程維護至活動結束；須檢附網頁安全需求報告書',note:'含報名系統及報名資料統計'},
+  {id:11,cat:'C',catName:'C 網頁及報名',title:'與會人員報名作業規劃與執行',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'規劃報名方式與流程（公告、資料登錄、名牌製作、會前通知、與會安排等）',note:''},
+  {id:12,cat:'D',catName:'D 論壇活動',title:'論壇活動規劃—場地及設備',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'台中市可容納250人以上會議室（含投影設備、網際網路、貴賓接待室、用餐場地）；4G以上無限流量WiFi',note:'論壇日7/3，場地需儘速確認訂位'},
+  {id:13,cat:'D',catName:'D 論壇活動',title:'論壇活動規劃—場地軟硬體設備',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'投影設備、3部連網筆電、無線麥克風12支以上、1部功能事務機；全程現場錄音錄影攝影；立即剪輯影像器材及人員至少1名',note:'當日中午前提供15-20張照片及新聞稿'},
+  {id:14,cat:'D',catName:'D 論壇活動',title:'論壇活動規劃—司儀',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'需曾主持百人以上活動至少3場、精通中英日語；提供2位名單供本局選擇；活動前1天（7/2）參與彩排',note:''},
+  {id:15,cat:'D',catName:'D 論壇活動',title:'論壇活動規劃—整體規劃及佈置',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'區域規劃、桌面擺放、花藝佈置、舞台佈置（LED電視牆/Truss桁架/背板）；至少3組攤位；至少30位現場工作人員',note:'攤位主題須經本局同意'},
+  {id:16,cat:'D',catName:'D 論壇活動',title:'論壇活動規劃—燈光音響及備案',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'燈光及音響控制；提出論壇備案規劃（視訊或線上等疫情替代模式）',note:''},
+  {id:17,cat:'E',catName:'E 翻譯安排',title:'口譯人員安排',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'中日文、中英文同步口譯各2位',note:'顧問名單須經本局同意'},
+  {id:18,cat:'E',catName:'E 翻譯安排',title:'翻譯設備安排',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'同步翻譯設備主機（可雙向傳輸）、紅外線發射器、紅外線接收器及耳機至少300份；通訊設備應符合NCC規範',note:''},
+  {id:19,cat:'E',catName:'E 翻譯安排',title:'翻譯作業（文件審校）',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'備有英文及日文專業翻譯顧問，協助整場活動文件、會議資料、手冊及紀錄等相關文案撰寫、審核、修改及校稿',note:'顧問名單須經本局同意'},
+  {id:20,cat:'F',catName:'F 外賓接待',title:'交通接送安排',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'★ 每次違規查屬實扣款5,000元',summary:'國內貴賓：高鐵/車站至會場來回接送；國外貴賓：機場/飯店/會場共3天交通接送（7/1–7/3）',note:''},
+  {id:21,cat:'F',catName:'F 外賓接待',title:'住宿安排',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'外賓1人1間大床房2晚（含早餐），與論壇同一地點，由廠商負責預定',note:''},
+  {id:22,cat:'G',catName:'G 餐飲規劃',title:'餐飲規劃及訂位',deadline:'2026/6/29',deadlineDate:new Date('2026-06-29'),status:'待辦',risk:'',summary:'2日晚宴、茶點（含素食）至少300人份、誤餐（含素食）約300人份；貴賓用餐；全程供應茶水及咖啡；含食品中毒條款保險',note:'餐飲皆須於當日準備於會議現場提供'},
+  {id:23,cat:'H',catName:'H 文宣設計',title:'文宣設計—論壇素材設計及輸出',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'論壇主題標誌、主視覺設計、宣傳海報、邀請卡及彩色布條等之設計及製作（須經本局同意後始得發送）',note:''},
+  {id:24,cat:'H',catName:'H 文宣設計',title:'文宣設計—會議手冊設計',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'設計會議手冊（含議程、講師資歷及授課資料等）；可提供電子講義供下載；視需求印製紙本手冊約50份',note:''},
+  {id:25,cat:'H',catName:'H 文宣設計',title:'文宣設計—識別證及資料袋',deadline:'2026/6/15（提報）\n2026/7/2（送達）',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'★ 禮品獎狀須於7/2送達會場',summary:'識別證設計及印製至少300份（明顯區分貴賓/講師/學員/工作人員）；主題文宣品及資料袋共300份',note:''},
+  {id:26,cat:'H',catName:'H 文宣設計',title:'文宣設計—邀請卡',deadline:'2026/6/15',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'',summary:'中英日文邀請卡（含信封）100份',note:''},
+  {id:27,cat:'I',catName:'I 禮品規劃',title:'禮品規劃',deadline:'2026/6/15（提報）\n2026/7/2（送達）',deadlineDate:new Date('2026-06-15'),status:'待辦',risk:'★ 禮品獎狀須於7/2送達會場',summary:'演講者禮品8份（≥1,500元）；貴賓禮至少50份（≥400元）；伴手禮至少300份（≥100元）；所有禮品須經本局同意後始可採購',note:''},
+  {id:28,cat:'J',catName:'J 活動推廣',title:'報紙推展（論壇前廣告2則）',deadline:'2026/6/19（論壇前14天）',deadlineDate:new Date('2026-06-19'),status:'待辦',risk:'★ 未達2則，每不足1則扣2萬元',summary:'論壇舉辦前於三大報（中國時報、聯合報或自由時報）刊登論壇資訊至少2則推廣資訊',note:'論壇後須於三大報刊至少1則論壇新聞稿'},
+  {id:29,cat:'J',catName:'J 活動推廣',title:'報紙新聞稿（論壇後1則）',deadline:'2026/7/3後儘速',deadlineDate:new Date('2026-07-10'),status:'待辦',risk:'★ 未達1篇扣1萬元',summary:'論壇舉辦後於三大報紙刊至少1則論壇新聞稿',note:''},
+  {id:30,cat:'J',catName:'J 活動推廣',title:'數位廣編稿（至少10則、200萬人次）',deadline:'2026/6/19（論壇前14天）',deadlineDate:new Date('2026-06-19'),status:'待辦',risk:'★ 每不足1則扣1萬元；未達200萬人次，扣減總額以該項目契約價金20%為限',summary:'於媒體及相關數位平台曝光至少10則，其中至少2篇包含長照3.0政策及失智症相關議題之專題報導',note:''},
+  {id:31,cat:'J',catName:'J 活動推廣',title:'電視牆/電子看板廣告（至少4,000檔次）',deadline:'2026/6/19（論壇前14天）',deadlineDate:new Date('2026-06-19'),status:'待辦',risk:'★ 每不足1檔次扣1,000元；扣減總額以該項目契約價金20%為限',summary:'台中市戶外電視牆/電子看板廣告，至少包含2處場域合計至少4,000檔次',note:''},
+  {id:32,cat:'J',catName:'J 活動推廣',title:'網路關鍵字廣告（至少20則）',deadline:'2026/6/3（論壇前30天）',deadlineDate:new Date('2026-06-03'),status:'待辦',risk:'★ 每不足1則扣1,000元；扣減總額以該項目契約價金20%為限',summary:'於Yahoo、Google、FB、YouTube、IG等上架設活動連結廣告及關鍵字連結廣告；以電子報或刊登網路廣告至少20則',note:''},
+  {id:33,cat:'K',catName:'K 活動前準備',title:'活動前籌備會（第1次）⚠',deadline:'⚠ 2026/5/4 已過→立即安排',deadlineDate:new Date('2026-05-04'),status:'待辦',risk:'★ 為第2期款70%請款依據',summary:'至少辦理1次活動前籌備會（活動前60日曆天）\n⚠ 論壇前60天=5/4，早於決標日，決標後應立即安排！',note:'論壇前60天=5/4，決標後需最速安排',urgent:true},
+  {id:34,cat:'K',catName:'K 活動前準備',title:'活動前籌備會（第2次）',deadline:'2026/6/3（論壇前30天）',deadlineDate:new Date('2026-06-03'),status:'待辦',risk:'',summary:'至少辦理1次活動前籌備會（活動前30日曆天完成1次）',note:''},
+  {id:35,cat:'K',catName:'K 活動前準備',title:'教育訓練',deadline:'2026/6/18（論壇前15天）',deadlineDate:new Date('2026-06-18'),status:'待辦',risk:'',summary:'論壇工作人員須於會議前辦理並接受國際禮儀訓練至少1場次實體教育訓練，並須配合彩排',note:''},
+  {id:36,cat:'K',catName:'K 活動前準備',title:'活動保險',deadline:'2026/6/26（論壇前7天）',deadlineDate:new Date('2026-06-26'),status:'待辦',risk:'',summary:'公共意外責任保險（含食品中毒條款）完成投保；外賓來台旅遊平安險',note:''},
+  {id:37,cat:'K',catName:'K 活動前準備',title:'彩排',deadline:'2026/7/2（論壇前1天）',deadlineDate:new Date('2026-07-02'),status:'待辦',risk:'',summary:'各項設備測試並安排活動彩排',note:''},
+  {id:38,cat:'L',catName:'L 活動當日',title:'活動當日—照片及新聞稿',deadline:'2026/7/3 當日中午前',deadlineDate:new Date('2026-07-03'),status:'待辦',risk:'',summary:'現場備有立即剪輯影像器材及即時影像處理能力之人員至少1名，活動當日中午前提供15至20張活動照片及新聞稿',note:''},
+  {id:39,cat:'L',catName:'L 活動當日',title:'活動當日—成果宣傳影片剪輯',deadline:'2026/7/3 當日晚宴',deadlineDate:new Date('2026-07-03'),status:'待辦',risk:'',summary:'現場剪輯，於晚宴時播放當日活動花絮；提供1支剪輯3分鐘成果宣傳影片',note:''},
+  {id:40,cat:'L',catName:'L 活動當日',title:'場復',deadline:'2026/7/3 活動結束後',deadlineDate:new Date('2026-07-03'),status:'待辦',risk:'',summary:'活動結束後進行會場善後清潔事宜，須經場地負責單位清點完成後廠商始可離場',note:''},
+  {id:41,cat:'M',catName:'M 成果驗收',title:'論壇後照片及影音電子檔交付',deadline:'2026/7/6（論壇+3天）',deadlineDate:new Date('2026-07-06'),status:'待辦',risk:'',summary:'論壇結束3日內提供其餘照片；影音電子檔於結案時提供機關保存及運用',note:''},
+  {id:42,cat:'M',catName:'M 成果驗收',title:'長照服務推展系列影片製作',deadline:'2026/7/19（7/4起+15天）',deadlineDate:new Date('2026-07-19'),status:'待辦',risk:'★ 未達扣契約價金1萬元',summary:'活動結束次日起15日曆天內製作長照服務推展系列影片（剪輯為至少10分鐘之精華片段影音檔）',note:''},
+  {id:43,cat:'M',catName:'M 成果驗收',title:'活動滿意度調查分析',deadline:'2026/12/15',deadlineDate:new Date('2026-12-15'),status:'待辦',risk:'★ 未達成執行狀況則依實際執行狀比例給付價金',summary:'論壇滿意度調查（出席者必填），項目須包含性別、年齡等資料，每堂課之課程滿意度分析',note:''},
+  {id:44,cat:'M',catName:'M 成果驗收',title:'期末總成果報告繳交',deadline:'2026/12/15',deadlineDate:new Date('2026-12-15'),status:'待辦',risk:'★ 為第2期款70%請款依據',summary:'繳交期末總成果報告（紙本1式2份；電子檔存於光碟（或隨身碟）1份（含word及pdf格式））',note:''},
+  {id:45,cat:'M',catName:'M 成果驗收',title:'未發送物品歸還',deadline:'2026/7/10（論壇+7天）',deadlineDate:new Date('2026-07-10'),status:'待辦',risk:'',summary:'活動結束後未發送完之文宣、貴賓禮及伴手禮等相關物品，運送回本局指定地點',note:''},
 ];
 
-const phaseColors = {
-  invest:   '#3B6EA5',
-  post:     '#2980B9',
-  june:     '#1A6B8A',
-  event:    '#B7410E',
-  followup: '#6C3483',
-  close:    '#1E8449',
-};
+const risks = [
+  {title:'活動網頁設計及報名系統建置未完成',amount:'扣契約價金 5 萬元',basis:'九（十一）1'},
+  {title:'報紙廣告未達 2 則',amount:'每不足 1 則扣 2 萬元',basis:'九（十一）2'},
+  {title:'活動新聞稿未達至少 1 篇',amount:'扣契約價金 1 萬元',basis:'九（十一）2'},
+  {title:'數位廣編稿未達 10 則',amount:'每不足 1 則扣 1 萬元（上限：該項目契約價金 20%）',basis:'九（十一）3'},
+  {title:'數位廣編稿總曝光未達 200 萬人次',amount:'扣減總額以該項目契約價金 20% 為限',basis:'九（十一）3'},
+  {title:'電視牆/電子看板廣告未達 4,000 檔次',amount:'每不足 1 檔次扣 1,000 元（上限：該項目契約價金 20%）',basis:'九（十一）4'},
+  {title:'網路廣告（電子報/刊登廣告）未達 20 則',amount:'每不足 1 則扣 1,000 元（上限：該項目契約價金 20%）',basis:'九（十一）5'},
+  {title:'長照服務推展系列影片未完成',amount:'扣契約價金 1 萬元',basis:'九（十一）6'},
+  {title:'論壇活動滿意度調查未達成',amount:'依實際執行狀比例給付價金',basis:'九（十一）7'},
+  {title:'司機違規（抽菸/飲酒/嚼檳榔/使用手機/違規駕駛）',amount:'每次查屬實扣款 5,000 元',basis:'五（二）外賓接待'},
+];
 
-// ── Helpers ──
-function pad2(n) { return String(n).padStart(2,'0'); }
-function daysDiff(d) {
-  const diff = new Date(d) - TODAY;
-  return Math.ceil(diff / 86400000);
-}
-function fmtDate(d) {
-  const dt = new Date(d);
-  return `${dt.getMonth()+1}/${dt.getDate()}`;
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function daysUntil(d){ return Math.ceil((d - TODAY)/(86400000)) }
+function pad2(n){ return String(n).padStart(2,'0') }
 
-// ── Live time ──
-function updateClock() {
+// ── Countdown ─────────────────────────────────────────────────────────────────
+function updateCountdown(){
   const now = new Date();
-  const s = `${now.getFullYear()}/${pad2(now.getMonth()+1)}/${pad2(now.getDate())}  ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}  (台北時間)`;
-  document.getElementById('live-time').textContent = s;
-}
-
-// ── Countdown ──
-function updateCountdown() {
-  function tick(target, ids) {
-    const diff = target - new Date();
-    if (diff <= 0) { ids.forEach(id => document.getElementById(id).textContent = '00'); return; }
-    const d = Math.floor(diff/86400000);
-    const h = Math.floor((diff%86400000)/3600000);
-    const m = Math.floor((diff%3600000)/60000);
-    const s = Math.floor((diff%60000)/1000);
-    document.getElementById(ids[0]).textContent = pad2(d);
-    document.getElementById(ids[1]).textContent = pad2(h);
-    document.getElementById(ids[2]).textContent = pad2(m);
-    document.getElementById(ids[3]).textContent = pad2(s);
+  const diff = FORUM_DATE - now;
+  if(diff <= 0){
+    document.getElementById('cd-d').textContent='00';
+    document.getElementById('cd-h').textContent='00';
+    document.getElementById('cd-m').textContent='00';
+    document.getElementById('cd-s').textContent='00';
+    return;
   }
-  tick(FORUM_DATE,  ['cd-days','cd-hrs','cd-min','cd-sec']);
-  tick(CLOSE_DATE,  ['cc-days','cc-hrs','cc-min','cc-sec']);
-}
+  const d=Math.floor(diff/86400000);
+  const h=Math.floor((diff%86400000)/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
+  document.getElementById('cd-d').textContent=pad2(d);
+  document.getElementById('cd-h').textContent=pad2(h);
+  document.getElementById('cd-m').textContent=pad2(m);
+  document.getElementById('cd-s').textContent=pad2(s);
+  document.getElementById('live-time').textContent=now.toLocaleString('zh-TW',{hour12:false});
 
-// ── Milestone track ──
-function buildMilestoneTrack() {
-  const track  = document.getElementById('milestone-track');
-  const prog   = document.getElementById('milestone-progress');
-  const start  = new Date('2026-04-15').getTime();
-  const end    = CLOSE_DATE.getTime();
-  const span   = end - start;
-  const nowPct = Math.min(100, Math.max(0, (TODAY.getTime() - start) / span * 100));
-  prog.style.width = nowPct + '%';
-
-  milestones.forEach(m => {
-    const t   = new Date(m.date).getTime();
-    const pct = Math.min(100, Math.max(0, (t - start) / span * 100));
-    const dot = document.createElement('div');
-    dot.className = 'milestone-dot';
-    dot.style.left = pct + '%';
-
-    const circle = document.createElement('div');
-    circle.className = 'milestone-dot-circle';
-    const isForumDay = m.date === '2026-07-03';
-    const isClose    = m.date === '2026-12-15';
-    const isPast     = new Date(m.date) < TODAY;
-    if (isForumDay)      circle.classList.add('md-forum');
-    else if (isClose)    circle.classList.add('md-close');
-    else if (isPast)     circle.classList.add('md-past');
-    else                 circle.classList.add('md-future');
-
-    const label = document.createElement('div');
-    label.className = 'milestone-dot-label';
-    label.textContent = m.label;
-    const dateEl = document.createElement('div');
-    dateEl.className = 'milestone-dot-date';
-    dateEl.textContent = fmtDate(m.date);
-
-    dot.appendChild(circle);
-    dot.appendChild(label);
-    dot.appendChild(dateEl);
-    track.appendChild(dot);
-  });
-}
-
-// ── Timeline ──
-function buildTimeline() {
-  const el = document.getElementById('timeline');
-  let prevPhase = null;
-
-  tasks.forEach(t => {
-    const days  = daysDiff(t.date);
-    const isPast = days < 0;
-    const isToday = days === 0;
-    const isUrgent = days >= 0 && days <= 14;
-    const isForum = t.date === '2026-07-03' && t.task.includes('🎯');
-
-    const item = document.createElement('div');
-    item.className = `tl-item phase-${t.phase}`;
-    if (isPast) item.classList.add('is-past');
-    if (isUrgent && !isPast) item.classList.add('is-urgent');
-    if (isForum) item.classList.add('is-forum');
-
-    const dot = document.createElement('div');
-    dot.className = 'tl-dot';
-    item.appendChild(dot);
-
-    // Top row
-    const top = document.createElement('div');
-    top.className = 'tl-top';
-
-    const dateEl = document.createElement('div');
-    dateEl.className = 'tl-date';
-    dateEl.textContent = t.deadline;
-
-    const taskEl = document.createElement('div');
-    taskEl.className = 'tl-task';
-    taskEl.textContent = t.task;
-
-    const daysEl = document.createElement('div');
-    daysEl.className = 'tl-days-left';
-    if (isPast)        { daysEl.textContent = '已過期'; daysEl.classList.add('urgent'); }
-    else if (isToday)  { daysEl.textContent = '今天！'; daysEl.classList.add('urgent'); }
-    else if (days <= 7){ daysEl.textContent = `剩 ${days} 天`; daysEl.classList.add('urgent'); }
-    else if (days <= 30){ daysEl.textContent = `剩 ${days} 天`; daysEl.classList.add('soon'); }
-    else               { daysEl.textContent = `剩 ${days} 天`; }
-
-    top.appendChild(dateEl);
-    top.appendChild(taskEl);
-    top.appendChild(daysEl);
-    item.appendChild(top);
-
-    // Tags
-    const tagsEl = document.createElement('div');
-    tagsEl.className = 'tl-tags';
-    const statusTag = document.createElement('span');
-    statusTag.className = `tag tag-${isPast ? 'urgent' : 'todo'}`;
-    statusTag.textContent = isPast ? '⚠ 待確認' : '待辦';
-    tagsEl.appendChild(statusTag);
-    if (t.penalty) {
-      const penTag = document.createElement('span');
-      penTag.className = 'tag tag-penalty';
-      penTag.textContent = '⚠ 罰款風險';
-      tagsEl.appendChild(penTag);
-    }
-    item.appendChild(tagsEl);
-    el.appendChild(item);
-  });
-}
-
-// ── Phase Progress Bars ──
-function buildPhaseBars() {
-  const phases = [
-    { key:'invest',   label:'投標/決標',         total:1  },
-    { key:'post',     label:'決標後第 1 個月',   total:9  },
-    { key:'june',     label:'6 月廣告與準備期',  total:7  },
-    { key:'event',    label:'論壇前後現場執行',  total:5  },
-    { key:'followup', label:'論壇後追蹤',         total:3  },
-    { key:'close',    label:'結案',               total:4  },
+  // next milestone
+  const milestones = [
+    {name:'籌備會第1次（立即！）',date:new Date('2026-05-15')},
+    {name:'網路廣告截止',date:new Date('2026-06-03')},
+    {name:'籌備會第2次截止',date:new Date('2026-06-03')},
+    {name:'第1期款計畫書截止',date:new Date('2026-06-15')},
+    {name:'教育訓練截止',date:new Date('2026-06-18')},
+    {name:'廣告媒體截止',date:new Date('2026-06-19')},
+    {name:'活動保險截止',date:new Date('2026-06-26')},
+    {name:'餐飲訂位截止',date:new Date('2026-06-29')},
+    {name:'彩排＋文宣送達',date:new Date('2026-07-02')},
+    {name:'論壇日🎉',date:FORUM_DATE},
   ];
-  const container = document.getElementById('phase-bars');
-  phases.forEach(p => {
-    const pct = 0; // will update from task statuses
-    const color = phaseColors[p.key];
-    const wrap = document.createElement('div');
-    wrap.className = 'prog-wrap';
-    wrap.innerHTML = `
-      <div class="prog-header">
-        <span class="prog-name" style="color:${color}">${p.label}</span>
-        <span class="prog-pct" id="pct-${p.key}">0 / ${p.total}</span>
+  const next = milestones.filter(m=>m.date>=now).sort((a,b)=>a.date-b.date)[0];
+  if(next){
+    const days=daysUntil(next.date);
+    document.getElementById('next-milestone').textContent=`${next.name}（${days<=0?'今天！':days+'天後'}）`;
+  }
+}
+updateCountdown();
+setInterval(updateCountdown,1000);
+
+// ── KPI ───────────────────────────────────────────────────────────────────────
+function updateKPIs(){
+  const urgent = tasks.filter(t=> t.status!=='已完成' && daysUntil(t.deadlineDate)<=7).length;
+  const done   = tasks.filter(t=>t.status==='已完成').length;
+  const pending= tasks.filter(t=>t.status==='待辦'||t.status==='進行中').length;
+  document.getElementById('kpi-total').textContent=tasks.length;
+  document.getElementById('kpi-urgent').textContent=urgent;
+  document.getElementById('kpi-pending').textContent=pending;
+  document.getElementById('kpi-done').textContent=done;
+  // progress
+  const wip  = tasks.filter(t=>t.status==='進行中').length;
+  const late = tasks.filter(t=>t.status==='延誤').length;
+  const pct  = Math.round(done/tasks.length*100);
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('p-done').textContent=done;
+  document.getElementById('p-wip').textContent=wip;
+  document.getElementById('p-todo').textContent=tasks.filter(t=>t.status==='待辦').length;
+  document.getElementById('p-late').textContent=late;
+}
+updateKPIs();
+
+// ── Timeline ──────────────────────────────────────────────────────────────────
+function buildTimeline(){
+  const tl = document.getElementById('tl-track');
+  const nodes = [
+    {date:new Date('2026-05-14'),label:'決標日',color:'#10b981',level:0},
+    {date:new Date('2026-06-03'),label:'籌備會第2次·網路廣告',color:'#f59e0b',level:2},
+    {date:new Date('2026-06-15'),label:'第1期款截止',color:'#ef4444',level:0},
+    {date:new Date('2026-06-18'),label:'教育訓練',color:'#8b5cf6',level:1},
+    {date:new Date('2026-06-19'),label:'廣告媒體截止',color:'#f97316',level:2},
+    {date:new Date('2026-06-26'),label:'保險截止',color:'#a78bfa',level:1},
+    {date:new Date('2026-06-29'),label:'餐飲訂位',color:'#fbbf24',level:0},
+    {date:new Date('2026-07-02'),label:'彩排',color:'#60a5fa',level:2},
+    {date:new Date('2026-07-03'),label:'🎉 論壇日',color:'#3b82f6',level:1},
+    {date:new Date('2026-07-19'),label:'影片製作截止',color:'#94a3b8',level:0},
+    {date:new Date('2026-12-15'),label:'期末報告截止',color:'#64748b',level:0},
+  ];
+  const start = new Date('2026-05-14'), end = new Date('2026-07-31');
+  const span = end - start;
+  const today = new Date();
+  const todayPct = Math.min(Math.max((today-start)/span,0),1);
+  const AXIS_B = 36, LH = 44;
+
+  // today line
+  const tl2 = document.createElement('div');
+  tl2.className='tl-today';
+  tl2.style.cssText=`left:${todayPct*100}%;bottom:4px;height:calc(100% - 8px);`;
+  const tll = document.createElement('div');
+  tll.className='tl-today-label';
+  tll.style.cssText='position:absolute;top:4px;left:50%;transform:translateX(-50%);bottom:auto;';
+  tll.textContent='今天';
+  tl2.appendChild(tll);
+  tl.appendChild(tl2);
+
+  nodes.forEach((n, i)=>{
+    const rawPct = (n.date-start)/span;
+    const isFarOut = rawPct > 1.01;
+    const pct = isFarOut ? 0.975 : Math.min(rawPct, 1);
+    const dotBottom = AXIS_B + n.level * LH;
+
+    const node = document.createElement('div');
+    node.className='tl-node'+(n.label.includes('論壇')?' forum':'');
+    node.style.left=(pct*100)+'%';
+    node.style.bottom=dotBottom+'px';
+
+    // 旗桿
+    if(n.level>0){
+      const stem=document.createElement('div');
+      stem.style.cssText=`position:absolute;left:50%;top:100%;transform:translateX(-50%);width:1px;height:${n.level*LH}px;background:${n.color};opacity:0.3;pointer-events:none;`;
+      node.appendChild(stem);
+    }
+
+    const dot=document.createElement('div');
+    dot.className='tl-dot';
+    dot.style.background=n.color;
+    dot.style.width='14px';dot.style.height='14px';
+
+    // 標籤：左右邊緣節點調整對齊避免溢出
+    const label=document.createElement('div');
+    label.className='tl-label';
+    label.style.color=n.color;
+    label.textContent=(isFarOut ? '→ ' : '') + n.label.split('·')[0];
+    if(pct < 0.06) label.style.transform='translateX(-5%)';
+    else if(pct > 0.92) label.style.transform='translateX(-95%)';
+
+    // 日期：-45° 斜排，錨點在刻度正上方，向左下延伸
+    const date=document.createElement('div');
+    date.style.cssText=`font-size:.54rem;color:var(--muted);position:absolute;white-space:nowrap;bottom:${-dotBottom + AXIS_B - 4}px;left:calc(50% + 2px);transform:rotate(45deg);transform-origin:top left;line-height:1;`;
+    date.textContent=n.date.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'});
+
+    node.appendChild(label);
+    node.appendChild(dot);
+    node.appendChild(date);
+    node.title=n.label;
+    tl.appendChild(node);
+  });
+}
+buildTimeline();
+
+// ── Task Cards ────────────────────────────────────────────────────────────────
+let activeFilter='all', activeStatus='all';
+
+const statusOptions = ['待辦','進行中','已完成','延誤'];
+
+function deadlineClass(t){
+  if(t.status==='已完成') return 'deadline-done';
+  const days = daysUntil(t.deadlineDate);
+  if(days<0) return 'deadline-urgent';
+  if(days<=7) return 'deadline-urgent';
+  if(days<=21) return 'deadline-warn';
+  return 'deadline-ok';
+}
+function daysBadge(t){
+  if(t.status==='已完成') return '';
+  const days=daysUntil(t.deadlineDate);
+  if(days<0) return `<span class="days-badge days-overdue">${Math.abs(days)}天前已過期</span>`;
+  if(days<=7) return `<span class="days-badge days-urgent">剩${days}天</span>`;
+  if(days<=21) return `<span class="days-badge days-urgent">剩${days}天</span>`;
+  return `<span class="days-badge days-normal">剩${days}天</span>`;
+}
+
+function buildCards(){
+  const grid = document.getElementById('task-grid');
+  grid.innerHTML='';
+  tasks.forEach(t=>{
+    const card = document.createElement('div');
+    card.className=`task-card cat-${t.cat}${t.urgent?' urgent':''}`;
+    card.dataset.cat=t.cat;
+    card.dataset.status=t.status;
+    card.onclick=()=>card.classList.toggle('expanded');
+
+    const dc=deadlineClass(t);
+    const db=daysBadge(t);
+
+    card.innerHTML=`
+      <div class="card-top">
+        <span class="card-cat">${t.catName}</span>
+        <select class="card-status status-${t.status}" onchange="changeStatus(${t.id},this.value)" onclick="event.stopPropagation()" style="background:transparent;border:none;cursor:pointer;font-size:.64rem;font-weight:600;color:inherit;padding:2px 6px;border-radius:99px;">
+          ${statusOptions.map(s=>`<option value="${s}"${s===t.status?' selected':''}>${s}</option>`).join('')}
+        </select>
       </div>
-      <div class="prog-bar">
-        <div class="prog-fill" id="bar-${p.key}" style="width:0%;background:linear-gradient(90deg,${color},${color}cc);"></div>
-      </div>`;
-    container.appendChild(wrap);
+      <div class="card-title">${t.title}</div>
+      <div class="card-deadline">
+        <span class="deadline-icon">📅</span>
+        <span class="deadline-text ${dc}">${t.deadline}</span>
+        ${db}
+      </div>
+      <div class="card-summary">${t.summary}${t.note?'<br><em>備註：'+t.note+'</em>':''}</div>
+      ${t.risk?`<div class="card-risk">${t.risk}</div>`:''}
+    `;
+    grid.appendChild(card);
+  });
+  applyFilters();
+}
+
+function changeStatus(id, newStatus){
+  const t = tasks.find(x=>x.id===id);
+  if(t){ t.status=newStatus; }
+  // update card class
+  const cards = document.querySelectorAll('.task-card');
+  cards.forEach(c=>{
+    const sel = c.querySelector('select');
+    if(sel && parseInt(c.querySelector('.card-cat') && tasks.find(x=>x.title===c.querySelector('.card-title').textContent)?.id)===id){
+      // simpler: rebuild
+    }
+  });
+  buildCards();
+  updateKPIs();
+}
+
+function applyFilters(){
+  document.querySelectorAll('.task-card').forEach(card=>{
+    const catOk = activeFilter==='all' || card.dataset.cat===activeFilter;
+    const statOk= activeStatus==='all' || card.dataset.status===activeStatus;
+    card.classList.toggle('hidden', !(catOk&&statOk));
   });
 }
 
-// ── Ring ──
-function updateRing() {
-  const start = START_DATE.getTime();
-  const end   = FORUM_DATE.getTime();
-  const now   = TODAY.getTime();
-  const pct   = Math.min(100, Math.max(0, (now - start) / (end - start) * 100));
-  const circumference = 351.9;
-  const offset = circumference * (1 - pct / 100);
-  document.getElementById('ring-circle').setAttribute('stroke-dashoffset', offset);
-  document.getElementById('ring-pct').textContent = Math.round(pct) + '%';
-  document.getElementById('today-label').textContent =
-    `${TODAY.getMonth()+1}/${TODAY.getDate()}`;
+function filterCat(cat, btn){
+  activeFilter=cat;
+  document.querySelectorAll('.chip[onclick^="filterCat"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
 }
 
-// ── Urgent count ──
-function updateStats() {
-  const urgent = tasks.filter(t => {
-    const d = daysDiff(t.date);
-    return d >= 0 && d <= 30;
-  }).length;
-  document.getElementById('stat-urgent').textContent = urgent;
-  document.getElementById('stat-urgent-label').textContent = `未來 30 天內須完成`;
+function filterStatus(s, btn){
+  activeStatus=s;
+  document.querySelectorAll('.chip[onclick^="filterStatus"]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
 }
 
-// ── Alert ──
-function buildAlert() {
-  const daysToForum = daysDiff(FORUM_DATE.toISOString().split('T')[0]);
-  const nextTask = tasks.filter(t => daysDiff(t.date) >= 0).sort((a,b) => new Date(a.date)-new Date(b.date))[0];
-  let msg = `<strong>距論壇還有 ${daysToForum} 天。</strong>`;
-  if (nextTask) {
-    const d = daysDiff(nextTask.date);
-    msg += `　最近截止項目：<strong>「${nextTask.task}」</strong>（${nextTask.deadline}，剩 ${d} 天）。`;
-  }
-  msg += `　決標後第 1 個月（6/1 前）為最密集提報期，共 9 項文件須完成。`;
-  document.getElementById('alert-text').innerHTML = msg;
+buildCards();
+
+// ── Risk Panel ────────────────────────────────────────────────────────────────
+function buildRisks(){
+  const g=document.getElementById('risk-grid');
+  risks.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='risk-item';
+    d.innerHTML=`
+      <div class="risk-item-title">${r.title}</div>
+      <div class="risk-item-amount">${r.amount}</div>
+      <div class="risk-item-basis">依據：${r.basis}</div>
+    `;
+    g.appendChild(d);
+  });
 }
+buildRisks();
 
-// ── Init ──
-function init() {
-  updateClock();
-  updateCountdown();
-  buildMilestoneTrack();
-  buildTimeline();
-  buildPhaseBars();
-  updateRing();
-  updateStats();
-  buildAlert();
-
-  setInterval(updateClock, 1000);
-  setInterval(updateCountdown, 1000);
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(init, 100); // let CSS paint first
+// ── Animate on load ───────────────────────────────────────────────────────────
+document.querySelectorAll('.kpi').forEach((el,i)=>{
+  el.style.animationDelay=`${i*0.08}s`;
 });
+setTimeout(()=>{
+  const bar = document.getElementById('prog-bar');
+  const done = tasks.filter(t=>t.status==='已完成').length;
+  bar.style.width=Math.round(done/tasks.length*100)+'%';
+},300);
 </script>
 </body>
 </html>
