@@ -3,41 +3,507 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>衛教文章存檔</title>
+  <title>衛教文章存檔 — 公傳室</title>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
+      --bg: #0d1117;
+      --surface: #161b25;
+      --card: #1c2232;
+      --border: #253050;
+      --accent: #4f8ef7;
+      --accent2: #3ecf8e;
+      --accent3: #f5a623;
+      --text: #e2e8f5;
+      --muted: #6b7a9e;
+      --radius: 12px;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 20px 100px;
+    }
+
+    h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    h1 span { color: var(--accent2); }
+    .subtitle { font-size: 0.82rem; color: var(--muted); margin-bottom: 28px; }
+
+    .wrap { max-width: 760px; margin: 0 auto; }
+
+    /* 區塊 */
+    .section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.83rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    label.field-label span { color: var(--accent3); }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+
+    /* 圖片上傳區 */
+    .drop-zone {
+      display: block;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .drop-zone:hover, .drop-zone.over {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.05);
+      color: var(--text);
+    }
+    .drop-zone input { display: none; }
+    .drop-zone .icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+
+    /* 圖片列表 */
+    #photoList { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .photo-item {
+      display: flex;
+      gap: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      align-items: flex-start;
+    }
+
+    .photo-item img {
+      width: 100px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+      background: #111;
+    }
+
+    .photo-meta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .photo-num {
+      font-size: 0.78rem;
+      color: var(--accent3);
+      font-weight: 600;
+    }
+
+    .photo-caption {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      font-family: inherit;
+      outline: none;
+    }
+    .photo-caption:focus { border-color: var(--accent); }
+
+    .photo-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: color 0.15s;
+      flex-shrink: 0;
+    }
+    .photo-del:hover { color: #f87171; }
+
+    /* 按鈕 */
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+    .btn {
+      padding: 11px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      font-family: inherit;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: var(--accent2); color: #0d1117; }
+    .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn:not(:disabled):hover { opacity: 0.85; }
+
+    /* 狀態訊息 */
+    #status {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      margin-top: 14px;
+    }
+    #status.ok  { background: rgba(62,207,142,0.12); border: 1px solid rgba(62,207,142,0.35); color: var(--accent2); }
+    #status.err { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.35); color: #f87171; }
+
+    /* 範本說明 */
+    .template-note {
+      display: flex;
+      gap: 20px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .template-note span { display: flex; align-items: center; gap: 6px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    /* 返回按鈕 */
+    .back-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      padding: 8px 14px;
+      transition: color 0.15s, border-color 0.15s;
+      z-index: 100;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--accent); }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">📄</div>
-    <h1>衛教文章存檔</h1>
-    <p>按範本格式輸入文章與附圖，一鍵產生 .docx，標楷體排版</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+
+<div class="wrap">
+  <h1>📄 衛教文章<span>存檔</span></h1>
+  <p class="subtitle">按範本格式輸入文章與附圖，一鍵產生 .docx — 標楷體排版，小標自動加粗，段落間自動空行</p>
+
+  <!-- 文章資訊 -->
+  <div class="section">
+    <div class="section-label">文章資訊</div>
+
+    <div class="template-note" style="margin-bottom:16px;">
+      <span><span class="tag">標題</span> 標楷體 16pt 粗體</span>
+      <span><span class="tag"># 小標</span> 標楷體 12pt 粗體</span>
+      <span><span class="tag">內文</span> 標楷體 12pt</span>
+      <span><span class="tag">圖說</span> 標楷體 12pt</span>
+    </div>
+    <div style="font-size:0.78rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px;line-height:1.7;">
+      💡 <strong style="color:var(--text);">小標用法：</strong>行首加 <code style="background:#0d1117;padding:1px 5px;border-radius:3px;color:var(--accent3);">#</code> 代表小標（自動加粗），空白行代表段落之間空一行
+    </div>
+
+    <div class="field">
+      <label class="field-label">標題 <span>*</span>（同時作為檔名）</label>
+      <input type="text" id="title" placeholder="例：心肌梗塞早期辨識與緊急處置" />
+    </div>
+
+    <div class="field">
+      <label class="field-label">內文 <span>*</span>（# 開頭＝小標，空白行＝段落空行）</label>
+      <textarea id="body" rows="14" placeholder="範例格式：&#10;&#10;引言段落文字……&#10;&#10;# 小標一（行首加 # 自動變粗體）&#10;這段是小標底下的內文，直接接在小標後面不空行。&#10;&#10;# 小標二&#10;又一段內文……&#10;&#10;結語段落……"></textarea>
+    </div>
   </div>
+
+  <!-- 附圖 -->
+  <div class="section">
+    <div class="section-label">附圖（選填）</div>
+
+    <label class="drop-zone" id="dropZone">
+      <span class="icon">🖼️</span>
+      點擊選取或拖曳圖片到此處<br>
+      <small style="font-size:0.76rem;margin-top:4px;display:block;color:var(--muted)">支援 JPG、PNG、WebP，可多選</small>
+      <input type="file" id="fileInput" accept="image/*" multiple />
+    </label>
+
+    <div id="photoList"></div>
+  </div>
+
+  <!-- 產生 -->
+  <div class="section">
+    <div class="section-label">產生檔案</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generate()">⬇ 下載 .docx</button>
+      <button class="btn btn-secondary" onclick="resetAll()">🗑 清除重填</button>
+    </div>
+    <div id="status"></div>
+  </div>
+</div>
+
+<a class="back-btn" href="../pr-dashboard/index.html">← 儀表板</a>
+
+<script>
+  // ── 圖片管理 ──────────────────────────────────────────────
+  let photos = []; // { id, file, dataUrl, arrayBuffer, naturalW, naturalH, caption }
+  let nextId = 1;
+
+  const dropZone  = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const photoList = document.getElementById('photoList');
+
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('over');
+    handleFiles(e.dataTransfer.files);
+  });
+
+  function handleFiles(files) {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      const id = nextId++;
+      const entry = { id, file, dataUrl: '', arrayBuffer: null, naturalW: 0, naturalH: 0, caption: '' };
+      photos.push(entry);
+
+      const reader = new FileReader();
+      reader.onload = ev => {
+        entry.dataUrl = ev.target.result;
+
+        // get natural dimensions
+        const img = new Image();
+        img.onload = () => {
+          entry.naturalW = img.naturalWidth;
+          entry.naturalH = img.naturalHeight;
+        };
+        img.src = ev.target.result;
+
+        // also read as ArrayBuffer for docx
+        const abReader = new FileReader();
+        abReader.onload = ev2 => { entry.arrayBuffer = ev2.target.result; };
+        abReader.readAsArrayBuffer(file);
+
+        renderPhotoList();
+      };
+      reader.readAsDataURL(file);
+    });
+    // reset input so same file can be re-selected
+    fileInput.value = '';
+  }
+
+  function renderPhotoList() {
+    photoList.innerHTML = '';
+    photos.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'photo-item';
+      div.innerHTML = `
+        <img src="${p.dataUrl}" alt="圖${i+1}" />
+        <div class="photo-meta">
+          <span class="photo-num">圖 ${i + 1}</span>
+          <input class="photo-caption" type="text"
+            placeholder="圖說（可空白）"
+            value="${escHtml(p.caption)}"
+            data-id="${p.id}"
+            oninput="updateCaption(${p.id}, this.value)" />
+        </div>
+        <button class="photo-del" title="移除" onclick="removePhoto(${p.id})">✕</button>
+      `;
+      photoList.appendChild(div);
+    });
+  }
+
+  function updateCaption(id, val) {
+    const p = photos.find(x => x.id === id);
+    if (p) p.caption = val;
+  }
+
+  function removePhoto(id) {
+    photos = photos.filter(x => x.id !== id);
+    renderPhotoList();
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── 產生 docx ─────────────────────────────────────────────
+  async function generate() {
+    const title = document.getElementById('title').value.trim();
+    const body  = document.getElementById('body').value.trim();
+
+    if (!title) { showStatus('err', '請填入標題！'); return; }
+    if (!body)  { showStatus('err', '請填入內文！'); return; }
+
+    showStatus('ok', '⏳ 正在產生 Word 檔…');
+
+    try {
+      const { Document, Packer, Paragraph, TextRun, ImageRun } = docx;
+
+      const FONT   = '標楷體';
+      const PT16   = 32;  // half-points
+      const PT12   = 24;
+
+      const children = [];
+
+      // ── 標題 ──
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: title, bold: true, size: PT16, font: FONT })]
+        }),
+        new Paragraph({ children: [new TextRun({ text: '' })] }) // blank line
+      );
+
+      // ── 內文解析（# 開頭＝小標粗體，空白行＝空行段落） ──
+      const BLANK = () => new Paragraph({ children: [new TextRun({ text: '', size: PT12, font: FONT })] });
+      const lines = body.split('\n');
+
+      lines.forEach(line => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          // 空白行 → 空行段落
+          children.push(BLANK());
+        } else if (trimmed.startsWith('#')) {
+          // 小標：去掉 # 號和空格，套粗體
+          const subText = trimmed.replace(/^#+\s*/, '');
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: subText, bold: true, size: PT12, font: FONT })]
+            })
+          );
+        } else {
+          // 一般內文
+          children.push(
+            new Paragraph({
+              children: [new TextRun({ text: trimmed, size: PT12, font: FONT })]
+            })
+          );
+        }
+      });
+
+      // ── 附圖區 ──
+      if (photos.length > 0) {
+        children.push(
+          new Paragraph({ children: [new TextRun({ text: '' })] }),
+          new Paragraph({
+            children: [new TextRun({ text: '照片與圖說：', size: PT12, font: FONT, bold: true })]
+          })
+        );
+
+        for (let i = 0; i < photos.length; i++) {
+          const p = photos[i];
+          if (!p.arrayBuffer) { continue; }
+
+          // 計算嵌入尺寸（最寬 420px，等比例）
+          const maxW = 420;
+          const ratio = p.naturalH && p.naturalW ? p.naturalH / p.naturalW : 0.75;
+          const imgW = maxW;
+          const imgH = Math.round(maxW * ratio);
+
+          // 判斷圖片類型
+          const typeMap = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'png', 'image/gif': 'gif' };
+          const imgType = typeMap[p.file.type] || 'png';
+
+          children.push(
+            new Paragraph({
+              children: [
+                new ImageRun({
+                  data: new Uint8Array(p.arrayBuffer),
+                  transformation: { width: imgW, height: imgH },
+                  type: imgType
+                })
+              ]
+            }),
+            new Paragraph({
+              children: [new TextRun({
+                text: `圖${i + 1}　${p.caption || ''}`,
+                size: PT12,
+                font: FONT
+              })]
+            }),
+            new Paragraph({ children: [new TextRun({ text: '' })] })
+          );
+        }
+      }
+
+      const doc = new Document({
+        creator: '台中慈濟醫院公傳室',
+        title: title,
+        sections: [{ children }]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${title}.docx`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+      showStatus('ok', `✅ 已下載「${title}.docx」`);
+    } catch (err) {
+      console.error(err);
+      showStatus('err', `產生失敗：${err.message}`);
+    }
+  }
+
+  function resetAll() {
+    if (!confirm('確定要清除所有內容？')) return;
+    document.getElementById('title').value = '';
+    document.getElementById('body').value  = '';
+    photos = [];
+    photoList.innerHTML = '';
+    document.getElementById('status').style.display = 'none';
+  }
+
+  function showStatus(type, msg) {
+    const el = document.getElementById('status');
+    el.className = type;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+</script>
 </body>
 </html>
