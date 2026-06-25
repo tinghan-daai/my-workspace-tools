@@ -1,43 +1,642 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>生成圖片客製化機器</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
     :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
+      --bg: #f3efe6;
+      --card: #ffffff;
+      --ink: #2b2620;
+      --muted: #8a8377;
+      --line: #e3ddd0;
+      --accent: #3a3631;
+      --accent-soft: #efe9dd;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Noto Sans TC', sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      line-height: 1.6;
+    }
+
+    .header { text-align: center; margin-bottom: 14px; }
+    h1 {
+      font-size: 2.1rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 6px;
+      letter-spacing: 0.03em;
+    }
+
+    .layout {
+      max-width: 980px;
+      margin: 32px auto 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 820px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px 24px;
+    }
+
+    .field { padding: 16px 0; border-bottom: 1px solid var(--line); }
+    .field:last-child { border-bottom: none; padding-bottom: 4px; }
+    .field:first-child { padding-top: 4px; }
+
+    .field-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .ico { font-size: 1.15rem; width: 24px; text-align: center; }
+    .field-name { font-weight: 700; font-size: 1rem; }
+    .field-hint {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-left: auto;
+      text-align: right;
+      max-width: 52%;
+    }
+
+    textarea, input[type="text"], input[type="number"], select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.92rem;
+      color: var(--ink);
+      background: var(--accent-soft);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      resize: vertical;
+    }
+    textarea { min-height: 58px; }
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .slider-row { display: flex; align-items: center; gap: 14px; }
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 5px;
+      border-radius: 5px;
+      background: var(--line);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 3px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .val-badge {
+      min-width: 52px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 0.95rem;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+
+    .seed-row { display: flex; gap: 8px; }
+    .seed-row input { flex: 1; }
+    .mini-btn {
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 0 14px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .mini-btn:hover { background: var(--line); }
+
+    /* 輸出面板 */
+    .out-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .out-title { font-weight: 700; font-size: 1.05rem; }
+    .seg {
+      display: inline-flex;
+      background: var(--accent-soft);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 3px;
+      margin-left: auto;
+    }
+    .seg button {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 5px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+    .seg button.active { background: var(--accent); color: #fff; }
+
+    pre {
+      background: #2b2620;
+      color: #f0ece2;
+      border-radius: 12px;
+      padding: 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .tok-key { color: #d9b08c; }
+    .tok-str { color: #c3e88d; }
+    .tok-num { color: #82aaff; }
+    .tok-cmt { color: #7c766b; }
+
+    .copy-btn {
+      margin-top: 14px;
+      width: 100%;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .copy-btn:hover { opacity: .9; }
+    .copy-btn.done { background: #5b8c5a; }
+    .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+    .btn-row .copy-btn { margin-top: 0; flex: 1; }
+    .copy-btn.ghost {
+      background: var(--accent-soft);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+    .copy-btn.ghost.done { background: #5b8c5a; color: #fff; border-color: #5b8c5a; }
+
+    /* 參數預設膠囊列 */
+    .presets {
+      max-width: 980px;
+      margin: 24px auto 0;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .presets-label { color: var(--muted); font-size: 0.85rem; margin-right: 4px; }
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    .chip:hover { background: var(--accent-soft); }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .foot {
+      max-width: 980px;
+      margin: 28px auto 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">🎚</div>
+  <div class="header">
     <h1>生成圖片客製化機器</h1>
-    <p>AI 生圖 8 參數滑桿/下拉即時調節，輸出文字 / YAML / 偽代碼</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+    <div class="subtitle">調好這些參數，AI 才知道「該怎麼畫」</div>
   </div>
+
+  <div class="presets" id="presets">
+    <span class="presets-label">🎨 一鍵套用預設：</span>
+    <button class="chip" data-preset="photo">寫實照片</button>
+    <button class="chip" data-preset="anime">動漫</button>
+    <button class="chip" data-preset="illust">插畫</button>
+    <button class="chip" data-preset="logo">Logo / 圖標</button>
+    <button class="chip" data-preset="cinematic">電影感</button>
+  </div>
+
+  <div class="layout">
+    <!-- 參數面板 -->
+    <div class="panel">
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">💬</span>
+          <span class="field-name">1. Prompt 提示詞</span>
+          <span class="field-hint">主體 / 場景 / 風格</span>
+        </div>
+        <textarea id="prompt" placeholder="a cozy cat sleeping by the window, warm light, watercolor style">a cozy cat sleeping by the window, warm sunset light, watercolor style</textarea>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">🚫</span>
+          <span class="field-name">2. Negative Prompt 負面提示詞</span>
+          <span class="field-hint">排除多手指、模糊、浮水印</span>
+        </div>
+        <textarea id="negative" placeholder="blurry, extra fingers, watermark, low quality">blurry, extra fingers, watermark, low quality, deformed</textarea>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">📶</span>
+          <span class="field-name">3. Steps 取樣步數</span>
+          <span class="field-hint">越多越細緻，但越慢</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="steps" min="1" max="150" value="30">
+          <span class="val-badge" id="steps-v">30</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">🎛️</span>
+          <span class="field-name">4. Guidance / CFG 引導強度</span>
+          <span class="field-hint">越高越貼文字，太高會僵硬</span>
+        </div>
+        <div class="slider-row">
+          <input type="range" id="cfg" min="1" max="30" step="0.5" value="7.5">
+          <span class="val-badge" id="cfg-v">7.5</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">🎲</span>
+          <span class="field-name">5. Seed 種子碼</span>
+          <span class="field-hint">固定亂數可重現同一張圖</span>
+        </div>
+        <div class="seed-row">
+          <input type="number" id="seed" value="-1">
+          <button class="mini-btn" id="seed-rand">🎲 隨機</button>
+          <button class="mini-btn" id="seed-lock">-1 不固定</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">🖼️</span>
+          <span class="field-name">6. Aspect Ratio 長寬比</span>
+          <span class="field-hint">決定構圖與用途</span>
+        </div>
+        <select id="ratio">
+          <option value="1:1">1:1　正方形（社群貼文）</option>
+          <option value="16:9" selected>16:9　橫式（影片封面 / 桌布）</option>
+          <option value="9:16">9:16　直式（手機 / Reels / Shorts）</option>
+          <option value="4:3">4:3　傳統照片</option>
+          <option value="3:2">3:2　相機比例</option>
+          <option value="2:3">2:3　直式海報</option>
+          <option value="21:9">21:9　超寬電影感</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">🔳</span>
+          <span class="field-name">7. Resolution 解析度</span>
+          <span class="field-hint">影像清晰度與細節量</span>
+        </div>
+        <select id="res">
+          <option value="512">512px　草稿 / 快速試</option>
+          <option value="768" selected>768px　一般用途</option>
+          <option value="1024">1024px　高品質</option>
+          <option value="1536">1536px　大圖 / 印刷</option>
+          <option value="2048">2048px　超高解析</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <span class="ico">🔀</span>
+          <span class="field-name">8. Sampler 取樣器</span>
+          <span class="field-hint">去噪演算法，影響質感與收斂</span>
+        </div>
+        <select id="sampler">
+          <option value="DPM++ 2M Karras" selected>DPM++ 2M Karras　通用首選</option>
+          <option value="DPM++ SDE Karras">DPM++ SDE Karras　細節豐富</option>
+          <option value="Euler a">Euler a　快速、偏隨機</option>
+          <option value="Euler">Euler　穩定</option>
+          <option value="DDIM">DDIM　可重現、快</option>
+          <option value="UniPC">UniPC　少步數也清晰</option>
+          <option value="DPM++ 2M">DPM++ 2M　無 Karras 版</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 輸出面板 -->
+    <div class="panel">
+      <div class="out-head">
+        <span class="out-title">📤 輸出設定</span>
+        <div class="seg" id="format-seg">
+          <button data-fmt="text" class="active">文字</button>
+          <button data-fmt="yaml">YAML</button>
+          <button data-fmt="code">偽代碼</button>
+        </div>
+      </div>
+      <pre id="output"></pre>
+      <div class="btn-row">
+        <button class="copy-btn" id="copy">📋 複製設定</button>
+        <button class="copy-btn ghost" id="share">🔗 複製分享連結</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">my-workspace-tools · 生成圖片客製化機器 · 純瀏覽器，免安裝</div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let format = 'text';
+
+    // 由長寬比 + 解析度算出實際寬高（短邊 = 解析度）
+    function dimensions() {
+      const [rw, rh] = $('ratio').value.split(':').map(Number);
+      const base = Number($('res').value);
+      let w, h;
+      if (rw >= rh) { h = base; w = Math.round(base * rw / rh); }
+      else { w = base; h = Math.round(base * rh / rw); }
+      // 對齊到 8 的倍數（多數模型要求）
+      const r8 = n => Math.round(n / 8) * 8;
+      return { w: r8(w), h: r8(h) };
+    }
+
+    function gather() {
+      const { w, h } = dimensions();
+      return {
+        prompt: $('prompt').value.trim(),
+        negative_prompt: $('negative').value.trim(),
+        steps: Number($('steps').value),
+        cfg_scale: Number($('cfg').value),
+        seed: Number($('seed').value),
+        aspect_ratio: $('ratio').value,
+        resolution: Number($('res').value),
+        sampler: $('sampler').value,
+        width: w,
+        height: h
+      };
+    }
+
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const q = s => '"' + s.replace(/"/g,'\\"') + '"';
+
+    function render() {
+      const d = gather();
+      let html = '';
+
+      if (format === 'text') {
+        const lines = [
+          ['Prompt', d.prompt],
+          ['Negative Prompt', d.negative_prompt],
+          ['Steps', d.steps],
+          ['Guidance (CFG)', d.cfg_scale],
+          ['Seed', d.seed === -1 ? '-1（不固定）' : d.seed],
+          ['Aspect Ratio', d.aspect_ratio],
+          ['Resolution', d.resolution + 'px'],
+          ['Sampler', d.sampler],
+          ['Size', d.width + ' × ' + d.height]
+        ];
+        html = lines.map(([k,v]) =>
+          `<span class="tok-key">${esc(k)}:</span> <span class="tok-str">${esc(String(v))}</span>`
+        ).join('\n');
+
+      } else if (format === 'yaml') {
+        const row = (k, v, isStr) => `<span class="tok-key">${k}</span>: ` +
+          (isStr ? `<span class="tok-str">${esc(q(String(v)))}</span>` : `<span class="tok-num">${v}</span>`);
+        html = [
+          row('prompt', d.prompt, true),
+          row('negative_prompt', d.negative_prompt, true),
+          row('steps', d.steps, false),
+          row('cfg_scale', d.cfg_scale, false),
+          row('seed', d.seed, false),
+          row('aspect_ratio', d.aspect_ratio, true),
+          row('sampler', d.sampler, true),
+          row('width', d.width, false),
+          row('height', d.height, false)
+        ].join('\n');
+
+      } else { // code
+        html =
+`<span class="tok-cmt"># 生成圖片參數（偽代碼）</span>
+image = <span class="tok-key">generate</span>(
+  prompt           = <span class="tok-str">${esc(q(d.prompt))}</span>,
+  negative_prompt  = <span class="tok-str">${esc(q(d.negative_prompt))}</span>,
+  steps            = <span class="tok-num">${d.steps}</span>,
+  cfg_scale        = <span class="tok-num">${d.cfg_scale}</span>,
+  seed             = <span class="tok-num">${d.seed}</span>,
+  sampler          = <span class="tok-str">${esc(q(d.sampler))}</span>,
+  width            = <span class="tok-num">${d.width}</span>,
+  height           = <span class="tok-num">${d.height}</span>,
+)`;
+      }
+      $('output').innerHTML = html;
+    }
+
+    // 純文字版（給複製用，無 HTML）
+    function plain() {
+      const d = gather();
+      if (format === 'text') {
+        return [
+          `Prompt: ${d.prompt}`,
+          `Negative Prompt: ${d.negative_prompt}`,
+          `Steps: ${d.steps}`,
+          `Guidance (CFG): ${d.cfg_scale}`,
+          `Seed: ${d.seed === -1 ? '-1（不固定）' : d.seed}`,
+          `Aspect Ratio: ${d.aspect_ratio}`,
+          `Resolution: ${d.resolution}px`,
+          `Sampler: ${d.sampler}`,
+          `Size: ${d.width} × ${d.height}`
+        ].join('\n');
+      } else if (format === 'yaml') {
+        return [
+          `prompt: ${q(d.prompt)}`,
+          `negative_prompt: ${q(d.negative_prompt)}`,
+          `steps: ${d.steps}`,
+          `cfg_scale: ${d.cfg_scale}`,
+          `seed: ${d.seed}`,
+          `aspect_ratio: ${q(d.aspect_ratio)}`,
+          `sampler: ${q(d.sampler)}`,
+          `width: ${d.width}`,
+          `height: ${d.height}`
+        ].join('\n');
+      } else {
+        return `# 生成圖片參數（偽代碼）
+image = generate(
+  prompt           = ${q(d.prompt)},
+  negative_prompt  = ${q(d.negative_prompt)},
+  steps            = ${d.steps},
+  cfg_scale        = ${d.cfg_scale},
+  seed             = ${d.seed},
+  sampler          = ${q(d.sampler)},
+  width            = ${d.width},
+  height           = ${d.height},
+)`;
+      }
+    }
+
+    // ── 參數預設 ──
+    const PRESETS = {
+      photo: {
+        prompt: 'professional portrait photo, natural lighting, 85mm lens, sharp focus, ultra realistic, highly detailed skin',
+        negative: 'cartoon, painting, illustration, blurry, deformed, extra fingers, watermark, low quality',
+        steps: 30, cfg: 4.5, ratio: '3:2', res: 1024, sampler: 'DPM++ 2M Karras'
+      },
+      anime: {
+        prompt: 'anime style, cute girl with detailed eyes, vibrant colors, cherry blossom background, masterpiece, best quality',
+        negative: 'realistic, 3d, blurry, extra fingers, bad anatomy, watermark, low quality',
+        steps: 28, cfg: 7, ratio: '2:3', res: 768, sampler: 'Euler a'
+      },
+      illust: {
+        prompt: 'soft watercolor illustration, cozy storybook scene, warm pastel palette, gentle brush strokes, whimsical',
+        negative: 'photo, realistic, harsh shadows, blurry, watermark, low quality',
+        steps: 26, cfg: 6, ratio: '4:3', res: 1024, sampler: 'DPM++ SDE Karras'
+      },
+      logo: {
+        prompt: 'minimalist flat logo, simple geometric icon, clean vector, solid background, centered, modern branding',
+        negative: 'photo, realistic, gradient mess, text, blurry, watermark, low quality, complex details',
+        steps: 24, cfg: 8, ratio: '1:1', res: 1024, sampler: 'DDIM'
+      },
+      cinematic: {
+        prompt: 'cinematic film still, dramatic lighting, moody atmosphere, shallow depth of field, anamorphic, color graded',
+        negative: 'flat lighting, cartoon, blurry, deformed, watermark, low quality',
+        steps: 35, cfg: 5.5, ratio: '21:9', res: 1536, sampler: 'DPM++ SDE Karras'
+      }
+    };
+
+    function applyState(s) {
+      if (s.prompt   != null) $('prompt').value = s.prompt;
+      if (s.negative != null) $('negative').value = s.negative;
+      if (s.steps    != null) $('steps').value = s.steps;
+      if (s.cfg      != null) $('cfg').value = s.cfg;
+      if (s.seed     != null) $('seed').value = s.seed;
+      if (s.ratio    != null) $('ratio').value = s.ratio;
+      if (s.res      != null) $('res').value = s.res;
+      if (s.sampler  != null) $('sampler').value = s.sampler;
+      $('steps-v').textContent = $('steps').value;
+      $('cfg-v').textContent = Number($('cfg').value).toFixed(1);
+      render();
+    }
+
+    function currentState() {
+      return {
+        prompt: $('prompt').value, negative: $('negative').value,
+        steps: Number($('steps').value), cfg: Number($('cfg').value),
+        seed: Number($('seed').value), ratio: $('ratio').value,
+        res: Number($('res').value), sampler: $('sampler').value
+      };
+    }
+
+    // ── 網址存讀（設定編碼進 #hash，可分享 / 重現）──
+    function loadFromUrl() {
+      if (!location.hash || location.hash.length < 2) return false;
+      try {
+        const s = JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(1)))));
+        applyState(s);
+        return true;
+      } catch (e) { return false; }
+    }
+    function shareUrl() {
+      const data = btoa(unescape(encodeURIComponent(JSON.stringify(currentState()))));
+      return location.origin + location.pathname + '#' + data;
+    }
+
+    // 事件綁定
+    ['prompt','negative','steps','cfg','seed','ratio','res','sampler'].forEach(id =>
+      $(id).addEventListener('input', render));
+
+    $('steps').addEventListener('input', e => $('steps-v').textContent = e.target.value);
+    $('cfg').addEventListener('input', e => $('cfg-v').textContent = Number(e.target.value).toFixed(1));
+
+    $('seed-rand').addEventListener('click', () => {
+      $('seed').value = Math.floor(Math.random() * 4294967295);
+      render();
+    });
+    $('seed-lock').addEventListener('click', () => {
+      $('seed').value = -1;
+      render();
+    });
+
+    $('presets').addEventListener('click', e => {
+      const key = e.target.dataset.preset;
+      if (!key) return;
+      applyState(PRESETS[key]);
+      [...$('presets').querySelectorAll('.chip')].forEach(c =>
+        c.classList.toggle('active', c === e.target));
+    });
+    // 手動改參數就取消預設的選取狀態
+    $('presets').parentElement.addEventListener('input', () =>
+      [...$('presets').querySelectorAll('.chip')].forEach(c => c.classList.remove('active')));
+
+    $('format-seg').addEventListener('click', e => {
+      if (!e.target.dataset.fmt) return;
+      format = e.target.dataset.fmt;
+      [...$('format-seg').children].forEach(b =>
+        b.classList.toggle('active', b === e.target));
+      render();
+    });
+
+    function flash(btn, msg, base) {
+      const orig = btn.textContent;
+      btn.textContent = msg;
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = base; btn.classList.remove('done'); }, 1600);
+    }
+
+    $('copy').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(plain());
+      flash($('copy'), '✅ 已複製！', '📋 複製設定');
+    });
+
+    $('share').addEventListener('click', async () => {
+      const url = shareUrl();
+      history.replaceState(null, '', url);
+      await navigator.clipboard.writeText(url);
+      flash($('share'), '✅ 連結已複製！', '🔗 複製分享連結');
+    });
+
+    loadFromUrl();
+    render();
+  </script>
 </body>
 </html>
