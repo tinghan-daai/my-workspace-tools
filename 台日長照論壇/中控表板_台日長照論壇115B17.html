@@ -1,43 +1,855 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>論壇總中控表板</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0d1117; --surface: #161b25; --card: #1c2232;
-      --border: #253050; --accent: #4f8ef7; --text: #e2e8f5;
-      --muted: #6b7a9e; --radius: 14px;
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
-      background: var(--bg); color: var(--text); min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 20px; }
-    .card { background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 48px 40px; text-align: center;
-      max-width: 480px; width: 100%; }
-    .icon { font-size: 3rem; margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
-    p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 32px; }
-    .badge { display: inline-block; background: #1a2e44; border: 1px solid #2a4a6e;
-      color: var(--accent); border-radius: 20px; padding: 4px 14px;
-      font-size: 0.78rem; margin-bottom: 32px; }
-    .back-btn { display: inline-block; background: var(--card); border: 1px solid var(--border);
-      color: var(--text); border-radius: 10px; padding: 10px 22px;
-      text-decoration: none; font-size: 0.9rem; transition: border-color 0.15s; }
-    .back-btn:hover { border-color: var(--accent); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 臺中長照台日論壇｜中控儀表板</title>
+<style>
+  :root {
+    --navy:   #0F2342;
+    --blue:   #1A5CA8;
+    --sky:    #2E8BC0;
+    --teal:   #0D8A8A;
+    --amber:  #F0A500;
+    --red:    #C0392B;
+    --green:  #1E8449;
+    --purple: #6C3483;
+    --bg:     #0A1628;
+    --card:   #112240;
+    --card2:  #162B4A;
+    --border: rgba(255,255,255,0.08);
+    --text:   #E8F0FE;
+    --muted:  #8899AA;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'PingFang TC', 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated BG ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 10% 20%, rgba(26,92,168,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 80%, rgba(13,138,138,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 24px 20px; }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    padding: 36px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .header-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--blue), var(--teal));
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  header h1 {
+    font-size: clamp(20px, 4vw, 32px);
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #fff 0%, #90CAF9 60%, #80DEEA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.3;
+  }
+  .header-sub {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+  #live-time {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #64B5F6;
+    letter-spacing: 1px;
+  }
+
+  /* ── Grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 18px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .card-glow { position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; border-radius: 50%; opacity: 0.12; }
+
+  /* ── Countdown ── */
+  .countdown-wrap {
+    background: linear-gradient(135deg, #0F2342, #1A3A6B);
+    border: 1px solid rgba(26,92,168,0.4);
+    border-radius: 14px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .countdown-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; left: 50%;
+    transform: translateX(-50%);
+    width: 200px; height: 40px;
+    background: var(--blue);
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.3;
+  }
+  .countdown-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #90CAF9;
+    margin-bottom: 12px;
+  }
+  .countdown-digits {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .digit-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .digit-num {
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(180deg, #fff 0%, #90CAF9 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 60px;
+    text-align: center;
+  }
+  .digit-unit {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  .digit-sep {
+    font-size: 36px;
+    color: var(--blue);
+    font-weight: 300;
+    padding-bottom: 10px;
+  }
+  .countdown-date {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .countdown-close .digit-num {
+    background: linear-gradient(180deg, #fff 0%, #80CBC4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Progress Ring ── */
+  .ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 0 8px;
+  }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: rgba(255,255,255,0.06); }
+  .ring-fg {
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1);
+  }
+  .ring-text {
+    position: absolute;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .ring-container { position: relative; display: flex; align-items: center; justify-content: center; }
+  .ring-label { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center; }
+
+  /* ── Timeline ── */
+  .timeline-section { margin-bottom: 18px; }
+  .section-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .timeline {
+    position: relative;
+    padding-left: 24px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px; top: 8px; bottom: 8px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--blue) 0%, var(--teal) 100%);
+    border-radius: 2px;
+  }
+  .tl-item {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+  .tl-item:hover { background: var(--card2); }
+  .tl-dot {
+    position: absolute;
+    left: -21px;
+    top: 14px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid;
+  }
+  .tl-item.phase-invest .tl-dot   { background: #3B6EA5; border-color: #6B9FD5; }
+  .tl-item.phase-post .tl-dot     { background: #2980B9; border-color: #6AB7E0; }
+  .tl-item.phase-june .tl-dot     { background: #1A6B8A; border-color: #50A0BF; }
+  .tl-item.phase-event .tl-dot    { background: #B7410E; border-color: #E07050; }
+  .tl-item.phase-followup .tl-dot { background: #6C3483; border-color: #A06CBD; }
+  .tl-item.phase-close .tl-dot    { background: #1E8449; border-color: #50B478; }
+  .tl-item.is-today .tl-dot       { background: var(--amber); border-color: #FFD54F; animation: pulse 1.5s infinite; }
+  .tl-item.is-forum .tl-dot       { background: #C0392B; border-color: #E07070; animation: pulse 1.5s infinite; }
+  .tl-item.is-past { opacity: 0.45; }
+  .tl-item.is-urgent { border-color: rgba(240,165,0,0.5); }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(240,165,0,0.4); }
+    50%       { box-shadow: 0 0 0 6px rgba(240,165,0,0); }
+  }
+
+  .tl-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .tl-date {
+    font-size: 11px;
+    color: var(--sky);
+    white-space: nowrap;
+    font-weight: 600;
+    min-width: 80px;
+  }
+  .tl-task { font-size: 13px; font-weight: 600; flex: 1; line-height: 1.4; }
+  .tl-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .tag-todo    { background: rgba(136,153,170,0.2); color: #8899AA; }
+  .tag-doing   { background: rgba(240,165,0,0.2);   color: #F0A500; }
+  .tag-done    { background: rgba(30,132,73,0.2);   color: #52BE80; }
+  .tag-urgent  { background: rgba(192,57,43,0.2);   color: #EC7063; }
+  .tag-penalty { background: rgba(180,100,0,0.2);   color: #F0A500; }
+
+  .tl-days-left {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .tl-days-left.urgent { color: #EC7063; font-weight: 700; }
+  .tl-days-left.soon   { color: #F0A500; font-weight: 600; }
+
+  /* ── Stat Cards ── */
+  .stat-num {
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 800;
+    line-height: 1;
+    margin: 8px 0 4px;
+  }
+  .stat-sub { font-size: 12px; color: var(--muted); }
+
+  /* ── Progress Bar ── */
+  .prog-wrap { margin-bottom: 14px; }
+  .prog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .prog-name { color: var(--text); }
+  .prog-pct  { color: var(--muted); font-weight: 600; }
+  .prog-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .prog-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ── Alert Banner ── */
+  .alert-bar {
+    background: linear-gradient(90deg, rgba(192,57,43,0.15), rgba(192,57,43,0.05));
+    border: 1px solid rgba(192,57,43,0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn 0.6s ease;
+  }
+  .alert-icon { font-size: 18px; flex-shrink: 0; }
+  .alert-text { color: #EC7063; line-height: 1.5; }
+  .alert-text strong { color: #fff; }
+
+  /* ── Milestone bar ── */
+  .milestone-track {
+    position: relative;
+    height: 48px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    margin-bottom: 18px;
+    overflow: visible;
+  }
+  .milestone-progress {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--teal));
+    border-radius: 8px;
+    opacity: 0.35;
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
+  .milestone-dot {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: default;
+  }
+  .milestone-dot-circle {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: var(--bg);
+    z-index: 2;
+    position: relative;
+  }
+  .milestone-dot-label {
+    position: absolute;
+    top: 18px;
+    font-size: 9px;
+    color: var(--muted);
+    white-space: nowrap;
+    text-align: center;
+    transform: translateX(-50%);
+    left: 50%;
+  }
+  .milestone-dot-date {
+    position: absolute;
+    bottom: 18px;
+    font-size: 8px;
+    color: var(--muted);
+    white-space: nowrap;
+    text-align: center;
+    transform: translateX(-50%);
+    left: 50%;
+    opacity: 0.7;
+  }
+  .md-past   { border-color: #4A90A4; background: #4A90A4 !important; }
+  .md-today  { border-color: var(--amber); background: var(--amber) !important; box-shadow: 0 0 10px rgba(240,165,0,0.6); animation: pulse 1.5s infinite; }
+  .md-future { border-color: var(--muted); }
+  .md-forum  { border-color: var(--red); background: var(--red) !important; box-shadow: 0 0 10px rgba(192,57,43,0.5); }
+  .md-close  { border-color: var(--green); background: var(--green) !important; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 24px 0 12px;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">🗂</div>
-    <h1>論壇總中控表板</h1>
-    <p>全案進度、各組任務、整體時程追蹤</p>
-    <div class="badge">🚧 施工中</div>
-    <br>
-    <a class="back-btn" href="../../tools/pr-dashboard/index.html">← 返回工作儀表板</a>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <div class="header-badge">Project Dashboard</div>
+    <h1>2026 臺中長照台日論壇</h1>
+    <div class="header-sub">主辦：臺中市政府衛生局　｜　執行單位：公共傳播室</div>
+    <div id="live-time">載入中...</div>
+  </header>
+
+  <!-- Alert -->
+  <div class="alert-bar">
+    <div class="alert-icon">⚡</div>
+    <div class="alert-text" id="alert-text">載入中...</div>
   </div>
+
+  <!-- Countdown row -->
+  <div class="grid-2" style="margin-bottom:18px;">
+    <div class="countdown-wrap">
+      <div class="countdown-label">🎯 距論壇活動日（7/3）</div>
+      <div class="countdown-digits" id="forum-countdown">
+        <div class="digit-block"><div class="digit-num" id="cd-days">--</div><div class="digit-unit">DAYS</div></div>
+        <div class="digit-sep">:</div>
+        <div class="digit-block"><div class="digit-num" id="cd-hrs">--</div><div class="digit-unit">HRS</div></div>
+        <div class="digit-sep">:</div>
+        <div class="digit-block"><div class="digit-num" id="cd-min">--</div><div class="digit-unit">MIN</div></div>
+        <div class="digit-sep">:</div>
+        <div class="digit-block"><div class="digit-num" id="cd-sec">--</div><div class="digit-unit">SEC</div></div>
+      </div>
+      <div class="countdown-date">2026 年 7 月 3 日（五）</div>
+    </div>
+
+    <div class="countdown-wrap countdown-close" style="background:linear-gradient(135deg,#0D2B2B,#1A4040); border-color:rgba(13,138,138,0.4);">
+      <div class="countdown-label" style="color:#80CBC4;">📋 距結案截止（12/15）</div>
+      <div class="countdown-digits" id="close-countdown">
+        <div class="digit-block"><div class="digit-num" id="cc-days" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">DAYS</div></div>
+        <div class="digit-sep" style="color:var(--teal)">:</div>
+        <div class="digit-block"><div class="digit-num" id="cc-hrs" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">HRS</div></div>
+        <div class="digit-sep" style="color:var(--teal)">:</div>
+        <div class="digit-block"><div class="digit-num" id="cc-min" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">MIN</div></div>
+        <div class="digit-sep" style="color:var(--teal)">:</div>
+        <div class="digit-block"><div class="digit-num" id="cc-sec" style="background:linear-gradient(180deg,#fff 0%,#80CBC4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">--</div><div class="digit-unit">SEC</div></div>
+      </div>
+      <div class="countdown-date" style="color:#4DB6AC;">2026 年 12 月 15 日（二）</div>
+    </div>
+  </div>
+
+  <!-- Milestone Track -->
+  <div class="section-title">📍 專案時程軸</div>
+  <div class="milestone-track" id="milestone-track">
+    <div class="milestone-progress" id="milestone-progress"></div>
+  </div>
+
+  <!-- Stats row -->
+  <div class="grid-4" style="margin-bottom:18px;">
+    <div class="card">
+      <div class="card-glow" style="background:var(--blue);"></div>
+      <div class="card-label">總任務數</div>
+      <div class="stat-num" style="color:#90CAF9;">29</div>
+      <div class="stat-sub">涵蓋 6 大執行階段</div>
+    </div>
+    <div class="card">
+      <div class="card-glow" style="background:var(--amber);"></div>
+      <div class="card-label">⚡ 緊急任務（30 天內）</div>
+      <div class="stat-num" style="color:#F0A500;" id="stat-urgent">--</div>
+      <div class="stat-sub" id="stat-urgent-label">即將到期項目</div>
+    </div>
+    <div class="card">
+      <div class="card-glow" style="background:var(--red);"></div>
+      <div class="card-label">⚠️ 罰款風險項目</div>
+      <div class="stat-num" style="color:#EC7063;">6</div>
+      <div class="stat-sub">違約最高扣款 70,000 元</div>
+    </div>
+    <div class="card">
+      <div class="card-glow" style="background:var(--green);"></div>
+      <div class="card-label">整體完成度</div>
+      <div class="stat-num" style="color:#52BE80;" id="stat-pct">0%</div>
+      <div class="stat-sub">（請在管制表更新狀態）</div>
+    </div>
+  </div>
+
+  <!-- Progress by phase + Ring -->
+  <div class="grid-2" style="margin-bottom:18px;">
+    <div class="card">
+      <div class="card-label">各階段進度概覽</div>
+      <div id="phase-bars" style="margin-top:12px;"></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div class="card-label" style="text-align:center;">專案整體時間進度</div>
+      <div class="ring-container" style="margin-top:8px;">
+        <svg class="ring-svg" width="140" height="140">
+          <circle class="ring-bg" cx="70" cy="70" r="56" stroke-width="10"/>
+          <circle class="ring-fg" cx="70" cy="70" r="56" stroke-width="10"
+            stroke="url(#ringGrad)"
+            stroke-dasharray="351.9"
+            id="ring-circle"
+            stroke-dashoffset="351.9"/>
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#1A5CA8"/>
+              <stop offset="100%" stop-color="#0D8A8A"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="ring-text" id="ring-pct" style="font-size:20px;">0%</div>
+      </div>
+      <div class="ring-label">從決標日（5/1）到論壇日（7/3）<br>時間消耗比例</div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted);text-align:center;">
+        <span style="color:var(--sky);">今天：</span><span id="today-label">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="section-title" style="margin-top:8px;">📅 完整任務時間軸</div>
+  <div class="timeline" id="timeline"></div>
+
+  <footer>
+    製表：廷翰　｜　論壇日：2026/7/3　｜　結案截止：2026/12/15　｜　聯絡：衛生局長照科 張小姐 04-22289111 轉 71103
+  </footer>
+</div>
+
+<script>
+// ── Data ──
+const TODAY = new Date();
+const FORUM_DATE  = new Date('2026-07-03T08:00:00');
+const CLOSE_DATE  = new Date('2026-12-15T18:00:00');
+const START_DATE  = new Date('2026-05-01T00:00:00'); // 決標次日
+
+const milestones = [
+  { date:'2026-04-30', label:'決標', type:'past' },
+  { date:'2026-05-01', label:'起算', type:'past' },
+  { date:'2026-05-04', label:'第1次籌備', type:'past' },
+  { date:'2026-06-01', label:'密集提報截止', type:'upcoming' },
+  { date:'2026-06-03', label:'廣告上架', type:'upcoming' },
+  { date:'2026-06-15', label:'餐飲訂位', type:'upcoming' },
+  { date:'2026-06-19', label:'報紙廣告', type:'upcoming' },
+  { date:'2026-06-26', label:'保險完成', type:'upcoming' },
+  { date:'2026-07-02', label:'場佈彩排', type:'upcoming' },
+  { date:'2026-07-03', label:'🎯 論壇日', type:'forum' },
+  { date:'2026-07-20', label:'精華影片', type:'upcoming' },
+  { date:'2026-12-15', label:'結案', type:'close' },
+];
+
+const tasks = [
+  { phase:'invest', phaseLabel:'投標/決標',         date:'2026-04-30', deadline:'4/30（四）', task:'招標截止 / 預計決標',            tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-05-04', deadline:'5/4（一）',  task:'第一次活動前籌備會',             tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'① 活動整體形象規劃設計　提報',   tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'② 論壇網頁製作／建置　提報',     tags:['todo'], penalty:true  },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'③ 論壇活動規劃　提報',           tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'④ 翻譯安排　提報',               tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑤ 外賓接待與住宿規劃　提報',     tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑥ 文宣設計　提報',               tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑦ 禮品規劃　提報',               tags:['todo'], penalty:false },
+  { phase:'post',   phaseLabel:'決標後第 1 個月',   date:'2026-06-01', deadline:'6/1（一）',  task:'⑧ 第 1 期款（30%）交付計畫書',  tags:['todo'], penalty:false },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-03', deadline:'6/3（三）',  task:'網路關鍵字廣告上架',             tags:['todo'], penalty:true  },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-03', deadline:'6/3（三）',  task:'第二次活動前籌備會',             tags:['todo'], penalty:false },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-15', deadline:'6/15（一）', task:'餐飲規劃提報並完成訂位',         tags:['todo'], penalty:false },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-18', deadline:'6/18（四）', task:'工作人員教育訓練（國際禮儀）',   tags:['todo'], penalty:false },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-19', deadline:'6/19（五）', task:'報紙廣告 2 則刊登完成',          tags:['todo'], penalty:true  },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-19', deadline:'6/19（五）', task:'數位廣編稿 ≥10 則、電子看板廣告',tags:['todo'], penalty:true  },
+  { phase:'june',   phaseLabel:'6 月廣告與準備期',  date:'2026-06-26', deadline:'6/26（五）', task:'活動保險辦理完成',               tags:['todo'], penalty:false },
+  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-02', deadline:'7/2（四）',  task:'禮品、獎狀送達會場',            tags:['todo'], penalty:false },
+  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-02', deadline:'7/2（四）',  task:'場地佈置完成',                   tags:['todo'], penalty:false },
+  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-02', deadline:'7/2（四）',  task:'彩排完成（含設備測試）',         tags:['todo'], penalty:false },
+  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-03', deadline:'7/3（五）',  task:'🎯 論壇活動執行',               tags:['todo'], penalty:false },
+  { phase:'event',  phaseLabel:'論壇前後現場執行',  date:'2026-07-03', deadline:'7/3（五）',  task:'場復（會場善後清潔）',           tags:['todo'], penalty:false },
+  { phase:'followup','phaseLabel':'論壇後追蹤',     date:'2026-07-06', deadline:'7/6（一）',  task:'照片及影音電子檔提供',           tags:['todo'], penalty:false },
+  { phase:'followup','phaseLabel':'論壇後追蹤',     date:'2026-07-10', deadline:'7/10（五）', task:'未發送文宣／禮品送回主辦方',     tags:['todo'], penalty:false },
+  { phase:'followup','phaseLabel':'論壇後追蹤',     date:'2026-07-20', deadline:'7/20（一）', task:'精華影片製作完成（≥10 分鐘）',  tags:['todo'], penalty:true  },
+  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'論壇事後新聞稿三大報刊登',      tags:['todo'], penalty:false },
+  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'活動滿意度調查分析資料繳交',    tags:['todo'], penalty:false },
+  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'期末總成果報告繳交',            tags:['todo'], penalty:false },
+  { phase:'close',  phaseLabel:'結案',              date:'2026-12-15', deadline:'12/15（二）',task:'第 2 期款（70%）申請驗收',      tags:['todo'], penalty:false },
+];
+
+const phaseColors = {
+  invest:   '#3B6EA5',
+  post:     '#2980B9',
+  june:     '#1A6B8A',
+  event:    '#B7410E',
+  followup: '#6C3483',
+  close:    '#1E8449',
+};
+
+// ── Helpers ──
+function pad2(n) { return String(n).padStart(2,'0'); }
+function daysDiff(d) {
+  const diff = new Date(d) - TODAY;
+  return Math.ceil(diff / 86400000);
+}
+function fmtDate(d) {
+  const dt = new Date(d);
+  return `${dt.getMonth()+1}/${dt.getDate()}`;
+}
+
+// ── Live time ──
+function updateClock() {
+  const now = new Date();
+  const s = `${now.getFullYear()}/${pad2(now.getMonth()+1)}/${pad2(now.getDate())}  ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}  (台北時間)`;
+  document.getElementById('live-time').textContent = s;
+}
+
+// ── Countdown ──
+function updateCountdown() {
+  function tick(target, ids) {
+    const diff = target - new Date();
+    if (diff <= 0) { ids.forEach(id => document.getElementById(id).textContent = '00'); return; }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    document.getElementById(ids[0]).textContent = pad2(d);
+    document.getElementById(ids[1]).textContent = pad2(h);
+    document.getElementById(ids[2]).textContent = pad2(m);
+    document.getElementById(ids[3]).textContent = pad2(s);
+  }
+  tick(FORUM_DATE,  ['cd-days','cd-hrs','cd-min','cd-sec']);
+  tick(CLOSE_DATE,  ['cc-days','cc-hrs','cc-min','cc-sec']);
+}
+
+// ── Milestone track ──
+function buildMilestoneTrack() {
+  const track  = document.getElementById('milestone-track');
+  const prog   = document.getElementById('milestone-progress');
+  const start  = new Date('2026-04-15').getTime();
+  const end    = CLOSE_DATE.getTime();
+  const span   = end - start;
+  const nowPct = Math.min(100, Math.max(0, (TODAY.getTime() - start) / span * 100));
+  prog.style.width = nowPct + '%';
+
+  milestones.forEach(m => {
+    const t   = new Date(m.date).getTime();
+    const pct = Math.min(100, Math.max(0, (t - start) / span * 100));
+    const dot = document.createElement('div');
+    dot.className = 'milestone-dot';
+    dot.style.left = pct + '%';
+
+    const circle = document.createElement('div');
+    circle.className = 'milestone-dot-circle';
+    const isForumDay = m.date === '2026-07-03';
+    const isClose    = m.date === '2026-12-15';
+    const isPast     = new Date(m.date) < TODAY;
+    if (isForumDay)      circle.classList.add('md-forum');
+    else if (isClose)    circle.classList.add('md-close');
+    else if (isPast)     circle.classList.add('md-past');
+    else                 circle.classList.add('md-future');
+
+    const label = document.createElement('div');
+    label.className = 'milestone-dot-label';
+    label.textContent = m.label;
+    const dateEl = document.createElement('div');
+    dateEl.className = 'milestone-dot-date';
+    dateEl.textContent = fmtDate(m.date);
+
+    dot.appendChild(circle);
+    dot.appendChild(label);
+    dot.appendChild(dateEl);
+    track.appendChild(dot);
+  });
+}
+
+// ── Timeline ──
+function buildTimeline() {
+  const el = document.getElementById('timeline');
+  let prevPhase = null;
+
+  tasks.forEach(t => {
+    const days  = daysDiff(t.date);
+    const isPast = days < 0;
+    const isToday = days === 0;
+    const isUrgent = days >= 0 && days <= 14;
+    const isForum = t.date === '2026-07-03' && t.task.includes('🎯');
+
+    const item = document.createElement('div');
+    item.className = `tl-item phase-${t.phase}`;
+    if (isPast) item.classList.add('is-past');
+    if (isUrgent && !isPast) item.classList.add('is-urgent');
+    if (isForum) item.classList.add('is-forum');
+
+    const dot = document.createElement('div');
+    dot.className = 'tl-dot';
+    item.appendChild(dot);
+
+    // Top row
+    const top = document.createElement('div');
+    top.className = 'tl-top';
+
+    const dateEl = document.createElement('div');
+    dateEl.className = 'tl-date';
+    dateEl.textContent = t.deadline;
+
+    const taskEl = document.createElement('div');
+    taskEl.className = 'tl-task';
+    taskEl.textContent = t.task;
+
+    const daysEl = document.createElement('div');
+    daysEl.className = 'tl-days-left';
+    if (isPast)        { daysEl.textContent = '已過期'; daysEl.classList.add('urgent'); }
+    else if (isToday)  { daysEl.textContent = '今天！'; daysEl.classList.add('urgent'); }
+    else if (days <= 7){ daysEl.textContent = `剩 ${days} 天`; daysEl.classList.add('urgent'); }
+    else if (days <= 30){ daysEl.textContent = `剩 ${days} 天`; daysEl.classList.add('soon'); }
+    else               { daysEl.textContent = `剩 ${days} 天`; }
+
+    top.appendChild(dateEl);
+    top.appendChild(taskEl);
+    top.appendChild(daysEl);
+    item.appendChild(top);
+
+    // Tags
+    const tagsEl = document.createElement('div');
+    tagsEl.className = 'tl-tags';
+    const statusTag = document.createElement('span');
+    statusTag.className = `tag tag-${isPast ? 'urgent' : 'todo'}`;
+    statusTag.textContent = isPast ? '⚠ 待確認' : '待辦';
+    tagsEl.appendChild(statusTag);
+    if (t.penalty) {
+      const penTag = document.createElement('span');
+      penTag.className = 'tag tag-penalty';
+      penTag.textContent = '⚠ 罰款風險';
+      tagsEl.appendChild(penTag);
+    }
+    item.appendChild(tagsEl);
+    el.appendChild(item);
+  });
+}
+
+// ── Phase Progress Bars ──
+function buildPhaseBars() {
+  const phases = [
+    { key:'invest',   label:'投標/決標',         total:1  },
+    { key:'post',     label:'決標後第 1 個月',   total:9  },
+    { key:'june',     label:'6 月廣告與準備期',  total:7  },
+    { key:'event',    label:'論壇前後現場執行',  total:5  },
+    { key:'followup', label:'論壇後追蹤',         total:3  },
+    { key:'close',    label:'結案',               total:4  },
+  ];
+  const container = document.getElementById('phase-bars');
+  phases.forEach(p => {
+    const pct = 0; // will update from task statuses
+    const color = phaseColors[p.key];
+    const wrap = document.createElement('div');
+    wrap.className = 'prog-wrap';
+    wrap.innerHTML = `
+      <div class="prog-header">
+        <span class="prog-name" style="color:${color}">${p.label}</span>
+        <span class="prog-pct" id="pct-${p.key}">0 / ${p.total}</span>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-fill" id="bar-${p.key}" style="width:0%;background:linear-gradient(90deg,${color},${color}cc);"></div>
+      </div>`;
+    container.appendChild(wrap);
+  });
+}
+
+// ── Ring ──
+function updateRing() {
+  const start = START_DATE.getTime();
+  const end   = FORUM_DATE.getTime();
+  const now   = TODAY.getTime();
+  const pct   = Math.min(100, Math.max(0, (now - start) / (end - start) * 100));
+  const circumference = 351.9;
+  const offset = circumference * (1 - pct / 100);
+  document.getElementById('ring-circle').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('ring-pct').textContent = Math.round(pct) + '%';
+  document.getElementById('today-label').textContent =
+    `${TODAY.getMonth()+1}/${TODAY.getDate()}`;
+}
+
+// ── Urgent count ──
+function updateStats() {
+  const urgent = tasks.filter(t => {
+    const d = daysDiff(t.date);
+    return d >= 0 && d <= 30;
+  }).length;
+  document.getElementById('stat-urgent').textContent = urgent;
+  document.getElementById('stat-urgent-label').textContent = `未來 30 天內須完成`;
+}
+
+// ── Alert ──
+function buildAlert() {
+  const daysToForum = daysDiff(FORUM_DATE.toISOString().split('T')[0]);
+  const nextTask = tasks.filter(t => daysDiff(t.date) >= 0).sort((a,b) => new Date(a.date)-new Date(b.date))[0];
+  let msg = `<strong>距論壇還有 ${daysToForum} 天。</strong>`;
+  if (nextTask) {
+    const d = daysDiff(nextTask.date);
+    msg += `　最近截止項目：<strong>「${nextTask.task}」</strong>（${nextTask.deadline}，剩 ${d} 天）。`;
+  }
+  msg += `　決標後第 1 個月（6/1 前）為最密集提報期，共 9 項文件須完成。`;
+  document.getElementById('alert-text').innerHTML = msg;
+}
+
+// ── Init ──
+function init() {
+  updateClock();
+  updateCountdown();
+  buildMilestoneTrack();
+  buildTimeline();
+  buildPhaseBars();
+  updateRing();
+  updateStats();
+  buildAlert();
+
+  setInterval(updateClock, 1000);
+  setInterval(updateCountdown, 1000);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(init, 100); // let CSS paint first
+});
+</script>
 </body>
 </html>
