@@ -256,7 +256,7 @@
 <script>
   function getBook() {
     const v = document.getElementById('bookName').value.trim();
-    return v || '《書名》';
+    return v || '書名';
   }
 
   function getPersona() {
@@ -349,6 +349,9 @@ ${persona}
         btn.textContent = '複製';
         btn.classList.remove('copied');
       }, 2000);
+    }).catch(() => {
+      btn.textContent = '複製失敗';
+      setTimeout(() => { btn.textContent = '複製'; }, 2000);
     });
   }
 
