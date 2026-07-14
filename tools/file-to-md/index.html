@@ -456,7 +456,7 @@
       } else if (ext === 'pptx') {
         md = await convertPptx(file);
       } else if (['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'].includes(ext)) {
-        md = await convertImage(file);
+        md = buildImageMarkdown(await convertImage(file));
       } else if (ext === 'doc') {
         throw new Error('舊版 .doc 不支援，請另存為 .docx');
       } else if (ext === 'ppt') {
@@ -467,8 +467,18 @@
 
       return {
         fileName,
-        md: buildHeader(file, fileName) + md.trim() + '\n',
+        md: buildHeader(file, fileName, getFileMeta(ext)) + md.trim() + '\n',
       };
+    }
+
+    function getFileMeta(ext) {
+      if (['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'].includes(ext)) {
+        return [
+          '類型：圖片 OCR',
+          '建議：請人工檢查 OCR 結果，圖片版面與圖表資訊可能未完整保留',
+        ];
+      }
+      return [];
     }
 
     function safeBaseName(name) {
@@ -489,12 +499,13 @@
       return candidate;
     }
 
-    function buildHeader(file, name = currentName) {
+    function buildHeader(file, name = currentName, meta = []) {
       const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
       const sizeKb = (file.size / 1024).toFixed(1);
       return `# ${name}\n\n` +
              `> 來源：\`${file.name}\` (${sizeKb} KB)  \n` +
              `> 轉換時間：${now}  \n` +
+             meta.map((line) => `> ${line}  \n`).join('') +
              `> 工具：file-to-md\n\n---\n\n`;
     }
 
@@ -666,6 +677,13 @@
       URL.revokeObjectURL(url);
       await worker.terminate();
       return text.trim();
+    }
+
+    function buildImageMarkdown(text) {
+      const ocrText = text.trim() || '_(未辨識到文字)_';
+      return `## OCR 文字\n\n${ocrText}\n\n` +
+             `## 圖片描述\n\n` +
+             `（請補充圖片內容、圖表重點或版面說明）\n`;
     }
   </script>
   <script>
