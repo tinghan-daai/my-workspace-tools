@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#123b3a" />
+    <meta
+      name="description"
+      content="影片與聲音檔在瀏覽器本機轉成含時間碼及講者標示的逐字稿。"
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <title>影音逐字稿｜本機 AI 轉錄</title>
+    <script>
+      if (window.location.protocol === "file:") {
+        document.documentElement.dataset.openedAsFile = "true";
+      }
+    </script>
+    <style>
+      html[data-opened-as-file] body > * {
+        display: none !important;
+      }
+
+      html[data-opened-as-file] body::before {
+        content: "開啟方式不正確\A\A這個工具需要由工具站網址開啟，不能直接雙擊 app.html。直接開啟檔案時，瀏覽器會封鎖本機 AI 程式，因此畫面沒有樣式、按鈕也無法使用。\A\A請關閉此頁，回到工具站後再點「影音逐字稿」。";
+        display: block;
+        box-sizing: border-box;
+        width: min(680px, calc(100% - 40px));
+        margin: 72px auto;
+        padding: 32px;
+        border: 1px solid #d7e2df;
+        border-radius: 20px;
+        background: #f4faf8;
+        color: #123b3a;
+        font: 18px/1.75 system-ui, sans-serif;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="back-link" href="../../pr-dashboard/">← 工具站</a>
+      <div class="brand">
+        <span class="brand-mark">聲</span>
+        <span>影音逐字稿</span>
+      </div>
+      <button class="ghost-button" id="installButton" hidden>安裝到裝置</button>
+    </header>
+
+    <main class="page-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">LOCAL-FIRST TRANSCRIPTION</p>
+          <h1>影音留在電腦裡，<br />逐字稿帶著走。</h1>
+          <p class="hero-copy">
+            將採訪、會議或影片轉成含時間碼與講者標示的繁體中文逐字稿。
+            AI 模型在瀏覽器內執行，影音內容不會上傳。
+          </p>
+        </div>
+        <div class="privacy-card">
+          <div class="privacy-icon">✓</div>
+          <div>
+            <strong>全程本機處理</strong>
+            <p>只有模型與執行元件會從網路下載；你的影音與逐字稿不會送到伺服器。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace-card" id="setupPanel">
+        <div class="step-heading">
+          <span class="step-number">01</span>
+          <div>
+            <h2>選擇影音</h2>
+            <p>支援 MP4、MOV、MP3、M4A、WAV；建議單檔 60 分鐘內。</p>
+          </div>
+        </div>
+
+        <label class="drop-zone" id="dropZone">
+          <input
+            id="mediaFile"
+            type="file"
+            accept="audio/*,video/mp4,video/quicktime,.m4a,.wav,.mp3,.mov,.mp4"
+          />
+          <span class="drop-icon">＋</span>
+          <strong>拖入影片或聲音檔</strong>
+          <span>或點一下選擇檔案</span>
+        </label>
+
+        <div class="file-summary" id="fileSummary" hidden>
+          <div>
+            <strong id="fileName"></strong>
+            <span id="fileMeta"></span>
+          </div>
+          <button class="text-button" id="clearFileButton">更換檔案</button>
+        </div>
+
+        <div class="settings-grid">
+          <label>
+            <span>使用情境</span>
+            <select id="usageMode">
+              <option value="interview">採訪</option>
+              <option value="meeting">會議</option>
+              <option value="subtitle">影片字幕</option>
+            </select>
+          </label>
+          <label>
+            <span>辨識品質</span>
+            <select id="qualityMode">
+              <option value="fast">快速｜Whisper Base</option>
+              <option value="standard" selected>標準｜Whisper Small（建議）</option>
+              <option value="accurate">高準確｜Large-v3 Turbo（句段時間碼）</option>
+            </select>
+          </label>
+          <label>
+            <span>預估講者</span>
+            <select id="speakerCount">
+              <option value="1">單人</option>
+              <option value="2" selected>2 人</option>
+              <option value="3-5">3–5 人</option>
+              <option value="unknown">不確定</option>
+            </select>
+          </label>
+          <label>
+            <span>語言</span>
+            <select id="language">
+              <option value="zh" selected>繁體中文／中英夾雜</option>
+              <option value="en">英文</option>
+              <option value="ja">日文</option>
+            </select>
+          </label>
+        </div>
+
+        <details class="glossary-panel">
+          <summary>加入本次專有名詞（選填）</summary>
+          <textarea
+            id="glossary"
+            rows="3"
+            placeholder="例如：台中慈濟醫院、心導管、達文西手術；每個詞用頓號或換行分隔"
+          ></textarea>
+          <p>專有名詞會作為辨識提示，並保留在專案中供完成後搜尋校對；AI 仍可能聽錯。</p>
+        </details>
+
+        <div class="compatibility" id="compatibility"></div>
+        <button class="primary-button" id="startButton" disabled>
+          開始本機轉錄
+        </button>
+      </section>
+
+      <section class="workspace-card processing-panel" id="processingPanel" hidden>
+        <div class="step-heading">
+          <span class="step-number">02</span>
+          <div>
+            <h2>正在本機處理</h2>
+            <p id="processingMessage">準備模型中…</p>
+          </div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="progressLabel">0%</span>
+          <span id="elapsedTime">00:00</span>
+        </div>
+        <ol class="stage-list" id="stageList">
+          <li data-stage="decode">解碼音訊</li>
+          <li data-stage="models">下載／載入模型</li>
+          <li data-stage="transcribe">辨識文字與時間碼</li>
+          <li data-stage="diarize">分辨講者</li>
+          <li data-stage="merge">整理逐字稿</li>
+        </ol>
+        <button class="danger-button" id="cancelButton">取消處理</button>
+        <p class="processing-note">
+          第一次使用需下載模型。請保持此分頁開啟，後續使用會沿用瀏覽器快取。
+        </p>
+      </section>
+
+      <section id="editorPanel" hidden>
+        <div class="editor-toolbar">
+          <div>
+            <p class="eyebrow">校對工作台</p>
+            <h2 id="editorTitle">逐字稿</h2>
+            <span class="draft-badge">AI 辨識初稿，需人工校對</span>
+          </div>
+          <div class="toolbar-actions">
+            <button class="ghost-button" id="projectExportButton">專案備份</button>
+            <label class="ghost-button file-button">
+              匯入專案
+              <input id="projectImport" type="file" accept=".json" />
+            </label>
+            <button class="primary-button compact" id="exportOpenButton">匯出</button>
+          </div>
+        </div>
+
+        <div class="editor-layout">
+          <aside class="media-column">
+            <div class="sticky-media">
+              <video id="mediaPlayer" controls playsinline></video>
+              <div class="playback-tools">
+                <button data-seek="-5">−5 秒</button>
+                <button id="playPauseButton">播放／暫停</button>
+                <button data-seek="5">＋5 秒</button>
+              </div>
+
+              <section class="speaker-card">
+                <div class="section-row">
+                  <h3>講者</h3>
+                  <button class="text-button" id="addSpeakerButton">＋ 新增</button>
+                </div>
+                <div id="speakerList"></div>
+              </section>
+
+              <section class="find-card">
+                <h3>搜尋與取代</h3>
+                <input id="findText" placeholder="搜尋文字" />
+                <input id="replaceText" placeholder="取代為" />
+                <button class="ghost-button full" id="replaceAllButton">全部取代</button>
+              </section>
+            </div>
+          </aside>
+
+          <div class="transcript-column">
+            <div class="transcript-summary" id="transcriptSummary"></div>
+            <div id="transcriptRows"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="exportDialog">
+      <form method="dialog" class="dialog-card">
+        <div class="section-row">
+          <div>
+            <p class="eyebrow">EXPORT</p>
+            <h2>匯出逐字稿</h2>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="關閉">×</button>
+        </div>
+        <label>
+          <span>文件格式</span>
+          <select id="exportFormat">
+            <option value="docx">Word（.docx）</option>
+            <option value="txt">純文字（.txt）</option>
+            <option value="md">Markdown（.md）</option>
+            <option value="srt">字幕（.srt）</option>
+          </select>
+        </label>
+        <label>
+          <span>排列方式</span>
+          <select id="exportLayout">
+            <option value="timeline">依時間排列</option>
+            <option value="qa">訪談問答格式</option>
+            <option value="speaker">依講者整理</option>
+          </select>
+        </label>
+        <label class="checkbox-row">
+          <input id="includeTimestamps" type="checkbox" checked />
+          <span>顯示時間碼</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="reviewedStatus" type="checkbox" />
+          <span>標示為「已人工校對」</span>
+        </label>
+        <button class="primary-button" id="exportButton" value="default">
+          下載檔案
+        </button>
+      </form>
+    </dialog>
+
+    <dialog id="restoreDialog">
+      <form method="dialog" class="dialog-card">
+        <h2>找到上次的校對進度</h2>
+        <p id="restoreMessage"></p>
+        <div class="dialog-actions">
+          <button class="ghost-button" value="discard">略過</button>
+          <button class="primary-button compact" value="restore">恢復進度</button>
+        </div>
+      </form>
+    </dialog>
+
+    <footer>
+      <span>影音逐字稿 v0.2.3</span>
+      <button class="text-button" id="clearLocalDataButton">清除本機專案資料</button>
+    </footer>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

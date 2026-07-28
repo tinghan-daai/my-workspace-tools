@@ -1,0 +1,41 @@
+# Google Drive 系統檔
+desktop.ini
+Thumbs.db
+.DS_Store
+*.tmp
+~$*
+
+# 敏感資料
+.env
+.env.*
+*.key
+credentials.*
+secrets.*
+
+# AI agent 本地設定（含 permissions、可能記錄 token，絕不上雲）
+.claude/
+!.claude/launch.json
+.codex/
+
+# Node.js
+node_modules/
+package-lock.json
+!tools/media-transcriber/package-lock.json
+
+# 建置輸出
+dist/
+build/
+.cache/
+
+# 台日長照論壇 — 素材原始檔與歷史資料（檔案大，留在 GDrive 同步即可）
+台日長照論壇/素材/
+台日長照論壇/舊資料/
+
+# Google Drive 捷徑檔（git 無法讀取）
+*.gdoc
+*.gsheet
+*.gslides
+
+# 設計原始檔（PSD/AI 太大，留 Google Drive 同步，不進 git）
+*.psd
+*.ai

@@ -1,0 +1,21 @@
+{
+  "name": "media-transcriber",
+  "private": true,
+  "version": "0.2.3",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "3.8.1",
+    "diarization-js": "0.1.0",
+    "docx": "9.5.1",
+    "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4",
+    "opencc-js": "1.4.1"
+  },
+  "devDependencies": {
+    "vite": "7.0.6"
+  }
+}

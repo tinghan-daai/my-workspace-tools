@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>開啟影音逐字稿</title>
+    <script>
+      if (window.location.protocol !== "file:") {
+        window.location.replace("./site/app.html");
+      }
+    </script>
+    <style>
+      body {
+        box-sizing: border-box;
+        width: min(680px, calc(100% - 40px));
+        margin: 72px auto;
+        padding: 32px;
+        border: 1px solid #d7e2df;
+        border-radius: 20px;
+        background: #f4faf8;
+        color: #123b3a;
+        font: 18px/1.75 system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>請由工具站網址開啟</h1>
+    <p>
+      直接雙擊本機 HTML 檔案時，瀏覽器會封鎖本機 AI 程式。請回到工具站網頁，再點「影音逐字稿」。
+    </p>
+    <noscript><p>此工具需要啟用 JavaScript。</p></noscript>
+  </body>
+</html>

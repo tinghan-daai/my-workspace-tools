@@ -1,0 +1,18 @@
+{
+  "name": "影音逐字稿",
+  "short_name": "逐字稿",
+  "description": "影片與聲音檔在瀏覽器本機轉成逐字稿",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f0e8",
+  "theme_color": "#123b3a",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
