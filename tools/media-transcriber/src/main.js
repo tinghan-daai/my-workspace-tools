@@ -1,6 +1,10 @@
 import "./styles.css";
 import OpenCC from "opencc-js";
 import {
+  buildQuickContent,
+  organizeTranscriptRows,
+} from "./summarizer.js";
+import {
   buildDocx,
   buildMarkdown,
   buildPlainText,
@@ -37,6 +41,12 @@ const elements = {
   summary: $("#transcriptSummary"),
   exportDialog: $("#exportDialog"),
   restoreDialog: $("#restoreDialog"),
+  summaryText: $("#summaryText"),
+  keyPoints: $("#keyPoints"),
+  contentMode: $("#contentMode"),
+  aiStatus: $("#aiStatus"),
+  aiProgressBar: $("#aiProgressBar"),
+  aiStatusText: $("#aiStatusText"),
 };
 
 const colors = ["#2d6a65", "#b15d3b", "#7562a8", "#b28a21", "#3f72a0", "#8b566f"];
@@ -48,6 +58,7 @@ let timer = null;
 let startedAt = null;
 let deferredInstallPrompt = null;
 let saveTimer = null;
+let summaryWorker = null;
 
 function createSpeaker(id, index) {
   return {
@@ -69,6 +80,12 @@ function convertProjectToTraditional(target) {
   }
   if (changed) target.updatedAt = new Date().toISOString();
   return changed;
+}
+
+function ensureContent(target) {
+  if (!target.content?.summary || target.content?.points?.length !== 5) {
+    target.content = buildQuickContent(target.rows || []);
+  }
 }
 
 function formatSize(bytes) {
@@ -236,8 +253,15 @@ async function runTranscription() {
 
 function buildProject(result, duration) {
   const speakerIds = [...new Set(result.rows.map((row) => row.speaker))];
+  const translatedRows = result.rows.map((row) => ({
+    ...row,
+    text:
+      $("#language").value === "zh"
+        ? toTaiwanTraditional(row.text)
+        : row.text,
+  }));
   project = {
-    version: 1,
+    version: 2,
     title: selectedFile.name.replace(/\.[^.]+$/, ""),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -255,19 +279,14 @@ function buildProject(result, duration) {
       glossary: $("#glossary").value.trim(),
     },
     speakers: speakerIds.map(createSpeaker),
-    rows: result.rows.map((row) => ({
-      ...row,
-      text:
-        $("#language").value === "zh"
-          ? toTaiwanTraditional(row.text)
-          : row.text,
-    })),
+    rows: organizeTranscriptRows(translatedRows),
     raw: {
       transcript: result.rawTranscript,
       diarization: result.rawDiarization,
       metrics: result.metrics,
     },
   };
+  project.content = buildQuickContent(project.rows);
 }
 
 function showEditor() {
@@ -284,7 +303,43 @@ function showEditor() {
     elements.player.load();
   }
   renderSpeakers();
+  ensureContent(project);
+  renderContent();
   renderRows();
+}
+
+function renderContent() {
+  ensureContent(project);
+  elements.summaryText.value = project.content.summary;
+  elements.contentMode.textContent =
+    project.content.mode === "ai"
+      ? "本機 AI 精修版，可直接編輯"
+      : "快速整理版，可直接編輯";
+  $("#restoreQuickButton").hidden = project.content.mode !== "ai";
+  elements.keyPoints.innerHTML = "";
+  project.content.points.forEach((point, index) => {
+    const node = document.createElement("div");
+    node.className = "key-point";
+    node.innerHTML = `
+      <div>
+        <label for="pointTitle${index}">重點 ${index + 1} 小標</label>
+        <input id="pointTitle${index}" value="${escapeHtml(point.title)}">
+      </div>
+      <div>
+        <label for="pointText${index}">重點內容</label>
+        <textarea id="pointText${index}">${escapeHtml(point.text)}</textarea>
+      </div>
+    `;
+    node.querySelector("input").addEventListener("input", (event) => {
+      point.title = event.target.value;
+      saveProjectSoon();
+    });
+    node.querySelector("textarea").addEventListener("input", (event) => {
+      point.text = event.target.value;
+      saveProjectSoon();
+    });
+    elements.keyPoints.append(node);
+  });
 }
 
 function speakerName(id) {
@@ -496,6 +551,74 @@ function checkCompatibility() {
   $("#compatibility").innerHTML =
     `<strong>${webGpu ? "支援 WebGPU，可使用 Large-v3 Turbo" : "不支援 WebGPU，高準確模式會自動改用 Small"}</strong>・` +
     `邏輯核心 ${navigator.hardwareConcurrency || "未知"}・裝置記憶體 ${memory}`;
+  if (!webGpu) {
+    $("#aiRefineButton").disabled = true;
+    $("#aiRefineButton").title = "此裝置不支援 WebGPU，仍可使用快速整理版";
+  }
+}
+
+function transcriptForSummary() {
+  return project.rows
+    .map((row) => `${speakerName(row.speaker)}：${row.text}`)
+    .join("\n");
+}
+
+function refineWithLocalAI() {
+  if (!navigator.gpu) {
+    alert("此裝置不支援 WebGPU，請使用快速整理版。");
+    return;
+  }
+  summaryWorker?.terminate();
+  project.quickContentBackup = structuredClone(
+    project.content.mode === "quick"
+      ? project.content
+      : project.quickContentBackup || buildQuickContent(project.rows),
+  );
+  elements.aiStatus.hidden = false;
+  elements.aiProgressBar.style.width = "0%";
+  elements.aiStatusText.textContent = "準備本機摘要模型；第一次約需下載 786 MB";
+  $("#aiRefineButton").disabled = true;
+  summaryWorker = new Worker(new URL("./summary-worker.js", import.meta.url), {
+    type: "module",
+  });
+  summaryWorker.onmessage = ({ data }) => {
+    if (data.type === "progress") {
+      elements.aiProgressBar.style.width = `${Math.max(3, (data.fraction || 0) * 100)}%`;
+      elements.aiStatusText.textContent = data.message;
+    }
+    if (data.type === "error") {
+      summaryWorker.terminate();
+      summaryWorker = null;
+      $("#aiRefineButton").disabled = false;
+      elements.aiStatus.hidden = true;
+      alert(`本機 AI 精修失敗，已保留快速整理版：${data.message}`);
+    }
+    if (data.type === "complete") {
+      project.content = {
+        summary: toTaiwanTraditional(data.content.summary),
+        points: data.content.points.map((point) => ({
+          title: toTaiwanTraditional(point.title),
+          text: toTaiwanTraditional(point.text),
+        })),
+        mode: "ai",
+      };
+      summaryWorker.terminate();
+      summaryWorker = null;
+      $("#aiRefineButton").disabled = false;
+      elements.aiProgressBar.style.width = "100%";
+      elements.aiStatusText.textContent = "本機 AI 精修完成";
+      setTimeout(() => {
+        elements.aiStatus.hidden = true;
+      }, 1800);
+      renderContent();
+      saveProjectSoon(true);
+    }
+  };
+  summaryWorker.postMessage({
+    type: "refine",
+    transcript: transcriptForSummary(),
+    quickContent: project.quickContentBackup,
+  });
 }
 
 elements.file.addEventListener("change", () => handleFile(elements.file.files?.[0]));
@@ -570,6 +693,20 @@ $("#clearLocalDataButton").addEventListener("click", async () => {
   await clearActiveProject();
   location.reload();
 });
+elements.summaryText.addEventListener("input", () => {
+  ensureContent(project);
+  project.content.summary = elements.summaryText.value;
+  saveProjectSoon();
+});
+$("#aiRefineButton").addEventListener("click", refineWithLocalAI);
+$("#restoreQuickButton").addEventListener("click", () => {
+  project.content = structuredClone(
+    project.quickContentBackup || buildQuickContent(project.rows),
+  );
+  project.content.mode = "quick";
+  renderContent();
+  saveProjectSoon(true);
+});
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
@@ -593,6 +730,7 @@ loadActiveProject()
     if (convertProjectToTraditional(saved)) {
       await saveActiveProject(saved);
     }
+    ensureContent(saved);
     $("#restoreMessage").textContent = `${saved.title}，最後儲存於 ${new Date(saved.updatedAt).toLocaleString("zh-TW")}。恢復後需重新選取原影音才能播放。`;
     elements.restoreDialog.showModal();
     elements.restoreDialog.addEventListener(

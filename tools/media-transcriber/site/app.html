@@ -36,9 +36,9 @@
         white-space: pre-wrap;
       }
     </style>
-    <script type="module" crossorigin src="./assets/app-LeWgOEKh.js"></script>
+    <script type="module" crossorigin src="./assets/app-C4sjTdWt.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/diarization-D9Z9MdNV.js">
-    <link rel="stylesheet" crossorigin href="./assets/app-CUjzxeqr.css">
+    <link rel="stylesheet" crossorigin href="./assets/app-SqlREC8x.css">
   </head>
   <body>
     <header class="topbar">
@@ -195,6 +195,34 @@
           </div>
         </div>
 
+        <section class="content-pack">
+          <div class="section-row">
+            <div>
+              <p class="eyebrow">整理結果</p>
+              <h2>摘要與重點</h2>
+              <p class="content-mode" id="contentMode">快速整理版，可直接編輯</p>
+            </div>
+            <div class="toolbar-actions">
+              <button class="ghost-button" id="restoreQuickButton" hidden>恢復快速整理版</button>
+              <button class="primary-button compact" id="aiRefineButton">使用本機 AI 精修</button>
+            </div>
+          </div>
+          <div class="summary-editor">
+            <label for="summaryText">約 300 字摘要</label>
+            <textarea id="summaryText" rows="7"></textarea>
+          </div>
+          <div>
+            <h3>五項核心重點</h3>
+            <div class="key-points" id="keyPoints"></div>
+          </div>
+          <div class="ai-status" id="aiStatus" hidden>
+            <div class="progress-track">
+              <div class="progress-bar" id="aiProgressBar"></div>
+            </div>
+            <p id="aiStatusText">準備本機摘要模型</p>
+          </div>
+        </section>
+
         <div class="editor-layout">
           <aside class="media-column">
             <div class="sticky-media">
@@ -282,7 +310,7 @@
     </dialog>
 
     <footer>
-      <span>影音逐字稿 v0.2.4</span>
+      <span>影音逐字稿 v0.3.0</span>
       <button class="text-button" id="clearLocalDataButton">清除本機專案資料</button>
     </footer>
 

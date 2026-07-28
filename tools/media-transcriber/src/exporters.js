@@ -35,7 +35,22 @@ function layoutRows(project, layout) {
 
 export function buildPlainText(project, options) {
   const rows = layoutRows(project, options.layout);
-  return rows
+  const content = project.content || { summary: "", points: [] };
+  const heading = [
+    project.title || "影音逐字稿",
+    "",
+    "摘要",
+    content.summary || "未提供",
+    "",
+    "五項核心重點",
+    ...(content.points || []).map(
+      (point, index) => `${index + 1}. ${point.title}\n${point.text}`,
+    ),
+    "",
+    "完整逐字稿",
+    "",
+  ];
+  const transcript = rows
     .map((row) => {
       const time = options.includeTimestamps
         ? `[${formatClock(row.start)}] `
@@ -43,6 +58,7 @@ export function buildPlainText(project, options) {
       return `${time}${speakerName(project, row.speaker)}：\n${row.text}`;
     })
     .join("\n\n");
+  return [...heading, transcript].join("\n");
 }
 
 export function buildMarkdown(project, options) {
@@ -53,6 +69,20 @@ export function buildMarkdown(project, options) {
     `- 原始檔案：${project.file?.name || "未提供"}`,
     `- 建立時間：${new Date(project.createdAt).toLocaleString("zh-TW")}`,
     `- 狀態：${status}`,
+    "",
+    "## 摘要",
+    "",
+    project.content?.summary || "未提供",
+    "",
+    "## 五項核心重點",
+    "",
+    ...(project.content?.points || []).flatMap((point, index) => [
+      `### ${index + 1}. ${point.title}`,
+      "",
+      point.text,
+      "",
+    ]),
+    "## 完整逐字稿",
     "",
   ];
   const rows = layoutRows(project, options.layout).flatMap((row) => [
@@ -120,6 +150,49 @@ export async function buildDocx(project, options) {
       spacing: { after: 360 },
     }),
   ];
+  if (project.content?.summary) {
+    children.push(
+      new Paragraph({
+        text: "摘要",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 240, after: 120 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: project.content.summary })],
+        spacing: { after: 240, line: 360 },
+      }),
+      new Paragraph({
+        text: "五項核心重點",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 180, after: 120 },
+      }),
+    );
+    for (const [index, point] of (project.content.points || []).entries()) {
+      children.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: `${index + 1}. ${point.title}`,
+              bold: true,
+              color: "123B3A",
+            }),
+          ],
+          spacing: { before: 100, after: 50 },
+        }),
+        new Paragraph({
+          children: [new TextRun({ text: point.text })],
+          spacing: { after: 140, line: 360 },
+        }),
+      );
+    }
+    children.push(
+      new Paragraph({
+        text: "完整逐字稿",
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 240, after: 120 },
+      }),
+    );
+  }
   for (const row of layoutRows(project, options.layout)) {
     const label = `${options.includeTimestamps ? `${formatClock(row.start)}｜` : ""}${speakerName(project, row.speaker)}`;
     children.push(
