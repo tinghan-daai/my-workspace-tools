@@ -1,4 +1,4 @@
-const CACHE = "media-transcriber-v5";
+const CACHE = "media-transcriber-v6";
 const APP_SHELL = [
   "./",
   "./app.html",
