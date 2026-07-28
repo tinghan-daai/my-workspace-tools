@@ -1,4 +1,18 @@
 const sentenceEnd = /[。！？!?]/;
+const discourseMarkers = [
+  "不過", "但是", "可是", "然而", "因此", "所以", "另外", "同時", "接著",
+  "然後", "最後", "如果", "至於", "例如", "也就是", "換句話說", "相對來說",
+];
+const newClauseSubjects = [
+  ["團隊", "透過|表示|指出|將|會|已|也|共同"],
+  ["未來", ""],
+  ["目前", ""],
+  ["此次", ""],
+  ["這次", ""],
+  ["接下來", ""],
+  ["院方", "表示|指出|將|會|已|也"],
+  ["醫院", "表示|指出|將|會|已|也"],
+];
 const stopWords = new Set([
   "我們", "大家", "這個", "那個", "就是", "因為", "所以", "然後", "可以",
   "今天", "一個", "一些", "以及", "但是", "如果", "已經", "還是", "可能",
@@ -7,12 +21,52 @@ const stopWords = new Set([
 function cleanText(text) {
   return String(text || "")
     .replace(/\s+/g, " ")
+    .replace(/,/g, "，")
+    .replace(/;/g, "；")
+    .replace(/:/g, "：")
+    .replace(/\?/g, "？")
+    .replace(/!/g, "！")
     .replace(/\s+([，。！？；：、])/g, "$1")
+    .replace(/([，。！？；：、])\s+/g, "$1")
+    .replace(/([，。！？；：、])\1+/g, "$1")
     .trim();
 }
 
+function addClausePunctuation(text) {
+  let result = cleanText(text);
+  if (!result) return result;
+
+  // Whisper 有時用空格表示停頓；中文詞句間的空格視為逗點，
+  // 英文、數字與專有縮寫內的空格則保留。
+  result = result.replace(
+    /([\p{Script=Han}])\s+(?=[\p{Script=Han}])/gu,
+    "$1，",
+  );
+
+  for (const marker of discourseMarkers) {
+    result = result.replace(
+      new RegExp(`([^，。！？；：、])(${marker})`, "g"),
+      "$1，$2",
+    );
+  }
+
+  for (const [subject, following] of newClauseSubjects) {
+    result = result.replace(
+      new RegExp(
+        `(.{8,}[^，。！？；：、])(${subject})${following ? `(?=${following})` : ""}`,
+        "g",
+      ),
+      "$1，$2",
+    );
+  }
+
+  return result
+    .replace(/，{2,}/g, "，")
+    .replace(/，([。！？；])/g, "$1");
+}
+
 function splitLongText(text, maximum = 62) {
-  const clean = cleanText(text);
+  const clean = addClausePunctuation(text);
   if (!clean) return [];
   const natural = clean
     .split(/(?<=[。！？!?；;])\s*/)
@@ -142,4 +196,3 @@ export function buildQuickContent(rows) {
   }
   return { summary, points, mode: "quick" };
 }
-

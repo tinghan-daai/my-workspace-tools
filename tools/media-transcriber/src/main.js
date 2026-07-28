@@ -88,6 +88,17 @@ function ensureContent(target) {
   }
 }
 
+function upgradeProject(target) {
+  if (!target?.rows?.length || Number(target.version || 1) >= 3) return false;
+  target.rows = organizeTranscriptRows(target.rows);
+  target.version = 3;
+  if (!target.content || target.content.mode === "quick") {
+    target.content = buildQuickContent(target.rows);
+  }
+  target.updatedAt = new Date().toISOString();
+  return true;
+}
+
 function formatSize(bytes) {
   const units = ["B", "KB", "MB", "GB"];
   let value = bytes;
@@ -261,7 +272,7 @@ function buildProject(result, duration) {
         : row.text,
   }));
   project = {
-    version: 2,
+    version: 3,
     title: selectedFile.name.replace(/\.[^.]+$/, ""),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -528,6 +539,7 @@ async function importProject(file) {
   if (!Array.isArray(imported.rows) || !Array.isArray(imported.speakers)) {
     throw new Error("這不是有效的逐字稿專案備份");
   }
+  upgradeProject(imported);
   project = imported;
   selectedFile = null;
   await saveProjectSoon(true);
@@ -727,7 +739,9 @@ checkCompatibility();
 loadActiveProject()
   .then(async (saved) => {
     if (!saved?.rows?.length) return;
-    if (convertProjectToTraditional(saved)) {
+    const upgraded = upgradeProject(saved);
+    const converted = convertProjectToTraditional(saved);
+    if (upgraded || converted) {
       await saveActiveProject(saved);
     }
     ensureContent(saved);
