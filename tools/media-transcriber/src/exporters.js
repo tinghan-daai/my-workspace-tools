@@ -33,8 +33,26 @@ function layoutRows(project, layout) {
   });
 }
 
+function groupedRows(project, layout) {
+  const rows = layoutRows(project, layout);
+  const groups = [];
+  for (const row of rows) {
+    const previous = groups.at(-1);
+    if (previous?.speaker === row.speaker) {
+      previous.end = Math.max(previous.end, row.end);
+      previous.text = `${previous.text}${row.text}`.replace(
+        /([。！？；，])\1+/g,
+        "$1",
+      );
+    } else {
+      groups.push({ ...row });
+    }
+  }
+  return groups;
+}
+
 export function buildPlainText(project, options) {
-  const rows = layoutRows(project, options.layout);
+  const rows = groupedRows(project, options.layout);
   const content = project.content || { summary: "", points: [] };
   const heading = [
     project.title || "影音逐字稿",
@@ -85,7 +103,7 @@ export function buildMarkdown(project, options) {
     "## 完整逐字稿",
     "",
   ];
-  const rows = layoutRows(project, options.layout).flatMap((row) => [
+  const rows = groupedRows(project, options.layout).flatMap((row) => [
     `## ${options.includeTimestamps ? `${formatClock(row.start)}｜` : ""}${speakerName(project, row.speaker)}`,
     "",
     row.text,
@@ -193,7 +211,7 @@ export async function buildDocx(project, options) {
       }),
     );
   }
-  for (const row of layoutRows(project, options.layout)) {
+  for (const row of groupedRows(project, options.layout)) {
     const label = `${options.includeTimestamps ? `${formatClock(row.start)}｜` : ""}${speakerName(project, row.speaker)}`;
     children.push(
       new Paragraph({
